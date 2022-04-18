@@ -20,11 +20,26 @@ namespace Algiz::HTTP {
 				const size_t space = trimmed.find(' ');
 				if (space == std::string::npos)
 					throw ParseError("Bad method line");
-				std::string method(trimmed.c_str(), space);
-				
+				method = {trimmed.c_str(), space};
+				if (supportedMethods.contains(method)) {
+					INFO("Setting method to " << method);
+					const size_t second_space = trimmed.find(' ', space + 1);
+					if (space != std::string::npos) {
+						path = {trimmed.c_str(), space + 1, second_space - space - 1};
+						if (!path.empty() && path.front() == '/') {
+							const std::string version = trimmed.substr(second_space + 1);
+							if (version != "HTTP/1.1" && version != "HTTP/1.0")
+								throw ParseError("Invalid HTTP version");
+							return;
+						}
+					}
+					throw ParseError("Bad GET path");
+				}
 				throw ParseError("Invalid method: " + method);
 			} else
 				throw std::runtime_error("Invalid HTTP client mode: " + std::to_string(int(mode)));
 		}
 	}
+
+	std::unordered_set<std::string> Client::supportedMethods {"GET"};
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 
 namespace Algiz {
 	struct Logger {
@@ -24,7 +25,13 @@ namespace Algiz {
 			fn(std::cerr);
 			return *this;
 		}
+
+		static std::string getTimestamp();
 	};
 
 	extern Logger log;
 }
+
+#define INFO(message) \
+	do { ::Algiz::log << "\e[2m[" << ::Algiz::Logger::getTimestamp() << "] \e[22;34mi\e[39;2m ::\e[22m " << message \
+	                  << std::endl; } while (false);
