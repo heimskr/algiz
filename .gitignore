@@ -1,0 +1,12 @@
+.dep
+*.o
+algiz
+*.so
+*.dylib
+.DS_Store
+.vscode
+*.log
+PVS-Studio.log
+report.tasks
+strace_out
+callgrind.*
