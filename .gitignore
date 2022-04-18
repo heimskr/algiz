@@ -1,6 +1,6 @@
 .dep
 *.o
-algiz
+/algiz
 *.so
 *.dylib
 .DS_Store
@@ -10,3 +10,4 @@ PVS-Studio.log
 report.tasks
 strace_out
 callgrind.*
+/www
