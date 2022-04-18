@@ -4,9 +4,12 @@
 
 namespace Algiz::HTTP {
 	void Client::handleInput(const std::string &message) {
-		if (message == "\r") {
+		if (mode != Mode::Content && message == "\r") {
 			mode = Mode::Content;
 			lineMode = false;
+			if (headers.count("Content-Length") == 0) {
+				handleRequest();
+			}
 		} else if (mode == Mode::Content) {
 			content += message;
 		} else {
@@ -47,6 +50,18 @@ namespace Algiz::HTTP {
 				throw ParseError("Invalid method: " + method);
 			} else
 				throw std::runtime_error("Invalid HTTP client mode: " + std::to_string(int(mode)));
+		}
+	}
+
+	void Client::handleRequest() {
+		if (method == "GET") {
+			const std::string content("Hello there.");
+			send("HTTP/1.1 200 OK\r\n");
+			send("Content-Type: text/html; charset=UTF-8\r\n");
+			send("Content-Length: " + std::to_string(content.size()) + "\r\n\r\n");
+			send(content);
+		} else {
+			throw ParseError("Invalid method: " + method);
 		}
 	}
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <map>
 #include <string>
 #include <unordered_set>
@@ -8,6 +9,9 @@
 
 namespace Algiz::HTTP {
 	class Client: public GenericClient {
+		private:
+			void handleRequest();
+
 		public:
 			enum class Mode {Method, Headers, Content};
 
@@ -16,6 +20,8 @@ namespace Algiz::HTTP {
 			std::string content;
 			std::string method;
 			std::string path;
+
+			std::function<void(const std::string &)> send = [](const std::string &) {};
 
 			using GenericClient::GenericClient;
 

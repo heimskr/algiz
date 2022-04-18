@@ -12,6 +12,7 @@
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/Server.h"
+#include "Log.h"
 
 namespace Algiz {
 	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size):
@@ -172,7 +173,11 @@ namespace Algiz {
 						descriptors.emplace(new_client, new_fd);
 						clients.erase(new_fd);
 						clients.emplace(new_fd, new_client);
-						allClients.try_emplace(new_client, std::make_unique<HTTP::Client>(new_client, true));
+						auto http_client = std::make_unique<HTTP::Client>(new_client, true);
+						http_client->send = [this, new_client](const std::string &message) {
+							send(new_client, message, true);
+						};
+						allClients.try_emplace(new_client, std::move(http_client));
 					} else if (i != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {
