@@ -5,7 +5,7 @@
 
 namespace Algiz {
 	Server * run(const Options &options) {
-		auto *server = new HTTP::Server(options.addressFamily, options.ip, options.port, 1024);
+		auto *server = new HTTP::Server(options);
 		server->messageHandler = [server](int client, const std::string &message) {
 			try {
 				server->getClients().at(client)->handleInput(message);

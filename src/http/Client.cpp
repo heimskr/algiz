@@ -60,14 +60,7 @@ namespace Algiz::HTTP {
 
 	void Client::handleRequest() {
 		if (method == "GET") {
-			const std::string content("Hello there.");
-			send("HTTP/1.1 200 OK\r\n");
-			send("Content-Type: text/html; charset=UTF-8\r\n");
-			send("Content-Length: " + std::to_string(content.size()) + "\r\n");
-			send("Connection: close\r\n");
-			send("\r\n");
-			send(content);
-			server.removeClient(id);
+			server.handleGet(*this, path);
 		} else {
 			throw ParseError("Invalid method: " + method);
 		}

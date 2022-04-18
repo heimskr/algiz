@@ -37,6 +37,11 @@ namespace Algiz {
 	                  << "\e[22;2m]\e[22m (\e[22;1;34mi\e[22;39m)\e[2m ::\e[22m "    \
 	                  << message << std::endl; } while (false);
 
+#define WARN(message) \
+	do { ::Algiz::log << "\e[2m[\e[1m" << ::Algiz::Logger::getTimestamp() \
+	                  << "\e[22;2m]\e[22m (\e[22;1;33m!\e[22;39m)\e[2m ::\e[22m "    \
+	                  << message << std::endl; } while (false);
+
 #define ERROR(message) \
 	do { ::Algiz::log << "\e[2m[\e[1m" << ::Algiz::Logger::getTimestamp() \
 	                  << "\e[22;2m]\e[22m (\e[22;1;31m!\e[22;39m)\e[2m ::\e[22m "    \

@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 
 #include "Options.h"
-#include "Util.h"
+#include "util/Util.h"
 
 namespace Algiz {
 	Options Options::parse(int argc, char * const *argv) {
