@@ -13,9 +13,17 @@ namespace Algiz::HTTP {
 			std::string trimmed = message;
 			if (!trimmed.empty() && trimmed.back() == '\r')
 				trimmed.pop_back();
-			SPAM(id << ": " << trimmed);
+			// SPAM(id << ": " << trimmed);
 			if (mode == Mode::Headers) {
-
+				const size_t separator = trimmed.find(": ");
+				if (separator == std::string::npos)
+					throw ParseError("Couldn't parser header line");
+				const std::string header_name = trimmed.substr(0, separator);
+				if (headers.count(header_name) != 0)
+					headers.erase(header_name);
+				const std::string header_data = trimmed.substr(separator + 2);
+				INFO("\e[1m" << header_name << "\e[22m \e[2m->\e[22m [\e[1m" << header_data << "\e[22m]");
+				headers.emplace(header_name, std::move(header_data));
 			} else if (mode == Mode::Method) {
 				const size_t space = trimmed.find(' ');
 				if (space == std::string::npos)
