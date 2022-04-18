@@ -11,3 +11,4 @@ report.tasks
 strace_out
 callgrind.*
 /www
+/algiz.json

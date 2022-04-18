@@ -3,10 +3,9 @@ COMPILER	    ?= clang++
 OPTIMIZATION    ?= -O0 -g
 STANDARD	    ?= c++20
 WARNINGS	    ?= -Wall -Wextra
-CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) -Iinclude
+CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) -Iinclude -Ijson/include
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread
-TESTARGS        ?= -6 ::1 -p 8080 -r ./www
 
 CLOC_OPTIONS    := --exclude-dir=.vscode
 SOURCES         := $(shell find src/**/*.cpp src/*.cpp)
