@@ -5,9 +5,7 @@
 
 namespace Algiz {
 	struct Options {
-		enum class AddressFamily {None, IPv4, IPv6};
-
-		AddressFamily addressFamily = AddressFamily::None;
+		int addressFamily = -1;
 		std::string ip;
 		uint16_t port = 0;
 		std::string root;

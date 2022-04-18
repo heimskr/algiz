@@ -1,13 +1,14 @@
 #include <getopt.h>
 #include <iostream>
 #include <unistd.h>
+#include <sys/socket.h>
 
 #include "Options.h"
 #include "Util.h"
 
 namespace Algiz {
 	Options Options::parse(int argc, char * const *argv) {
-		Options out {AddressFamily::None, {}, 80, "./www"};
+		Options out {-1, {}, 80, "./www"};
 
 		static option long_options[] = {
 			{"ip4",  required_argument, nullptr, '4'},
@@ -19,16 +20,16 @@ namespace Algiz {
 
 		for (;;) {
 			int option_index;
-			int opt = getopt_long(argc, argv, "p:r:", long_options, &option_index);
+			int opt = getopt_long(argc, argv, "4:6:p:r:", long_options, &option_index);
 			if (opt == -1)
 				break;
 
 			switch (opt) {
 				case '4':
 				case '6':
-					if (out.addressFamily == AddressFamily::None) {
+					if (out.addressFamily == -1) {
 						out.ip = optarg;
-						out.addressFamily = opt == '4'? AddressFamily::IPv4 : AddressFamily::IPv6;
+						out.addressFamily = opt == '4'? AF_INET : AF_INET6;
 					} else
 						throw std::invalid_argument("IP already specified");
 					break;

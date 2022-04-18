@@ -17,6 +17,7 @@ namespace Algiz {
 		af(af_), ip(ip_), port(port_), chunkSize(chunk_size), buffer(new char[chunk_size]), lineMode(line_mode) {}
 
 	Server::~Server() {
+		stop();
 		delete[] buffer;
 	}
 

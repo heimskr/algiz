@@ -6,7 +6,7 @@ WARNINGS	    ?= -Wall -Wextra
 CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) -Iinclude
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread
-TESTARGS        ?= -i 127.0.0.1 -p 8080 -r ./www
+TESTARGS        ?= -6 ::1 -p 8080 -r ./www
 
 CLOC_OPTIONS    := --exclude-dir=.vscode
 SOURCES         := $(shell find src/**/*.cpp src/*.cpp)

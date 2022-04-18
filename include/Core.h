@@ -1,7 +1,11 @@
 #pragma once
 
+#include <memory>
+
 #include "Options.h"
 
 namespace Algiz {
-	void run(const Options &);
+	class Server;
+
+	Server * run(const Options &);
 }
