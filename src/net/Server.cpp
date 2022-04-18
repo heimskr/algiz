@@ -111,6 +111,7 @@ namespace Algiz {
 		FD_CLR(descriptor, &activeSet);
 		if (onEnd)
 			onEnd(client, descriptor);
+		freePool.insert(client);
 	}
 
 	void Server::send(int client, const std::string &message, bool suppress_newline) {
@@ -169,15 +170,16 @@ namespace Algiz {
 						// std::cerr << "Server: connect from host " << inet_ntoa(clientname.sin_addr) << ", port "
 						//           << ntohs(clientname.sin_port) << "\n";
 						FD_SET(new_fd, &activeSet);
-						int new_client = ++lastClient;
+						int new_client;
+						if (freePool.size() != 0) {
+							new_client = *freePool.begin();
+							freePool.erase(new_client);
+						} else
+							new_client = ++lastClient;
 						descriptors.emplace(new_client, new_fd);
 						clients.erase(new_fd);
 						clients.emplace(new_fd, new_client);
-						auto http_client = std::make_unique<HTTP::Client>(new_client, true);
-						http_client->send = [this, new_client](const std::string &message) {
-							send(new_client, message, true);
-						};
-						allClients.try_emplace(new_client, std::move(http_client));
+						addClient(new_client);
 					} else if (i != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {

@@ -1,8 +1,13 @@
 #include "error/ParseError.h"
 #include "http/Client.h"
+#include "http/Server.h"
 #include "Log.h"
 
 namespace Algiz::HTTP {
+	void Client::send(const std::string &message) {
+		server.send(id, message, true);
+	}
+
 	void Client::handleInput(const std::string &message) {
 		if (mode != Mode::Content && message == "\r") {
 			mode = Mode::Content;
@@ -33,7 +38,7 @@ namespace Algiz::HTTP {
 					throw ParseError("Bad method line");
 				method = {trimmed.c_str(), space};
 				if (supportedMethods.contains(method)) {
-					INFO("Setting method to " << method);
+					INFO(id << ": Setting method to " << method);
 					const size_t second_space = trimmed.find(' ', space + 1);
 					if (space != std::string::npos) {
 						path = {trimmed.c_str(), space + 1, second_space - space - 1};
@@ -58,8 +63,11 @@ namespace Algiz::HTTP {
 			const std::string content("Hello there.");
 			send("HTTP/1.1 200 OK\r\n");
 			send("Content-Type: text/html; charset=UTF-8\r\n");
-			send("Content-Length: " + std::to_string(content.size()) + "\r\n\r\n");
+			send("Content-Length: " + std::to_string(content.size()) + "\r\n");
+			send("Connection: close\r\n");
+			send("\r\n");
 			send(content);
+			server.removeClient(id);
 		} else {
 			throw ParseError("Invalid method: " + method);
 		}

@@ -6,6 +6,7 @@
 #include <string>
 #include <sys/types.h>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "net/GenericClient.h"
 
@@ -35,7 +36,13 @@ namespace Algiz {
 			/** Maps descriptors to buffers. */
 			std::map<int, std::string> buffers;
 
+			/** Contains IDs that were previously used but are now available. */
+			std::unordered_set<int> freePool;
+
+		protected:
 			std::unordered_map<int, std::unique_ptr<GenericClient>> allClients;
+
+			virtual void addClient(int) = 0;
 
 		public:
 			std::function<void(int, const std::string &)> messageHandler; // (int client, const std::string &message)
