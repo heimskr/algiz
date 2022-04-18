@@ -5,6 +5,9 @@
 #include <set>
 #include <string>
 #include <sys/types.h>
+#include <unordered_map>
+
+#include "net/GenericClient.h"
 
 namespace Algiz {
 	class Server {
@@ -32,15 +35,14 @@ namespace Algiz {
 			/** Maps descriptors to buffers. */
 			std::map<int, std::string> buffers;
 
-			std::set<int> allClients;
+			std::unordered_map<int, std::unique_ptr<GenericClient>> allClients;
 
 		public:
 			std::function<void(int, const std::string &)> messageHandler; // (int client, const std::string &message)
 			std::function<void(int, int)> onEnd; // (int client, int descriptor)
-			bool lineMode = false;
 
-			Server(int af_, const std::string &ip_, uint16_t port_, bool line_mode = true, size_t chunk_size = 1);
-			~Server();
+			Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size = 1);
+			virtual ~Server();
 
 			int getPort() const { return port; }
 			void readFromClient(int descriptor);
@@ -50,7 +52,8 @@ namespace Algiz {
 			void removeClient(int);
 			void run();
 			void stop();
-			const std::set<int> & getClients() const { return allClients; }
+			decltype(allClients) & getClients() { return allClients; }
+			const decltype(allClients) & getClients() const { return allClients; }
 
 			/** Given a buffer, this function returns {-1, *} if the message is still incomplete or the {i, l} if the
 			 *  buffer contains a complete message, where i is the index at which the message ends and l is the size of

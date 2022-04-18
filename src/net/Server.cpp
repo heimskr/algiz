@@ -9,12 +9,13 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "http/Client.h"
 #include "net/NetError.h"
 #include "net/Server.h"
 
 namespace Algiz {
-	Server::Server(int af_, const std::string &ip_, uint16_t port_, bool line_mode, size_t chunk_size):
-		af(af_), ip(ip_), port(port_), chunkSize(chunk_size), buffer(new char[chunk_size]), lineMode(line_mode) {}
+	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size):
+		af(af_), ip(ip_), port(port_), chunkSize(chunk_size), buffer(new char[chunk_size]) {}
 
 	Server::~Server() {
 		stop();
@@ -65,24 +66,29 @@ namespace Algiz {
 			throw NetError("Reading", errno);
 		} else if (byte_count == 0) {
 			end(descriptor);
-		} else if (!lineMode) {
-			handleMessage(clients.at(descriptor), str);
-			buffers[descriptor].clear();
 		} else {
-			str.insert(str.size(), buffer, byte_count);
-			ssize_t index;
-			size_t delimiter_size;
-			bool done = false;
-			std::tie(index, delimiter_size) = isMessageComplete(str);
-			do {
-				if (index != -1) {
-					handleMessage(clients.at(descriptor), str.substr(0, index));
-					if (clients.count(descriptor) == 1) {
-						str.erase(0, index + delimiter_size);
-						std::tie(index, delimiter_size) = isMessageComplete(str);
+			const int client_id = clients.at(descriptor);
+			auto &client = *allClients.at(client_id);
+
+			if (!client.lineMode) {
+				handleMessage(clients.at(descriptor), str);
+				buffers[descriptor].clear();
+			} else {
+				str.insert(str.size(), buffer, byte_count);
+				ssize_t index;
+				size_t delimiter_size;
+				bool done = false;
+				std::tie(index, delimiter_size) = isMessageComplete(str);
+				do {
+					if (index != -1) {
+						handleMessage(clients.at(descriptor), str.substr(0, index));
+						if (clients.count(descriptor) == 1) {
+							str.erase(0, index + delimiter_size);
+							std::tie(index, delimiter_size) = isMessageComplete(str);
+						} else done = true;
 					} else done = true;
-				} else done = true;
-			} while (!done);
+				} while (!done);
+			}
 		}
 	}
 
@@ -166,7 +172,7 @@ namespace Algiz {
 						descriptors.emplace(new_client, new_fd);
 						clients.erase(new_fd);
 						clients.emplace(new_fd, new_client);
-						allClients.insert(new_client);
+						allClients.try_emplace(new_client, std::make_unique<HTTP::Client>(new_client, true));
 					} else if (i != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {
