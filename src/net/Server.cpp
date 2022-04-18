@@ -13,8 +13,8 @@
 #include "net/Server.h"
 
 namespace Algiz {
-	Server::Server(uint16_t port_, bool line_mode, size_t chunk_size):
-		port(port_), chunkSize(chunk_size), buffer(new char[chunk_size]), lineMode(line_mode) {}
+	Server::Server(int af_, const std::string &ip_, uint16_t port_, bool line_mode, size_t chunk_size):
+		af(af_), ip(ip_), port(port_), chunkSize(chunk_size), buffer(new char[chunk_size]), lineMode(line_mode) {}
 
 	Server::~Server() {
 		delete[] buffer;
@@ -23,12 +23,33 @@ namespace Algiz {
 	int Server::makeSocket() {
 		int sock;
 
-		sock = ::socket(PF_INET, SOCK_STREAM, 0);
+		sock = ::socket(af, SOCK_STREAM, 0);
 		if (sock < 0)
 			throw NetError(errno);
 
-		sockaddr_in name = {.sin_family = AF_INET, .sin_port = htons(port), .sin_addr = {.s_addr = htonl(INADDR_ANY)}};
-		if (::bind(sock, (sockaddr *) &name, sizeof(name)) < 0)
+		sockaddr *name = nullptr;
+		size_t name_size = 0;
+
+		sockaddr_in  name4 {.sin_family  = AF_INET,  .sin_port  = htons(port)};
+		sockaddr_in6 name6 {.sin6_family = AF_INET6, .sin6_port = htons(port)};
+
+		int status = 0;
+
+		if (af == AF_INET) {
+			name = reinterpret_cast<sockaddr *>(&name4);
+			name_size = sizeof(name4);
+			status = inet_pton(AF_INET, ip.c_str(), &name4.sin_addr.s_addr);
+		} else if (af == AF_INET6) {
+			name = reinterpret_cast<sockaddr *>(&name6);
+			name_size = sizeof(name6);
+			status = inet_pton(AF_INET6, ip.c_str(), &name6.sin6_addr);
+		} else
+			throw std::invalid_argument("Unsupported or invalid address family: " + std::to_string(af));
+
+		if (status != 1)
+			throw std::invalid_argument("Couldn't parse IP address \"" + ip + "\"");
+
+		if (::bind(sock, name, name_size) < 0)
 			throw NetError(errno);
 
 		return sock;

@@ -8,6 +8,8 @@
 namespace Algiz {
 	class Server {
 		private:
+			int af;
+			std::string ip;
 			int makeSocket();
 			int port;
 			size_t chunkSize;
@@ -36,7 +38,7 @@ namespace Algiz {
 			std::function<void(int, int)> onEnd; // (int client, int descriptor)
 			bool lineMode = false;
 
-			Server(uint16_t port_, bool line_mode = true, size_t chunk_size = 1);
+			Server(int af_, const std::string &ip_, uint16_t port_, bool line_mode = true, size_t chunk_size = 1);
 			~Server();
 
 			int getPort() const { return port; }
