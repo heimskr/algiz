@@ -13,7 +13,7 @@ namespace Algiz::HTTP {
 			std::string trimmed = message;
 			if (!trimmed.empty() && trimmed.back() == '\r')
 				trimmed.pop_back();
-			std::cerr << id << "[" << trimmed << "]\n";
+			SPAM(id << ": " << trimmed);
 			if (mode == Mode::Headers) {
 
 			} else if (mode == Mode::Method) {
@@ -30,6 +30,7 @@ namespace Algiz::HTTP {
 							const std::string version = trimmed.substr(second_space + 1);
 							if (version != "HTTP/1.1" && version != "HTTP/1.0")
 								throw ParseError("Invalid HTTP version");
+							mode = Mode::Headers;
 							return;
 						}
 					}

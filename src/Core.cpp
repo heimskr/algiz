@@ -10,7 +10,8 @@ namespace Algiz {
 			try {
 				server->getClients().at(client)->handleInput(message);
 			} catch (const ParseError &error) {
-				log << "Disconnecting client " << client << ": " << error.what() << "\n";
+				INFO("Disconnecting client " << client << ": " << error.what());
+				server->send(client, "HTTP/1.1 400 Bad Request");
 				server->removeClient(client);
 			}
 		};
