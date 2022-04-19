@@ -2,8 +2,13 @@
 
 #include <functional>
 #include <string>
+#include <vector>
 
 namespace Algiz {
+	/** Splits a string by a given delimiter. If condense is true, empty strings won't be included in the output. */
+	std::vector<std::string_view> split(const std::string_view &str, const std::string &delimiter,
+		bool condense = true);
+
 	long parseLong(const std::string &, int base = 10);
 	long parseLong(const char *, int base = 10);
 	unsigned long parseUlong(const std::string &, int base = 10);
