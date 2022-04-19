@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "http/Server.h"
 #include "plugins/Plugin.h"
 #include "util/Util.h"
@@ -25,8 +27,8 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs>>(bind(*this, &HttpFileserv::handle));
 
 		private:
-			HTTP::Server *server = nullptr;
-
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+
+			std::optional<std::string> getDefault(const HTTP::Server &);
 	};
 }

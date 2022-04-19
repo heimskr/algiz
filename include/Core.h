@@ -7,5 +7,5 @@
 namespace Algiz {
 	class Server;
 
-	Server * run(const Options &);
+	Server * run(Options &);
 }

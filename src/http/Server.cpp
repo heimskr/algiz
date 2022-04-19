@@ -6,8 +6,10 @@
 #include "Log.h"
 
 namespace Algiz::HTTP {
-	Server::Server(const Options &options):
-		Algiz::Server(options.addressFamily, options.ip, options.port, 1024), webRoot(getWebRoot(options.jsonObject)) {}
+	Server::Server(Options &options_):
+		Algiz::Server(options_.addressFamily, options_.ip, options_.port, 1024),
+		options(options_),
+		webRoot(getWebRoot(options_.jsonObject)) {}
 
 	std::filesystem::path Server::getWebRoot(const nlohmann::json &json) const {
 		return std::filesystem::absolute(json.contains("root")? json.at("root") : "./www").lexically_normal();

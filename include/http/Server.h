@@ -33,10 +33,12 @@ namespace Algiz::HTTP {
 			void addClient(int) override;
 
 		public:
+			Options &options;
+
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs>> handlers;
 
-			Server(const Options &);
+			Server(Options &);
 
 			void handleGet(HTTP::Client &, const std::string &path);
 	};

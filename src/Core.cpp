@@ -7,7 +7,7 @@
 #include "Log.h"
 
 namespace Algiz {
-	Server * run(const Options &options) {
+	Server * run(Options &options) {
 		auto *server = new HTTP::Server(options);
 		std::cerr << braille;
 		INFO("Binding to " << options.ip << " on port " << options.port << ".");
