@@ -55,7 +55,7 @@ $(OUTPUT): $(OBJECTS)
 clean:
 	rm -f $(OUTPUT) src/*.o src/**/*.o PVS-Studio.log report.tasks strace_out plugin/*.$(SHARED_EXT)
 
-test: $(OUTPUT)
+test: $(OUTPUT) plugins
 	./$< $(TESTARGS)
 
 grind: $(OUTPUT)
