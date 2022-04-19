@@ -12,3 +12,4 @@ strace_out
 callgrind.*
 /www
 /algiz.json
+/plugin

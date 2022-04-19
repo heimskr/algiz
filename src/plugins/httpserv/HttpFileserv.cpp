@@ -6,3 +6,5 @@ namespace Algiz::Plugins {
 		return Plugins::CancelableResult::Approve;
 	}
 }
+
+Algiz::Plugins::HttpFileserv ext_plugin;
