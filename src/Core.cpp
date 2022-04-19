@@ -1,6 +1,7 @@
 #include "error/ParseError.h"
 #include "http/Response.h"
 #include "http/Server.h"
+#include "util/Braille.h"
 #include "util/Util.h"
 #include "Core.h"
 #include "Log.h"
@@ -8,6 +9,7 @@
 namespace Algiz {
 	Server * run(const Options &options) {
 		auto *server = new HTTP::Server(options);
+		std::cerr << braille;
 		INFO("Binding to " << options.ip << " on port " << options.port << ".");
 
 		if (options.jsonObject.contains("plugins")) {
