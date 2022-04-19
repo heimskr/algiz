@@ -9,9 +9,7 @@
 
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
-		HTTP::Server *server = dynamic_cast<HTTP::Server *>(parent = host);
-
-		server->handlers.push_back(handler);
+		dynamic_cast<HTTP::Server &>(*(parent = host)).handlers.push_back(handler);
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
