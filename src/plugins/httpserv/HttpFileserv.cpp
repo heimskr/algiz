@@ -1,5 +1,10 @@
+#include "http/Client.h"
+#include "http/Response.h"
 #include "http/Server.h"
 #include "plugins/HttpFileserv.h"
+#include "util/FS.h"
+#include "util/MIME.h"
+#include "util/Util.h"
 #include "Log.h"
 
 namespace Algiz::Plugins {
@@ -10,14 +15,24 @@ namespace Algiz::Plugins {
 		server->handlers.insert(handler);
 	}
 
-	void HttpFileserv::cleanup(PluginHost *host) {
+	void HttpFileserv::cleanup(PluginHost *) {
 		server->handlers.erase(handler);
 	}
 
-	CancelableResult HttpFileserv::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
+	CancelableResult HttpFileserv::handle(const HTTP::Server::HandlerArgs &args, bool) {
 		auto &[server, client, path] = args;
-		INFO(":) " << path);
-		return Plugins::CancelableResult::Approve;
+		if (std::filesystem::exists(path) && std::filesystem::is_regular_file(path)) {
+			try {
+				server.send(client.id, HTTP::Response(200, readFile(path)).setMIME(getMIME(path.extension())), true);
+				return CancelableResult::Approve;
+			} catch (std::exception &err) {
+				ERROR(err.what());
+				server.send(client.id, HTTP::Response(403, "Forbidden"), true);
+				return CancelableResult::Kill;
+			}
+		}
+
+		return CancelableResult::Disable;
 	}
 }
 

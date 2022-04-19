@@ -27,6 +27,6 @@ namespace Algiz::Plugins {
 		private:
 			HTTP::Server *server = nullptr;
 
-			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool);
+			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 	};
 }
