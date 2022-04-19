@@ -24,12 +24,16 @@ namespace Algiz::HTTP {
 		if (!isSubpath(webRoot, full_path)) {
 			send(client.id, Response(403, "Invalid path."), true);
 		} else if (std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
-			try {
-				send(client.id, Response(200, readFile(full_path)).setMIME(getMIME(full_path.extension())), true);
-			} catch (std::exception &err) {
-				ERROR(err.what());
-				send(client.id, Response(403, "Forbidden"), true);
+			HandlerArgs args {*this, client, full_path};
+			if (!before(args, handlers)) {
+				send(client.id, Response(501, "Unhandled request"), true);
 			}
+			// try {
+			// 	send(client.id, Response(200, readFile(full_path)).setMIME(getMIME(full_path.extension())), true);
+			// } catch (std::exception &err) {
+			// 	ERROR(err.what());
+			// 	send(client.id, Response(403, "Forbidden"), true);
+			// }
 		} else {
 			send(client.id, Response(404, "File not found."), true);
 		}

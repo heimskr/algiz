@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <string>
 
 namespace Algiz::Plugins {
 	constexpr const char *PLUGIN_GLOBAL_VARIABLE_NAME = "ext_plugin";

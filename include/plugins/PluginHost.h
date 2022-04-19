@@ -25,41 +25,39 @@ namespace Algiz::Plugins {
 			template <typename T>
 			using PostPtr = std::weak_ptr<PostFn<T>>;
 
-		private:
-			std::list<PluginTuple> plugins {};
-
+		public:
 			/** Determines whether a pre-event should go through. */
-			template <typename T>
-			bool before(T &obj, const std::list<PrePtr<T>> &funcs) {
+			template <typename T, typename C>
+			bool before(T &obj, const C &funcs) {
 				return beforeMulti(obj, funcs).first;
 			}
 
 			/** Determines whether a pre-event should go through. Used inside functions that process sets of sets of
 			 *  handler functions. */
-			template <typename T>
-			std::pair<bool, HandlerResult> beforeMulti(T &obj, const std::list<PrePtr<T>> &funcs,
+			template <typename T, typename C>
+			std::pair<bool, HandlerResult> beforeMulti(T &obj, const C &funcs,
 			bool initial = true) {
-				bool should_send = initial;
+				bool should_pass = initial;
 				for (auto &func: funcs) {
 					if (func.expired()) {
 						WARN("beforeMulti: pointer is expired");
 						continue;
 					}
 
-					Plugins::CancelableResult result = (*func.lock())(obj, should_send);
+					Plugins::CancelableResult result = (*func.lock())(obj, should_pass);
 
 					if (result == Plugins::CancelableResult::Kill || result == Plugins::CancelableResult::Disable) {
-						should_send = false;
+						should_pass = false;
 					} else if (result == Plugins::CancelableResult::Approve
 					        || result == Plugins::CancelableResult::Enable) {
-						should_send = true;
+						should_pass = true;
 					}
 
 					if (result == Plugins::CancelableResult::Kill || result == Plugins::CancelableResult::Approve)
-						return {should_send, HandlerResult::Kill};
+						return {should_pass, HandlerResult::Kill};
 				}
 
-				return {should_send, HandlerResult::Pass};
+				return {should_pass, HandlerResult::Pass};
 			}
 
 			template <typename T>
@@ -71,6 +69,9 @@ namespace Algiz::Plugins {
 						(*func.lock())(obj);
 				}
 			}
+
+		private:
+			std::list<PluginTuple> plugins {};
 
 			template <typename T>
 			bool erase(std::list<T> &list, const T &item) {
