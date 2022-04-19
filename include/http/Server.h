@@ -34,7 +34,7 @@ namespace Algiz::HTTP {
 
 		public:
 			std::filesystem::path webRoot;
-			WeakSet<PreFn<HandlerArgs>> handlers;
+			std::list<PrePtr<HandlerArgs>> handlers;
 
 			Server(const Options &);
 

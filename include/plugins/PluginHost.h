@@ -74,20 +74,6 @@ namespace Algiz::Plugins {
 		private:
 			std::list<PluginTuple> plugins {};
 
-			template <typename T>
-			bool erase(std::list<T> &list, const T &item) {
-				auto locked = item.lock();
-
-				for (auto iter = list.begin(), end = list.end(); iter != end; ++iter) {
-					if (iter->lock() == locked) {
-						list.erase(iter);
-						return true;
-					}
-				}
-
-				return false;
-			}
-
 		public:
 			virtual ~PluginHost() {}
 
@@ -124,5 +110,19 @@ namespace Algiz::Plugins {
 
 			/** If a plugin was loaded from a given path, a pointer to its corresponding plugin object is returned. */
 			Plugins::Plugin * pluginForPath(const std::string &path) const;
+
+			template <typename T>
+			static bool erase(std::list<T> &list, const T &item) {
+				auto locked = item.lock();
+
+				for (auto iter = list.begin(), end = list.end(); iter != end; ++iter) {
+					if (iter->lock() == locked) {
+						list.erase(iter);
+						return true;
+					}
+				}
+
+				return false;
+			}
 	};
 }

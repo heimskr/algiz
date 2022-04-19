@@ -12,11 +12,11 @@ namespace Algiz::Plugins {
 		server = dynamic_cast<HTTP::Server *>(parent = host);
 		if (!server) { ERROR("Expected HTTP server as plugin host"); return; }
 		
-		server->handlers.insert(handler);
+		server->handlers.push_back(handler);
 	}
 
 	void HttpFileserv::cleanup(PluginHost *) {
-		server->handlers.erase(handler);
+		PluginHost::erase(server->handlers, std::weak_ptr(handler));
 	}
 
 	CancelableResult HttpFileserv::handle(const HTTP::Server::HandlerArgs &args, bool non_disabled) {
