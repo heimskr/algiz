@@ -2,6 +2,7 @@
 #include "http/Response.h"
 #include "http/Server.h"
 #include "util/FS.h"
+#include "util/MIME.h"
 #include "Log.h"
 
 namespace Algiz::HTTP {
@@ -21,7 +22,7 @@ namespace Algiz::HTTP {
 			send(client.id, Response(403, "Invalid path."), true);
 		} else if (std::filesystem::exists(full_path)) {
 			try {
-				send(client.id, Response(200, readFile(full_path)), true);
+				send(client.id, Response(200, readFile(full_path)).setMIME(getMIME(full_path.extension())), true);
 			} catch (std::exception &err) {
 				ERROR(err.what());
 				send(client.id, Response(403, "Forbidden"), true);

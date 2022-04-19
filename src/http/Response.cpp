@@ -41,6 +41,11 @@ namespace Algiz::HTTP {
 		return *this;
 	}
 
+	Response & Response::setNoContentType(bool value) {
+		noContentType = value;
+		return *this;
+	}
+
 	Response::operator std::string() const {
 		if (codeDescriptions.count(code) == 0)
 			return generate500();
@@ -48,7 +53,7 @@ namespace Algiz::HTTP {
 		std::string out;
 		out.reserve(content.size() + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
-		if (headers.count("Content-Type") == 0)
+		if (!noContentType && headers.count("Content-Type") == 0)
 		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset = " + charset) + "\r\n";
 		if (headers.count("Content-Length") == 0)
 			out += "Content-Length: " + std::to_string(content.size()) + "\r\n";

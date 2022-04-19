@@ -16,6 +16,7 @@ namespace Algiz::HTTP {
 			std::string content;
 			std::string charset;
 			std::map<std::string, std::string> headers;
+			bool noContentType = false;
 
 			Response(int code_, const std::string &content_);
 
@@ -24,6 +25,7 @@ namespace Algiz::HTTP {
 			Response & setHeaders(const decltype(headers) &);
 			Response & setHeader(const std::string &, const std::string &);
 			Response & setClose(bool = true);
+			Response & setNoContentType(bool = true);
 
 			operator std::string() const;
 	};

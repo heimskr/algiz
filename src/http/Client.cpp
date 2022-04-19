@@ -42,6 +42,7 @@ namespace Algiz::HTTP {
 					const size_t second_space = trimmed.find(' ', space + 1);
 					if (space != std::string::npos) {
 						path = {trimmed.c_str(), space + 1, second_space - space - 1};
+						INFO(id << ": Setting path to " << path);
 						if (!path.empty() && path.front() == '/') {
 							const std::string version = trimmed.substr(second_space + 1);
 							if (version != "HTTP/1.1" && version != "HTTP/1.0")
