@@ -25,6 +25,8 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs>>(bind(*this, &HttpFileserv::handle));
 
 		private:
+			HTTP::Server *server = nullptr;
+
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool);
 	};
 }

@@ -36,6 +36,8 @@ namespace Algiz::Plugins {
 	 * Plugins modify the server's behavior. They reside in shared objects within a global variable called "ext_plugin".
 	 */
 	struct Plugin {
+		PluginHost *parent = nullptr;
+
 		virtual std::string getName()        const = 0;
 		virtual std::string getDescription() const = 0;
 		virtual std::string getVersion()     const = 0;

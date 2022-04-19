@@ -32,9 +32,8 @@ namespace Algiz::Plugins {
 		Plugins::Plugin *plugin = static_cast<Plugins::Plugin *>(dlsym(lib, PLUGIN_GLOBAL_VARIABLE_NAME));
 		if (plugin == nullptr)
 			throw std::runtime_error("Plugin is null");
-		
-		plugins.push_back({path, plugin, lib});
-		return {path, plugin, lib};
+
+		return plugins.emplace_back(path, plugin, lib);
 	}
 
 	void PluginHost::loadPlugins(const std::string &path) {

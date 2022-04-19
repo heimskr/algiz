@@ -36,7 +36,7 @@ all: $(OUTPUT) plugins
 
 define PLUGINRULE
 plugin/$P.$(SHARED_EXT): $(patsubst %.cpp,%.o,$(addprefix src/plugins/$P/,$(filter %.cpp,$(shell ls "src/plugins/$P"))))
-	$(COMPILER) $(SHARED_FLAG) $$+ -o $$@ $(LDFLAGS)
+	$(COMPILER) $(SHARED_FLAG)  $$+ -o $$@ $(LDFLAGS) -Wl,-undefined,dynamic_lookup
 endef
 
 $(foreach P,$(notdir $(shell find src/plugins -mindepth 1 -maxdepth 1 -type d '!' -exec test -e "{}/targets.mk" ';' -print)),$(eval $(PLUGINRULE)))
