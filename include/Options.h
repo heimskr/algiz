@@ -10,7 +10,6 @@ namespace Algiz {
 		int addressFamily = -1;
 		std::string ip;
 		uint16_t port = 0;
-		std::string root;
 		nlohmann::json jsonObject;
 
 		static Options parse(int argc, char * const *argv);

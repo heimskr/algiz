@@ -17,7 +17,6 @@ namespace Algiz {
 			{"ip4",    required_argument, nullptr, '4'},
 			{"ip6",    required_argument, nullptr, '6'},
 			{"port",   required_argument, nullptr, 'p'},
-			{"root",   required_argument, nullptr, 'r'},
 			{nullptr, 0, nullptr, 0}
 		};
 
@@ -31,7 +30,7 @@ namespace Algiz {
 
 		for (;;) {
 			int option_index;
-			int opt = getopt_long(argc, argv, "4:6:p:c:r:", long_options, &option_index);
+			int opt = getopt_long(argc, argv, "4:6:p:c:", long_options, &option_index);
 			if (opt == -1)
 				break;
 
@@ -58,10 +57,6 @@ namespace Algiz {
 					break;
 				}
 
-				case 'r':
-					root = optarg;
-					break;
-
 				default:
 					throw std::invalid_argument("Failed to parse options");
 			}
@@ -82,9 +77,6 @@ namespace Algiz {
 
 			if (!port && json.contains("port"))
 				port = json.at("port");
-
-			if (!root && json.contains("root"))
-				root = json.at("root");
 		}
 
 		if (!ip) {
@@ -98,11 +90,6 @@ namespace Algiz {
 			port = 80;
 		}
 
-		if (!root) {
-			WARN("Webroot not specified; defaulting to ./www");
-			root = "./www";
-		}
-
-		return {*address_family, *ip, *port, *root, json};
+		return {*address_family, *ip, *port, json};
 	}
 }

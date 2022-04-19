@@ -7,8 +7,11 @@
 
 namespace Algiz::HTTP {
 	Server::Server(const Options &options):
-		Algiz::Server(options.addressFamily, options.ip, options.port, 1024),
-		webRoot(std::filesystem::absolute(options.root).lexically_normal()) {}
+		Algiz::Server(options.addressFamily, options.ip, options.port, 1024), webRoot(getWebRoot(options.jsonObject)) {}
+
+	std::filesystem::path Server::getWebRoot(const nlohmann::json &json) const {
+		return std::filesystem::absolute(json.contains("root")? json.at("root") : "./www").lexically_normal();
+	}
 
 	void Server::addClient(int new_client) {
 		auto http_client = std::make_unique<HTTP::Client>(*this, new_client);
@@ -20,7 +23,7 @@ namespace Algiz::HTTP {
 
 		if (!isSubpath(webRoot, full_path)) {
 			send(client.id, Response(403, "Invalid path."), true);
-		} else if (std::filesystem::exists(full_path)) {
+		} else if (std::filesystem::exists(full_path) && std::filesystem::is_regular_file(full_path)) {
 			try {
 				send(client.id, Response(200, readFile(full_path)).setMIME(getMIME(full_path.extension())), true);
 			} catch (std::exception &err) {
