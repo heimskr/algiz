@@ -7,7 +7,7 @@ CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) -Iinclude -Ijson
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread
 
-CLOC_OPTIONS    := --exclude-dir=.vscode
+CLOC_OPTIONS    := --exclude-dir=.vscode,json,www --not-match-f='^algiz.json$$'
 SOURCES         := $(shell find src/**/*.cpp src/*.cpp)
 OBJECTS         := $(SOURCES:.cpp=.o)
 
