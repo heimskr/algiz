@@ -34,4 +34,18 @@ namespace Algiz {
 			throw std::invalid_argument("Not an integer: \"" + std::string(str) + "\"");
 		return parsed;
 	}
+
+	std::string toLower(std::string str) {
+		for (size_t i = 0, length = str.length(); i < length; ++i)
+			if ('A' <= str[i] && str[i] <= 'Z')
+				str[i] += 'a' - 'A';
+		return str;
+	}
+
+	std::string toUpper(std::string str) {
+		for (size_t i = 0, length = str.length(); i < length; ++i)
+			if ('a' <= str[i] && str[i] <= 'z')
+				str[i] -= 'a' - 'A';
+		return str;
+	}
 }
