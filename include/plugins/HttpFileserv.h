@@ -1,6 +1,7 @@
 #pragma once
 
-#include <optional>
+#include <string>
+#include <vector>
 
 #include "http/Server.h"
 #include "plugins/Plugin.h"
@@ -29,6 +30,6 @@ namespace Algiz::Plugins {
 		private:
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 
-			std::optional<std::string> getDefault(const HTTP::Server &);
+			std::vector<std::string> getDefaults(const HTTP::Server &);
 	};
 }

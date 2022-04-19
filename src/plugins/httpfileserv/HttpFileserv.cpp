@@ -32,12 +32,20 @@ namespace Algiz::Plugins {
 
 		if (std::filesystem::is_regular_file(full_path)) {
 			// Use the path as-is.
-		} else if (auto default_filename = getDefault(server)) {
-			full_path /= *default_filename;
-			if (!std::filesystem::is_regular_file(full_path))
+		} else {
+			bool found = false;
+			for (const auto &default_filename: getDefaults(server)) {
+				auto new_path = full_path / default_filename;
+				if (std::filesystem::is_regular_file(new_path)) {
+					full_path = std::move(new_path);
+					found = true;
+					break;
+				}
+			}
+
+			if (!found)
 				return CancelableResult::Pass;
-		} else
-			return CancelableResult::Pass;
+		}
 
 		try {
 			const std::string mime = getMIME(full_path.extension());
@@ -54,14 +62,20 @@ namespace Algiz::Plugins {
 		return CancelableResult::Pass;
 	}
 
-	std::optional<std::string> HttpFileserv::getDefault(const HTTP::Server &server) {
+	std::vector<std::string> HttpFileserv::getDefaults(const HTTP::Server &server) {
 		const auto &json = server.options.jsonObject;
 		if (!json.contains("httpfileserv"))
-			return std::nullopt;
+			return {};
 		const auto &config = json.at("httpfileserv");
-		if (config.contains("default"))
-			return config.at("default").get<std::string>();
-		return std::nullopt;
+		if (config.contains("default")) {
+			const auto &defaults = config.at("default");
+			if (defaults.is_string())
+				return {defaults};
+			if (!defaults.is_array())
+				throw std::runtime_error("httpfileserv.default is required to be a string or array of strings");
+			return defaults;
+		}
+		return {};
 	}
 }
 
