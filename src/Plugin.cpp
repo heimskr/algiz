@@ -3,12 +3,11 @@
 
 namespace Algiz::Plugins {
 	bool Plugin::unload() {
-		if (!host) {
+		if (!parent)
 			throw std::runtime_error("Plugin host is null");
-		}
 
-		if (PluginHost::PluginTuple *tuple = host->getPlugin(this)) {
-			host->unloadPlugin(*tuple);
+		if (PluginHost::PluginTuple *tuple = parent->getPlugin(this)) {
+			parent->unloadPlugin(*tuple);
 			return true;
 		}
 

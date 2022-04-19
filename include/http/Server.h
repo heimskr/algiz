@@ -19,24 +19,24 @@ namespace Algiz::HTTP {
 			struct HandlerArgs {
 				Server &server;
 				Client &client;
-				const std::filesystem::path path;
+				const std::string path;
 
-				HandlerArgs(Server &server_, Client &client_, const std::filesystem::path &path_):
+				HandlerArgs(Server &server_, Client &client_, const std::string &path_):
 					server(server_), client(client_), path(path_) {}
 			};
 
 		private:
 			std::filesystem::path getWebRoot(const nlohmann::json &) const;
+			bool validatePath(const std::string &) const;
 
 		protected:
-			std::filesystem::path webRoot;
-
 			void addClient(int) override;
 
 		public:
-			Server(const Options &);
-
+			std::filesystem::path webRoot;
 			WeakSet<PreFn<HandlerArgs>> handlers;
+
+			Server(const Options &);
 
 			void handleGet(HTTP::Client &, const std::string &path);
 	};
