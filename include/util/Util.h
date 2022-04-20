@@ -15,6 +15,7 @@ namespace Algiz {
 	unsigned long parseUlong(const char *, int base = 10);
 	std::string toLower(std::string);
 	std::string toUpper(std::string);
+	std::string unescape(const std::string_view &, bool plus_to_space = true);
 
 	template<typename R, typename O1, typename O2, typename... A>
 	auto bind(O1 &obj, R(O2::*func)(A...)) {

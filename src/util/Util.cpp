@@ -1,4 +1,5 @@
 #include "util/Util.h"
+#include "Log.h"
 
 namespace Algiz {
 	std::vector<std::string_view> split(const std::string_view &str, const std::string &delimiter, bool condense) {
@@ -72,5 +73,56 @@ namespace Algiz {
 			if ('a' <= str[i] && str[i] <= 'z')
 				str[i] -= 'a' - 'A';
 		return str;
+	}
+
+	std::string unescape(const std::string_view &path, bool plus_to_space) {
+		if (path.find('%') == std::string::npos && !(plus_to_space && path.find('+') != std::string::npos))
+			return std::string(path);
+
+		std::string out;
+
+		for (size_t i = 0, size = path.size(); i < size; ++i) {
+			const char ch = path[i];
+			if (plus_to_space && ch == '+') {
+				out += ' ';
+				continue;
+			}
+
+			if (ch != '%' || size - 3 < i) {
+				out += ch;
+				continue;
+			}
+
+			const char next  = path[i + 1];
+			const char after = path[i + 2];
+			if (!std::isxdigit(next) || !std::isxdigit(after)) {
+				WARN("Not hex: " << next << " or " << after);
+				out += ch;
+				continue;
+			}
+
+			char to_add = 0;
+
+			if ('a' <= next && next <= 'f')
+				to_add += (next - 'a' + 10) << 4;
+			else if ('A' <= next && next <= 'F')
+				to_add += (next - 'A' + 10) << 4;
+			else
+				to_add += (next - '0') << 4;
+
+			if ('a' <= after && after <= 'f')
+				to_add += after - 'a' + 10;
+			else if ('A' <= after && after <= 'F')
+				to_add += after - 'A' + 10;
+			else
+				to_add += after - '0';
+
+			INFO("Adding '" << to_add << "'");
+			out += to_add;
+			i += 2;
+		}
+
+		INFO("Returning \"" << out << "\"");
+		return out;
 	}
 }

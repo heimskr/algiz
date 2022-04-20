@@ -20,14 +20,16 @@ namespace Algiz::HTTP {
 				Server &server;
 				Client &client;
 				const std::string path;
+				const std::vector<std::string> parts;
 
-				HandlerArgs(Server &server_, Client &client_, const std::string &path_):
-					server(server_), client(client_), path(path_) {}
+				HandlerArgs(Server &server_, Client &client_, std::string &&path_, std::vector<std::string> &&parts_):
+					server(server_), client(client_), path(std::move(path_)), parts(std::move(parts_)) {}
 			};
 
 		private:
 			std::filesystem::path getWebRoot(const nlohmann::json &) const;
 			bool validatePath(const std::string &) const;
+			std::vector<std::string> getParts(const std::string &) const;
 
 		protected:
 			void addClient(int) override;

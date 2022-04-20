@@ -20,8 +20,8 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[server, client, path] = args;
-		auto full_path = (server.webRoot / ("./" + path)).lexically_normal();
+		auto &[server, client, path, parts] = args;
+		auto full_path = (server.webRoot / ("./" + unescape(path, true))).lexically_normal();
 
 		if (!isSubpath(server.webRoot, full_path)) {
 			ERROR("Not subpath of " << server.webRoot << ": " << full_path);

@@ -1,8 +1,11 @@
+#include <cctype>
+
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
 #include "util/FS.h"
 #include "util/MIME.h"
+#include "util/Util.h"
 #include "Log.h"
 
 namespace Algiz::HTTP {
@@ -29,12 +32,19 @@ namespace Algiz::HTTP {
 			send(client.id, Response(403, "Invalid path."), true);
 			removeClient(client.id);
 		} else {
-			HandlerArgs args {*this, client, path};
+			HandlerArgs args {*this, client, std::string(path), getParts(path)};
 			auto [should_pass, result] = beforeMulti(args, handlers);
 			if (result == Plugins::HandlerResult::Pass) {
 				send(client.id, Response(501, "Unhandled request"), true);
 				removeClient(client.id);
 			}
 		}
+	}
+
+	std::vector<std::string> Server::getParts(const std::string &path) const {
+		std::vector<std::string> out;
+		for (const auto &view: split(std::string_view(path).substr(1), "/", true))
+			out.push_back(unescape(view));
+		return out;
 	}
 }

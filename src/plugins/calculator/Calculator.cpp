@@ -20,30 +20,30 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[server, client, path] = args;
-		auto pieces = split(std::string_view(path).substr(1), "/", true);
+		auto &[server, client, path, parts] = args;
 		
-		if (pieces.size() == 3) {
-			std::string_view oper = pieces.front();
+		if (parts.size() == 3) {
+			std::string_view oper = parts.front();
 			long left, right;
 			try {
-				left = parseLong(std::string(pieces.at(1)));
-				right = parseLong(std::string(pieces.at(2)));
+				left = parseLong(std::string(parts.at(1)));
+				right = parseLong(std::string(parts.at(2)));
 			} catch (const std::invalid_argument &) {
 				return CancelableResult::Pass;
 			}
 
 			std::string out;
 
-			if (oper == "+") {
+			if (oper == "+" || oper == "plus") {
 				out = std::to_string(left + right);
-			} else if (oper == "-") {
+			} else if (oper == "-" || oper == "min") {
 				out = std::to_string(left - right);
-			} else if (oper == "*") {
+			} else if (oper == "*" || oper == "mult") {
 				out = std::to_string(left * right);
-			} else if (oper == "/") {
-				out = std::to_string(left / right);
-			}
+			} else if (oper == "/" || oper == "div") {
+				out = right == 0? "Division by zero" : std::to_string(left / right);
+			} else
+				return CancelableResult::Pass;
 
 			server.send(client.id, HTTP::Response(200, out).setMIME("text/plain"), true);
 			server.removeClient(client.id);
