@@ -47,12 +47,12 @@ namespace Algiz::Plugins {
 
 		try {
 			const std::string mime = getMIME(full_path.extension());
-			server.send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime), true);
+			server.send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
 			server.removeClient(client.id);
 			return CancelableResult::Approve;
 		} catch (std::exception &err) {
 			ERROR(err.what());
-			server.send(client.id, HTTP::Response(403, "Forbidden"), true);
+			server.send(client.id, HTTP::Response(403, "Forbidden"));
 			server.removeClient(client.id);
 			return CancelableResult::Kill;
 		}

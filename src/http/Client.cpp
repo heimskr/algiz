@@ -5,7 +5,7 @@
 
 namespace Algiz::HTTP {
 	void Client::send(const std::string &message) {
-		server.send(id, message, true);
+		server.server->send(id, message);
 	}
 
 	void Client::handleInput(const std::string &message) {

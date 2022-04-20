@@ -12,10 +12,9 @@
 
 namespace Algiz {
 	class Server {
-		private:
+		protected:
 			int af;
 			std::string ip;
-			int makeSocket();
 			int port;
 			size_t chunkSize;
 			char *buffer;
@@ -39,33 +38,36 @@ namespace Algiz {
 			/** Contains IDs that were previously used but are now available. */
 			std::unordered_set<int> freePool;
 
-		protected:
 			std::unordered_map<int, std::unique_ptr<GenericClient>> allClients;
 
-			virtual void addClient(int) = 0;
+			int makeSocket();
+			virtual void close(int descriptor);
 
 		public:
 			std::function<void(int, const std::string &)> messageHandler; // (int client, const std::string &message)
 			std::function<void(int, int)> onEnd; // (int client, int descriptor)
+			std::function<void(int)> addClient;
 
 			Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size = 1);
 			virtual ~Server();
 
-			int getPort() const { return port; }
+			inline int getPort() const { return port; }
 			void readFromClient(int descriptor);
 			virtual void handleMessage(int client, const std::string &message);
 			virtual void end(int descriptor);
-			void send(int client, const std::string &message, bool suppress_newline = false);
+			virtual ssize_t send(int client, const std::string_view &);
+			virtual ssize_t send(int client, const std::string &);
+			virtual ssize_t read(int descriptor, void *, size_t);
 			void removeClient(int);
-			void run();
+			virtual void run();
 			void stop();
-			decltype(allClients) & getClients() { return allClients; }
-			const decltype(allClients) & getClients() const { return allClients; }
+			inline decltype(allClients) & getClients() { return allClients; }
+			inline const decltype(allClients) & getClients() const { return allClients; }
 
 			/** Given a buffer, this function returns {-1, *} if the message is still incomplete or the {i, l} if the
 			 *  buffer contains a complete message, where i is the index at which the message ends and l is the size of
 			 *  the delimiter that ended the message. By default, a message is considered complete after the first
 			 *  newline. */
-			virtual std::pair<ssize_t, size_t> isMessageComplete(const std::string &);
+			std::pair<ssize_t, size_t> isMessageComplete(const std::string &);
 	};
 }

@@ -3,9 +3,10 @@ COMPILER        ?= clang++
 OPTIMIZATION    ?= -O0 -g
 STANDARD        ?= c++20
 WARNINGS        ?= -Wall -Wextra
-CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) -Iinclude -Ijson/include
+INCLUDES        := -Iinclude -Ijson/include $(shell pkg-config --cflags openssl)
+CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
-LDFLAGS         ?= -pthread
+LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl)
 
 CLOC_OPTIONS    := --exclude-dir=.vscode,json,www --not-match-f='^algiz.json$$'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
@@ -53,7 +54,7 @@ $(OUTPUT): $(OBJECTS)
 	$(COMPILER) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OUTPUT) src/*.o src/**/*.o PVS-Studio.log report.tasks strace_out plugin/*.$(SHARED_EXT)
+	rm -f $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out plugin/*.$(SHARED_EXT)
 
 test: $(OUTPUT) plugins
 	./$< $(TESTARGS)

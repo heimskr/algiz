@@ -7,7 +7,7 @@ namespace Algiz {
 	class Socket {
 		friend class SocketBuffer;
 
-		private:
+		protected:
 			static int socketCount;
 			struct addrinfo *info;
 			int netFD = -1, controlRead = -1, controlWrite = -1;
@@ -30,16 +30,16 @@ namespace Algiz {
 			~Socket();
 
 			/** Connects to the socket. */
-			void connect();
+			virtual void connect();
 
 			/** Closes the socket. */
 			void close();
 
 			/** Sends a given number of bytes from a buffer through the socket and returns the number of bytes sent. */
-			ssize_t send(const void *, size_t);
+			virtual ssize_t send(const void *, size_t);
 
 			/** Reads a given number of bytes into a buffer from the socket and returns the number of bytes read. */
-			ssize_t recv(void *, size_t);
+			virtual ssize_t recv(void *, size_t);
 
 			int accept();
 

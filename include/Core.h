@@ -5,7 +5,7 @@
 #include "Options.h"
 
 namespace Algiz {
-	class Server;
+	class ApplicationServer;
 
-	Server * run(Options &);
+	ApplicationServer * run(Options &);
 }

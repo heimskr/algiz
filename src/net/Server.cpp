@@ -58,11 +58,15 @@ namespace Algiz {
 		return sock;
 	}
 
+	void Server::close(int descriptor) {
+		::close(descriptor);
+	}
+
 	void Server::readFromClient(int descriptor) {
 		std::string &str = buffers[descriptor];
 		str.reserve(chunkSize);
 
-		int byte_count = ::read(descriptor, buffer, chunkSize);
+		ssize_t byte_count = read(descriptor, buffer, chunkSize);
 		if (byte_count < 0) {
 			throw NetError("Reading", errno);
 		} else if (byte_count == 0) {
@@ -102,7 +106,7 @@ namespace Algiz {
 	}
 
 	void Server::end(int descriptor) {
-		::close(descriptor);
+		close(descriptor);
 		const int client = clients.at(descriptor);
 		descriptors.erase(client);
 		buffers.erase(descriptor);
@@ -114,10 +118,16 @@ namespace Algiz {
 		freePool.insert(client);
 	}
 
-	void Server::send(int client, const std::string &message, bool suppress_newline) {
-		::write(descriptors.at(client), message.c_str(), message.size());
-		if (!suppress_newline)
-			::write(descriptors.at(client), "\n", 1);
+	ssize_t Server::send(int client, const std::string_view &message) {
+		return ::write(descriptors.at(client), message.begin(), message.size());
+	}
+
+	ssize_t Server::send(int client, const std::string &message) {
+		return send(client, std::string_view(message));
+	}
+
+	ssize_t Server::read(int descriptor, void *buffer, size_t size) {
+		return ::read(descriptor, buffer, size);
 	}
 
 	void Server::removeClient(int client) {
@@ -179,7 +189,8 @@ namespace Algiz {
 						descriptors.emplace(new_client, new_fd);
 						clients.erase(new_fd);
 						clients.emplace(new_fd, new_client);
-						addClient(new_client);
+						if (addClient)
+							addClient(new_client);
 					} else if (i != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {

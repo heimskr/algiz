@@ -9,12 +9,13 @@
 #include "nlohmann/json.hpp"
 #include "plugins/PluginHost.h"
 #include "util/WeakCompare.h"
+#include "ApplicationServer.h"
 #include "Options.h"
 
 namespace Algiz::HTTP {
 	class Client;
 
-	class Server: public Algiz::Server, public Plugins::PluginHost {
+	class Server: public ApplicationServer, public Plugins::PluginHost {
 		public:
 			struct HandlerArgs {
 				Server &server;
@@ -31,17 +32,15 @@ namespace Algiz::HTTP {
 			bool validatePath(const std::string &) const;
 			std::vector<std::string> getParts(const std::string &) const;
 
-		protected:
-			void addClient(int) override;
-
 		public:
+			std::shared_ptr<Algiz::Server> server;
 			Options &options;
-
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs>> handlers;
 
-			Server(Options &);
+			Server(const std::shared_ptr<Algiz::Server> &, Options &);
 
+			void run() override;
 			void handleGet(HTTP::Client &, const std::string &path);
 	};
 }
