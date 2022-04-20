@@ -54,12 +54,21 @@ namespace Algiz {
 	ssize_t SSLServer::send(int client, const std::string_view &message) {
 		SSL *ssl = ssls.at(descriptors.at(client));
 		size_t written = 0;
-		SSL_write_ex(ssl, message.begin(), message.size(), &written);
+		if (SSL_write_ex(ssl, message.begin(), message.size(), &written) <= 0)
+			ERR_print_errors_fp(stderr);
 		return ssize_t(written);
 	}
 
 	ssize_t SSLServer::send(int client, const std::string &message) {
 		return send(client, std::string_view(message));
+	}
+
+	ssize_t SSLServer::read(int descriptor, void *buffer, size_t size) {
+		SSL *ssl = ssls.at(descriptor);
+		size_t read_bytes;
+		if (SSL_read_ex(ssl, buffer, size, &read_bytes) <= 0)
+			ERR_print_errors_fp(stderr);
+		return ssize_t(read_bytes);
 	}
 
 	void SSLServer::run() {
