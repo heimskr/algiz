@@ -31,7 +31,7 @@ else ifeq ($(CHECK), msan)
 	COMPILER := $(COMPILER) -fsanitize=memory  -fno-common
 endif
 
-.PHONY: all plugins clean test count countbf list
+.PHONY: all plugins clean test count countbf list unplug
 
 all: $(OUTPUT) plugins
 
@@ -55,6 +55,9 @@ $(OUTPUT): $(OBJECTS)
 
 clean:
 	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out $(shell find plugin -name '*.$(SHARED_EXT)'))
+
+unplug:
+	rm -f $(shell find plugin -name '*.$(SHARED_EXT)')
 
 test: $(OUTPUT) plugins
 	./$< $(TESTARGS)
