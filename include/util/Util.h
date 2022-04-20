@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <functional>
 #include <string>
 #include <vector>
@@ -16,6 +17,21 @@ namespace Algiz {
 	std::string toLower(std::string);
 	std::string toUpper(std::string);
 	std::string unescape(const std::string_view &, bool plus_to_space = true);
+
+	// template <typename Ti, typename To, template <typename...> typename C, typename Fn, template <typename...> typename V = std::vector>
+	// V<To> map(const C<Ti> &input, std::function<To(const Ti &)> function) {
+	// 	V<To> out;
+	// 	std::transform(input.begin(), input.end(), std::back_inserter(out), function);
+	// 	return out;
+	// }
+
+	template <typename To, template <typename...> typename C, typename... CA, typename Fn,
+	          template <typename...> typename V = std::vector>
+	V<To> map(const C<CA...> &input, Fn function) {
+		V<To> out;
+		std::transform(input.begin(), input.end(), std::back_inserter(out), function);
+		return out;
+	}
 
 	template<typename R, typename O1, typename O2, typename... A>
 	auto bind(O1 &obj, R(O2::*func)(A...)) {

@@ -10,7 +10,6 @@
 #include "plugins/PluginHost.h"
 #include "util/WeakCompare.h"
 #include "ApplicationServer.h"
-#include "Options.h"
 
 namespace Algiz::HTTP {
 	class Client;
@@ -28,17 +27,16 @@ namespace Algiz::HTTP {
 			};
 
 		private:
-			std::filesystem::path getWebRoot(const nlohmann::json &) const;
+			std::filesystem::path getWebRoot(const std::string &) const;
 			bool validatePath(const std::string &) const;
 			std::vector<std::string> getParts(const std::string &) const;
 
 		public:
 			std::shared_ptr<Algiz::Server> server;
-			Options &options;
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs>> handlers;
 
-			Server(const std::shared_ptr<Algiz::Server> &, Options &);
+			Server(const std::shared_ptr<Algiz::Server> &, const std::string &web_root);
 
 			void run() override;
 			void handleGet(HTTP::Client &, const std::string &path);

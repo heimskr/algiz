@@ -115,8 +115,6 @@ namespace Algiz {
 						new_fd = ::accept(sock, (sockaddr *) &clientname, (socklen_t *) &size);
 						if (new_fd < 0)
 							throw NetError("accept()", errno);
-						// std::cerr << "SSLServer: connect from host " << inet_ntoa(clientname.sin_addr) << ", port "
-						//           << ntohs(clientname.sin_port) << "\n";
 						FD_SET(new_fd, &activeSet);
 
 						SSL *ssl = SSL_new(sslContext);

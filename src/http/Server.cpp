@@ -9,16 +9,16 @@
 #include "Log.h"
 
 namespace Algiz::HTTP {
-	Server::Server(const std::shared_ptr<Algiz::Server> &server_, Options &options_):
-	server(server_), options(options_), webRoot(getWebRoot(options_.jsonObject)) {
+	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const std::string &web_root):
+	server(server_), webRoot(getWebRoot(web_root)) {
 		server->addClient = [this](int new_client) {
 			auto http_client = std::make_unique<HTTP::Client>(*this, new_client);
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
 	}
 
-	std::filesystem::path Server::getWebRoot(const nlohmann::json &json) const {
-		return std::filesystem::absolute(json.contains("root")? json.at("root") : "./www").lexically_normal();
+	std::filesystem::path Server::getWebRoot(const std::string &web_root) const {
+		return std::filesystem::absolute(web_root.empty()? "./www" : web_root).lexically_normal();
 	}
 
 	bool Server::validatePath(const std::string &path) const {

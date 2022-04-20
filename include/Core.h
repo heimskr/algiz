@@ -1,11 +1,12 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
-#include "Options.h"
+#include "nlohmann/json.hpp"
 
 namespace Algiz {
 	class ApplicationServer;
 
-	ApplicationServer * run(Options &);
+	std::vector<ApplicationServer *> run(nlohmann::json &);
 }
