@@ -57,7 +57,6 @@ namespace Algiz {
 			const std::string &cert = suboptions.at("cert");
 			const std::string &key = suboptions.at("key");
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-
 			auto server = std::make_shared<SSLServer>(af, ip, port, cert, key, 1024);
 			out.emplace_back(makeHTTP(server, suboptions));
 		}

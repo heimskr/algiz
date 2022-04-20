@@ -115,7 +115,6 @@ namespace Algiz {
 						new_fd = ::accept(sock, (sockaddr *) &clientname, (socklen_t *) &size);
 						if (new_fd < 0)
 							throw NetError("accept()", errno);
-						FD_SET(new_fd, &activeSet);
 
 						SSL *ssl = SSL_new(sslContext);
 						SSL_set_fd(ssl, new_fd);
@@ -125,6 +124,7 @@ namespace Algiz {
 							SSL_shutdown(ssl);
 							SSL_free(ssl);
 						} else {
+							FD_SET(new_fd, &activeSet);
 							int new_client;
 							if (freePool.size() != 0) {
 								new_client = *freePool.begin();
