@@ -33,10 +33,11 @@ namespace Algiz::HTTP {
 
 		public:
 			std::shared_ptr<Algiz::Server> server;
+			nlohmann::json options;
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs>> handlers;
 
-			Server(const std::shared_ptr<Algiz::Server> &, const std::string &web_root);
+			Server(const std::shared_ptr<Algiz::Server> &, const nlohmann::json &options_);
 
 			void run() override;
 			void handleGet(HTTP::Client &, const std::string &path);

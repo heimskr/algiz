@@ -9,8 +9,8 @@
 #include "Log.h"
 
 namespace Algiz::HTTP {
-	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const std::string &web_root):
-	server(server_), webRoot(getWebRoot(web_root)) {
+	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const nlohmann::json &options_):
+	server(server_), options(options_), webRoot(getWebRoot(options_.contains("root")? options_.at("root") : "")) {
 		server->addClient = [this](int new_client) {
 			auto http_client = std::make_unique<HTTP::Client>(*this, new_client);
 			server->getClients().try_emplace(new_client, std::move(http_client));

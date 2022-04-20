@@ -61,7 +61,7 @@ namespace Algiz::Plugins {
 	}
 
 	std::vector<std::string> HttpFileserv::getDefaults(const HTTP::Server &server) {
-		const auto &json = server.options.jsonObject;
+		const auto &json = server.options;
 		if (!json.contains("httpfileserv"))
 			return {};
 		const auto &config = json.at("httpfileserv");
