@@ -13,3 +13,8 @@ callgrind.*
 /www
 /algiz.json
 /plugin
+*.key
+*.pem
+*.ext
+*.csr
+*.crt
