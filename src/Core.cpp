@@ -11,7 +11,7 @@
 
 namespace Algiz {
 	static HTTP::Server * makeHTTP(const std::shared_ptr<Server> &server, const nlohmann::json &suboptions) {
-		auto *http = new HTTP::Server(server, suboptions.contains("root")? suboptions.at("root") : "");
+		auto *http = new HTTP::Server(server, suboptions);
 		INFO("Binding to " << suboptions.at("ip") << " on port " << suboptions.at("port") << ".");
 
 		if (suboptions.contains("plugins")) {
