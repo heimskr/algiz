@@ -20,7 +20,7 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[server, client, path, parts] = args;
+		auto &[http, client, path, parts] = args;
 		
 		if (parts.size() == 3) {
 			std::string_view oper = parts.front();
@@ -45,8 +45,8 @@ namespace Algiz::Plugins {
 			else
 				return CancelableResult::Pass;
 
-			server.send(client.id, HTTP::Response(200, out).setMIME("text/plain"));
-			server.removeClient(client.id);
+			http.server->send(client.id, HTTP::Response(200, out).setMIME("text/plain"));
+			http.server->removeClient(client.id);
 			return CancelableResult::Approve;
 		}
 

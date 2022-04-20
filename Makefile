@@ -54,7 +54,7 @@ $(OUTPUT): $(OBJECTS)
 	$(COMPILER) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out plugin/*.$(SHARED_EXT)
+	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out $(shell find plugin -name '*.$(SHARED_EXT)'))
 
 test: $(OUTPUT) plugins
 	./$< $(TESTARGS)

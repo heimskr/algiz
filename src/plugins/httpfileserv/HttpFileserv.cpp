@@ -20,11 +20,11 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[server, client, path, parts] = args;
-		auto full_path = (server.webRoot / ("./" + unescape(path, true))).lexically_normal();
+		auto &[http, client, path, parts] = args;
+		auto full_path = (http.webRoot / ("./" + unescape(path, true))).lexically_normal();
 
-		if (!isSubpath(server.webRoot, full_path)) {
-			ERROR("Not subpath of " << server.webRoot << ": " << full_path);
+		if (!isSubpath(http.webRoot, full_path)) {
+			ERROR("Not subpath of " << http.webRoot << ": " << full_path);
 			return CancelableResult::Pass;
 		}
 
@@ -32,7 +32,7 @@ namespace Algiz::Plugins {
 			// Use the path as-is.
 		} else {
 			bool found = false;
-			for (const auto &default_filename: getDefaults(server)) {
+			for (const auto &default_filename: getDefaults(http)) {
 				auto new_path = full_path / default_filename;
 				if (std::filesystem::is_regular_file(new_path)) {
 					full_path = std::move(new_path);
@@ -47,13 +47,13 @@ namespace Algiz::Plugins {
 
 		try {
 			const std::string mime = getMIME(full_path.extension());
-			server.send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
-			server.removeClient(client.id);
+			http.server->send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
+			http.server->removeClient(client.id);
 			return CancelableResult::Approve;
 		} catch (std::exception &err) {
 			ERROR(err.what());
-			server.send(client.id, HTTP::Response(403, "Forbidden"));
-			server.removeClient(client.id);
+			http.server->send(client.id, HTTP::Response(403, "Forbidden"));
+			http.server->removeClient(client.id);
 			return CancelableResult::Kill;
 		}
 
