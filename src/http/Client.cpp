@@ -30,7 +30,7 @@ namespace Algiz::HTTP {
 				if (headers.count(header_name) != 0)
 					headers.erase(header_name);
 				const std::string header_data = trimmed.substr(separator + 2);
-				INFO("\e[1m" << header_name << "\e[22m \e[2m->\e[22m [\e[1m" << header_data << "\e[22m]");
+				// INFO("\e[1m" << header_name << "\e[22m \e[2m->\e[22m [\e[1m" << header_data << "\e[22m]");
 				headers.emplace(header_name, std::move(header_data));
 			} else if (mode == Mode::Method) {
 				const size_t space = trimmed.find(' ');
@@ -38,11 +38,11 @@ namespace Algiz::HTTP {
 					throw ParseError("Bad method line");
 				method = {trimmed.c_str(), space};
 				if (supportedMethods.contains(method)) {
-					INFO(id << ": Setting method to " << method);
+					// INFO(id << ": Setting method to " << method);
 					const size_t second_space = trimmed.find(' ', space + 1);
 					if (space != std::string::npos) {
 						path = {trimmed.c_str(), space + 1, second_space - space - 1};
-						INFO(id << ": Setting path to " << path);
+						// INFO(id << ": Setting path to " << path);
 						if (!path.empty() && path.front() == '/') {
 							const std::string version = trimmed.substr(second_space + 1);
 							if (version != "HTTP/1.1" && version != "HTTP/1.0")

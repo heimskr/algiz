@@ -12,7 +12,6 @@ CLOC_OPTIONS    := --exclude-dir=.vscode,json,www --not-match-f='^algiz.json$$'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
 OBJECTS         := $(SOURCES:.cpp=.o)
 
-
 SHARED_EXT      := so
 SHARED_FLAG	    := -shared
 LIBPATHVAR      := LD_LIBRARY_PATH

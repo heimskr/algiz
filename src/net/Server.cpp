@@ -162,7 +162,6 @@ namespace Algiz {
 				throw NetError("select()", errno);
 
 			if (FD_ISSET(controlRead, &read_set)) {
-				std::cerr << "Closed server socket.\n";
 				::close(sock);
 				break;
 			}
