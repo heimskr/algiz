@@ -29,6 +29,10 @@ namespace Algiz::HTTP {
 		server->run();
 	}
 
+	void Server::stop() {
+		server->stop();
+	}
+
 	void Server::handleGet(HTTP::Client &client, const std::string &path) {
 		if (!validatePath(path)) {
 			server->send(client.id, Response(403, "Invalid path."));

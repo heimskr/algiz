@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <csignal>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -12,8 +13,17 @@
 #include "Core.h"
 #include "Options.h"
 
+std::vector<std::shared_ptr<Algiz::ApplicationServer>> global_servers;
+
 int main(int argc, char **argv) {
-	// Algiz::Options options = Algiz::Options::parse(argc, argv);
+	signal(SIGPIPE, SIG_IGN);
+
+	signal(SIGINT, +[](int) {
+		for (auto &server: global_servers)
+			server->stop();
+		global_servers.clear();
+	});
+
 	nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
 
 	auto servers = map<std::shared_ptr<Algiz::ApplicationServer>>(Algiz::run(options), [](auto *server) {
@@ -24,6 +34,7 @@ int main(int argc, char **argv) {
 	threads.reserve(servers.size());
 
 	for (auto &server: servers) {
+		global_servers.push_back(server);
 		threads.emplace_back([server] {
 			server->run();
 		});

@@ -40,6 +40,7 @@ namespace Algiz::HTTP {
 			Server(const std::shared_ptr<Algiz::Server> &, const nlohmann::json &options_);
 
 			void run() override;
+			void stop() override;
 			void handleGet(HTTP::Client &, const std::string &path);
 	};
 }
