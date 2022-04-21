@@ -1,3 +1,5 @@
+#include <inja.hpp>
+
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
@@ -46,8 +48,15 @@ namespace Algiz::Plugins {
 		}
 
 		try {
-			const std::string mime = getMIME(full_path.extension());
-			http.server->send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
+			const auto extension = full_path.extension();
+			if (extension == ".t") {
+				nlohmann::json data;
+				data["status"] = "online, obviously";
+				http.server->send(client.id, HTTP::Response(200, inja::render(readFile(full_path), data)).setMIME("text/html"));
+			} else {
+				const std::string mime = getMIME(full_path.extension());
+				http.server->send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
+			}
 			http.server->removeClient(client.id);
 			return CancelableResult::Approve;
 		} catch (std::exception &err) {
