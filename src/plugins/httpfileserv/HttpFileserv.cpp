@@ -56,8 +56,6 @@ namespace Algiz::Plugins {
 			http.server->removeClient(client.id);
 			return CancelableResult::Kill;
 		}
-
-		return CancelableResult::Pass;
 	}
 
 	std::vector<std::string> HttpFileserv::getDefaults(const HTTP::Server &server) {
