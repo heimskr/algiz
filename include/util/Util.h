@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <chrono>
 #include <functional>
 #include <string>
 #include <vector>
@@ -18,12 +19,15 @@ namespace Algiz {
 	std::string toUpper(std::string);
 	std::string unescape(const std::string_view &, bool plus_to_space = true);
 
-	// template <typename Ti, typename To, template <typename...> typename C, typename Fn, template <typename...> typename V = std::vector>
-	// V<To> map(const C<Ti> &input, std::function<To(const Ti &)> function) {
-	// 	V<To> out;
-	// 	std::transform(input.begin(), input.end(), std::back_inserter(out), function);
-	// 	return out;
-	// }
+	template <size_t BL = 128>
+	std::string formatTime(const char *format,
+	                       std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())) {
+		tm now_tm;
+		localtime_r(&now, &now_tm);
+		char buffer[BL];
+		strftime(buffer, sizeof(buffer), format, now_tm);
+		return buffer;
+	}
 
 	template <typename To, template <typename...> typename C, typename... CA, typename Fn,
 	          template <typename...> typename V = std::vector>

@@ -62,6 +62,9 @@ namespace Algiz::Plugins {
 					data["resident"] = std::to_string(resident_memory);
 				}
 
+				data["time"] = formatTime("%H:%M:%S");
+				data["date"] = formatTime("%B %e, %Y");
+
 				http.server->send(client.id, HTTP::Response(200, inja::render(readFile(full_path), data)).setMIME("text/html"));
 			} else {
 				const std::string mime = getMIME(full_path.extension());
