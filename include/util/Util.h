@@ -25,7 +25,7 @@ namespace Algiz {
 		tm now_tm;
 		localtime_r(&now, &now_tm);
 		char buffer[BL];
-		strftime(buffer, sizeof(buffer), format, now_tm);
+		strftime(buffer, sizeof(buffer), format, &now_tm);
 		return buffer;
 	}
 
