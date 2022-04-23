@@ -6,7 +6,7 @@ WARNINGS        ?= -Wall -Wextra
 INCLUDES        := -Iinclude -Ijson/include -Iinja/single_include/inja $(shell pkg-config --cflags openssl)
 CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
-LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl)
+LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl) -ldl
 
 CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja --not-match-f='^algiz.json$$'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
@@ -21,7 +21,6 @@ ifeq ($(shell uname -s), Darwin)
 	LIBPATHVAR  := DYLD_LIBRARY_PATH
 endif
 
-PLUGIN_SRC      := $(shell find src/plugins/**/*.cpp)
 OBJECTS_PL      := $(addsuffix .$(SHARED_EXT),$(addprefix plugin/,$(shell ls src/plugins)))
 
 ifeq ($(CHECK), asan)
@@ -36,7 +35,7 @@ all: $(OUTPUT) plugins
 
 define PLUGINRULE
 plugin/$P.$(SHARED_EXT): $(patsubst %.cpp,%.o,$(addprefix src/plugins/$P/,$(filter %.cpp,$(shell ls "src/plugins/$P"))))
-	$(COMPILER) $(SHARED_FLAG)  $$+ -o $$@ $(LDFLAGS) -Wl,-undefined,dynamic_lookup
+	$(COMPILER) $(SHARED_FLAG) $$+ -o $$@ $(LDFLAGS) -Wl,-undefined,dynamic_lookup
 endef
 
 $(foreach P,$(notdir $(shell find src/plugins -mindepth 1 -maxdepth 1 -type d '!' -exec test -e "{}/targets.mk" ';' -print)),$(eval $(PLUGINRULE)))
@@ -51,6 +50,9 @@ $(OUTPUT): $(OBJECTS)
 
 %.o: %.cpp
 	$(COMPILER) $(CFLAGS) -c $< -o $@
+
+src/plugins/%.o: src/plugins/%.cpp
+	$(COMPILER) $(CFLAGS) -fPIC -c $< -o $@
 
 clean:
 	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out $(shell find plugin -name '*.$(SHARED_EXT)'))
