@@ -12,7 +12,7 @@
 namespace Algiz {
 	static HTTP::Server * makeHTTP(std::unique_ptr<Server> &&server, const nlohmann::json &suboptions) {
 		auto *http = new HTTP::Server(std::move(server), suboptions);
-		INFO("Binding to " << suboptions.at("ip") << " on port " << suboptions.at("port") << ".");
+		INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port") << ".");
 
 		if (suboptions.contains("plugins")) {
 			for (const auto &[key, value]: suboptions.at("plugins").items())
