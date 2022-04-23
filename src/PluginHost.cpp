@@ -28,7 +28,7 @@ namespace Algiz::Plugins {
 		void *lib = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (lib == nullptr)
 			throw std::runtime_error("dlopen returned nullptr. " + std::string(dlerror()));
-		
+
 		Plugins::Plugin *plugin = static_cast<Plugins::Plugin *>(dlsym(lib, PLUGIN_GLOBAL_VARIABLE_NAME));
 		if (plugin == nullptr)
 			throw std::runtime_error("Plugin is null");

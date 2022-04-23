@@ -46,7 +46,7 @@ plugin:
 plugins: plugin $(OBJECTS_PL)
 
 $(OUTPUT): $(OBJECTS)
-	$(COMPILER) -o $@ $^ $(LDFLAGS)
+	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS)
 
 %.o: %.cpp
 	$(COMPILER) $(CFLAGS) -c $< -o $@
