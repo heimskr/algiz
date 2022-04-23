@@ -10,8 +10,8 @@
 #include "Log.h"
 
 namespace Algiz {
-	static HTTP::Server * makeHTTP(const std::shared_ptr<Server> &server, const nlohmann::json &suboptions) {
-		auto *http = new HTTP::Server(server, suboptions);
+	static HTTP::Server * makeHTTP(std::unique_ptr<Server> &&server, const nlohmann::json &suboptions) {
+		auto *http = new HTTP::Server(std::move(server), suboptions);
 		INFO("Binding to " << suboptions.at("ip") << " on port " << suboptions.at("port") << ".");
 
 		if (suboptions.contains("plugins")) {
@@ -21,7 +21,7 @@ namespace Algiz {
 			http->postinitPlugins();
 		}
 
-		server->messageHandler = [server](int client, const std::string &message) {
+		http->server->messageHandler = [server = http->server](int client, const std::string &message) {
 			try {
 				server->getClients().at(client)->handleInput(message);
 			} catch (const ParseError &error) {
@@ -45,8 +45,7 @@ namespace Algiz {
 			const std::string &ip = suboptions.at("ip");
 			const uint16_t port = suboptions.at("port");
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-			auto server = std::make_shared<Server>(af, ip, port, 1024);
-			out.emplace_back(makeHTTP(server, suboptions));
+			out.emplace_back(makeHTTP(std::make_unique<Server>(af, ip, port, 1024), suboptions));
 		}
 
 		if (json.contains("https")) {
@@ -56,8 +55,7 @@ namespace Algiz {
 			const std::string &cert = suboptions.at("cert");
 			const std::string &key = suboptions.at("key");
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-			auto server = std::make_shared<SSLServer>(af, ip, port, cert, key, 1024);
-			out.emplace_back(makeHTTP(server, suboptions));
+			out.emplace_back(makeHTTP(std::make_unique<SSLServer>(af, ip, port, cert, key, 1024), suboptions));
 		}
 
 		return out;

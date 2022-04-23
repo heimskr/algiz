@@ -40,7 +40,11 @@ namespace Algiz {
 	}
 
 	SSLServer::~SSLServer() {
-		SSL_CTX_free(sslContext);
+		if (sslContext) {
+			SSL_CTX_free(sslContext);
+			sslContext = nullptr;
+		}
+
 	}
 
 	void SSLServer::close(int descriptor) {
@@ -101,6 +105,7 @@ namespace Algiz {
 			if (FD_ISSET(controlRead, &read_set)) {
 				::close(sock);
 				SSL_CTX_free(sslContext);
+				sslContext = nullptr;
 				break;
 			}
 

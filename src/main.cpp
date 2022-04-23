@@ -13,7 +13,7 @@
 #include "Core.h"
 #include "Options.h"
 
-std::vector<std::shared_ptr<Algiz::ApplicationServer>> global_servers;
+std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
 
 int main(int argc, char **argv) {
 	signal(SIGPIPE, SIG_IGN);
@@ -26,14 +26,14 @@ int main(int argc, char **argv) {
 	nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
 
 	global_servers = map(Algiz::run(options), [](auto *server) {
-		return std::shared_ptr<Algiz::ApplicationServer>(server);
+		return std::unique_ptr<Algiz::ApplicationServer>(server);
 	});
 
 	std::vector<std::thread> threads;
 	threads.reserve(global_servers.size());
 
 	for (auto &server: global_servers)
-		threads.emplace_back([server] {
+		threads.emplace_back([server = server.get()] {
 			server->run();
 		});
 

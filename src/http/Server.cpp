@@ -17,6 +17,10 @@ namespace Algiz::HTTP {
 		};
 	}
 
+	Server::~Server() {
+		server->messageHandler = {};
+	}
+
 	std::filesystem::path Server::getWebRoot(const std::string &web_root) const {
 		return std::filesystem::absolute(web_root.empty()? "./www" : web_root).lexically_normal();
 	}

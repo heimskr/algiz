@@ -38,6 +38,7 @@ namespace Algiz::HTTP {
 			std::list<PrePtr<HandlerArgs>> handlers;
 
 			Server(const std::shared_ptr<Algiz::Server> &, const nlohmann::json &options_);
+			~Server();
 
 			void run() override;
 			void stop() override;

@@ -50,7 +50,9 @@ namespace Algiz {
 
 			Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size = 1);
 			Server(const Server &) = delete;
+			Server(Server &&) = delete;
 			Server & operator=(const Server &) = delete;
+			Server & operator=(Server &&) = delete;
 			virtual ~Server();
 
 			inline int getPort() const { return port; }
