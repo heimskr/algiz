@@ -6,6 +6,7 @@
 #include "plugins/HttpFileserv.h"
 #include "util/FS.h"
 #include "util/MIME.h"
+#include "util/Templates.h"
 #include "util/Usage.h"
 #include "util/Util.h"
 #include "Log.h"
@@ -51,21 +52,8 @@ namespace Algiz::Plugins {
 		try {
 			const auto extension = full_path.extension();
 			if (extension == ".t") {
-				nlohmann::json data;
-
-				size_t virtual_memory, resident_memory;
-				if (!getMemoryUsage(virtual_memory, resident_memory)) {
-					data["virtual"] = "???";
-					data["resident"] = "???";
-				} else {
-					data["virtual"] = std::to_string(virtual_memory);
-					data["resident"] = std::to_string(resident_memory);
-				}
-
-				data["time"] = formatTime("%H:%M:%S");
-				data["date"] = formatTime("%B %e, %Y");
-
-				http.server->send(client.id, HTTP::Response(200, inja::render(readFile(full_path), data)).setMIME("text/html"));
+				http.server->send(client.id,
+					HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
 			} else {
 				const std::string mime = getMIME(full_path.extension());
 				http.server->send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));

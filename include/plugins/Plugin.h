@@ -42,7 +42,7 @@ namespace Algiz::Plugins {
 		virtual std::string getDescription() const = 0;
 		virtual std::string getVersion()     const = 0;
 
-		/** Called when the plugin first loads, before client initialization. Useful for registering configurations. */
+		/** Called when the plugin first loads. */
 		virtual void preinit(PluginHost *) {}
 
 		/** Called after client initialization. */

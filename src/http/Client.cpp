@@ -9,7 +9,7 @@ namespace Algiz::HTTP {
 	}
 
 	void Client::handleInput(const std::string &message) {
-		if (mode != Mode::Content && message == "\r") {
+		if (mode != Mode::Content && (message.empty() || message == "\r")) {
 			mode = Mode::Content;
 			lineMode = false;
 			if (headers.count("Content-Length") == 0) {
