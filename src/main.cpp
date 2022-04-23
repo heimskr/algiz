@@ -21,26 +21,24 @@ int main(int argc, char **argv) {
 	signal(SIGINT, +[](int) {
 		for (auto &server: global_servers)
 			server->stop();
-		global_servers.clear();
 	});
 
 	nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
 
-	auto servers = map<std::shared_ptr<Algiz::ApplicationServer>>(Algiz::run(options), [](auto *server) {
+	global_servers = map(Algiz::run(options), [](auto *server) {
 		return std::shared_ptr<Algiz::ApplicationServer>(server);
 	});
 
 	std::vector<std::thread> threads;
-	threads.reserve(servers.size());
+	threads.reserve(global_servers.size());
 
-	for (auto &server: servers) {
-		global_servers.push_back(server);
+	for (auto &server: global_servers)
 		threads.emplace_back([server] {
 			server->run();
 		});
-	}
 
-	for (auto &thread: threads) {
+	for (auto &thread: threads)
 		thread.join();
-	}
+
+	global_servers.clear();
 }

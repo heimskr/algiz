@@ -45,7 +45,6 @@ namespace Algiz {
 			const std::string &ip = suboptions.at("ip");
 			const uint16_t port = suboptions.at("port");
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-
 			auto server = std::make_shared<Server>(af, ip, port, 1024);
 			out.emplace_back(makeHTTP(server, suboptions));
 		}

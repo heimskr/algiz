@@ -29,10 +29,10 @@ namespace Algiz {
 		return buffer;
 	}
 
-	template <typename To, template <typename...> typename C, typename... CA, typename Fn,
+	template <template <typename...> typename C, typename T, typename... CA, typename Fn,
 	          template <typename...> typename V = std::vector>
-	V<To> map(const C<CA...> &input, Fn function) {
-		V<To> out;
+	auto map(const C<T, CA...> &input, Fn function) -> V<decltype(function(input.front()))> {
+		V<decltype(function(input.front()))> out;
 		std::transform(input.begin(), input.end(), std::back_inserter(out), function);
 		return out;
 	}
