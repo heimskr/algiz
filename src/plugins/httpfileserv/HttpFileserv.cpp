@@ -97,4 +97,6 @@ namespace Algiz::Plugins {
 	}
 }
 
-Algiz::Plugins::HttpFileserv ext_plugin;
+extern "C" Algiz::Plugins::Plugin * make_plugin() {
+	return new Algiz::Plugins::HttpFileserv;
+}

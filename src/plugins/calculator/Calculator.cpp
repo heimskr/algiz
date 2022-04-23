@@ -54,4 +54,6 @@ namespace Algiz::Plugins {
 	}
 }
 
-Algiz::Plugins::Calculator ext_plugin;
+extern "C" Algiz::Plugins::Plugin * make_plugin() {
+	return new Algiz::Plugins::Calculator;
+}

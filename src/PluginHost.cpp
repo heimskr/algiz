@@ -29,11 +29,11 @@ namespace Algiz::Plugins {
 		if (lib == nullptr)
 			throw std::runtime_error("dlopen returned nullptr. " + std::string(dlerror()));
 
-		Plugins::Plugin *plugin = static_cast<Plugins::Plugin *>(dlsym(lib, PLUGIN_GLOBAL_VARIABLE_NAME));
-		if (plugin == nullptr)
-			throw std::runtime_error("Plugin is null");
+		auto *make_plugin = (Plugin * (*)()) dlsym(lib, PLUGIN_CREATOR_FUNCTION_NAME);
+		if (make_plugin == nullptr)
+			throw std::runtime_error("Plugin creation function is null");
 
-		return plugins.emplace_back(path, plugin, lib);
+		return plugins.emplace_back(path, std::shared_ptr<Plugin>(make_plugin()), lib);
 	}
 
 	void PluginHost::loadPlugins(const std::string &path) {
@@ -66,7 +66,7 @@ namespace Algiz::Plugins {
 
 	PluginHost::PluginTuple * PluginHost::getPlugin(const Plugins::Plugin *plugin) {
 		auto iter = std::find_if(plugins.begin(), plugins.end(), [&](const PluginTuple &tuple) {
-			return std::get<1>(tuple) == plugin;
+			return std::get<1>(tuple).get() == plugin;
 		});
 
 		return iter == plugins.end()? nullptr : &*iter;
@@ -105,7 +105,7 @@ namespace Algiz::Plugins {
 			std::get<1>(tuple)->postinit(this);
 	}
 
-	Plugins::Plugin * PluginHost::pluginForPath(const std::string &path) const {
+	std::shared_ptr<Plugins::Plugin> PluginHost::pluginForPath(const std::string &path) const {
 		auto iter = std::find_if(plugins.begin(), plugins.end(), [&](const PluginTuple &tuple) {
 			return std::get<0>(tuple) == path;
 		});

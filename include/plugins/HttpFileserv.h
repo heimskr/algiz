@@ -15,8 +15,6 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class HttpFileserv: public Plugin {
 		public:
-			virtual ~HttpFileserv() {}
-
 			std::string getName()        const override { return "HTTP Fileserv"; }
 			std::string getDescription() const override { return "Serves files from the filesystem over HTTP."; }
 			std::string getVersion()     const override { return "0.0.1"; }

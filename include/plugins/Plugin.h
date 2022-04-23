@@ -4,7 +4,7 @@
 #include <string>
 
 namespace Algiz::Plugins {
-	constexpr const char *PLUGIN_GLOBAL_VARIABLE_NAME = "ext_plugin";
+	constexpr const char *PLUGIN_CREATOR_FUNCTION_NAME = "make_plugin";
 
 	class PluginHost;
 
@@ -32,11 +32,11 @@ namespace Algiz::Plugins {
 	 */
 	enum class CancelableResult {Pass, Kill, Disable, Enable, Approve};
 
-	/**
-	 * Plugins modify the server's behavior. They reside in shared objects within a global variable called "ext_plugin".
-	 */
+	/** Plugins modify the server's behavior. They're created by functions called "make_plugin" in shared objects. */
 	struct Plugin {
 		PluginHost *parent = nullptr;
+
+		virtual ~Plugin() {}
 
 		virtual std::string getName()        const = 0;
 		virtual std::string getDescription() const = 0;

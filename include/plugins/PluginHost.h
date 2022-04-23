@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <list>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "plugins/Plugin.h"
@@ -11,7 +12,7 @@
 namespace Algiz::Plugins {
 	class PluginHost {
 		public:
-			using PluginTuple = std::tuple<std::string, Plugin *, void *>; // path, plugin
+			using PluginTuple = std::tuple<std::string, std::shared_ptr<Plugin>, void *>; // path, plugin
 
 			template <typename T>
 			// The bool argument indicates whether the result hasn't been disabled.
@@ -109,7 +110,7 @@ namespace Algiz::Plugins {
 			void postinitPlugins();
 
 			/** If a plugin was loaded from a given path, a pointer to its corresponding plugin object is returned. */
-			Plugins::Plugin * pluginForPath(const std::string &path) const;
+			std::shared_ptr<Plugins::Plugin> pluginForPath(const std::string &path) const;
 
 			template <typename T>
 			static bool erase(std::list<T> &list, const T &item) {
