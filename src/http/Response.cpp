@@ -46,6 +46,14 @@ namespace Algiz::HTTP {
 		return *this;
 	}
 
+	Response & Response::setAcceptsRanges(bool value) {
+		if (value)
+			headers["Accepts-Ranges"] = "bytes";
+		else
+			headers.erase("Accepts-Ranges");
+		return *this;
+	}
+
 	std::string & Response::operator[](const std::string &header_name) {
 		return headers[header_name];
 	}
