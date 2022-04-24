@@ -9,19 +9,20 @@ namespace Algiz::HTTP {
 	}
 
 	void Client::handleInput(const std::string &message) {
-		request.emplace(message);
+		const auto result = request.handleLine(message);
+		if (result == Request::HandleResult::DisableLineMode)
+			lineMode = false;
+		else if (result == Request::HandleResult::Done)
+			handleRequest();
 	}
 
 	void Client::handleRequest() {
-		if (!request)
-			throw std::runtime_error("No request to handle.");
-
-		switch (request->method) {
+		switch (request.method) {
 			case Request::Method::GET:
-				server.handleGet(*this, *request);
+				server.handleGet(*this, request);
 				break;
 			default:
-				throw ParseError("Invalid method: " + std::to_string(int(request->method)));
+				throw ParseError("Invalid method: " + std::to_string(int(request.method)));
 		}
 	}
 

@@ -5,18 +5,27 @@
 
 namespace Algiz::HTTP {
 	class Request {
+		private:
+			enum class Mode {Method, Headers, Content};
+			Mode mode = Mode::Method;
+
+			size_t contentLength = 0;
+			size_t lengthRemaining = 0;
+
 		public:
 			enum class Method {GET, HEAD, PUT, POST};
+			enum class HandleResult {Continue, DisableLineMode, Done};
+
 			Method method;
-			const std::string full;
-			std::string_view path;
-			std::string_view version;
-			std::string_view content;
-			std::string_view charset;
+			std::string path;
+			std::string version;
+			std::string content;
+			std::string charset;
 			std::map<std::string, std::string> headers;
 
-			/** Constructs a Request from a string representing the full request. */
-			explicit Request(const std::string &full_);
-			explicit Request(std::string &&full_);
+			Request() = default;
+
+			HandleResult handleLine(std::string_view);
+			bool isComplete() const;
 	};
 }

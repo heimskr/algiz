@@ -26,7 +26,7 @@ namespace Algiz::HTTP {
 			Client & operator=(const Client &) = delete;
 			Client & operator=(Client &&) = delete;
 
-			std::optional<Request> request;
+			Request request;
 
 			void send(const std::string &);
 			void handleInput(const std::string &message) override;
