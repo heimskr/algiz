@@ -46,6 +46,14 @@ namespace Algiz::HTTP {
 		return *this;
 	}
 
+	std::string & Response::operator[](const std::string &header_name) {
+		return headers[header_name];
+	}
+
+	const std::string & Response::operator[](const std::string &header_name) const {
+		return headers.at(header_name);
+	}
+
 	Response::operator std::string() const {
 		if (codeDescriptions.count(code) == 0)
 			return generate500();

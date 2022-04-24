@@ -27,6 +27,9 @@ namespace Algiz::HTTP {
 			Response & setClose(bool = true);
 			Response & setNoContentType(bool = true);
 
+			std::string & operator[](const std::string &);
+			const std::string & operator[](const std::string &) const;
+
 			operator std::string() const;
 	};
 }

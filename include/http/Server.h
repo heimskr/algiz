@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 
+#include "http/Request.h"
 #include "net/Server.h"
 #include "nlohmann/json.hpp"
 #include "plugins/PluginHost.h"
@@ -28,8 +29,8 @@ namespace Algiz::HTTP {
 
 		private:
 			std::filesystem::path getWebRoot(const std::string &) const;
-			bool validatePath(const std::string &) const;
-			std::vector<std::string> getParts(const std::string &) const;
+			bool validatePath(const std::string_view &) const;
+			std::vector<std::string> getParts(const std::string_view &) const;
 
 		public:
 			std::shared_ptr<Algiz::Server> server;
@@ -42,6 +43,6 @@ namespace Algiz::HTTP {
 
 			void run() override;
 			void stop() override;
-			void handleGet(HTTP::Client &, const std::string &path);
+			void handleGet(HTTP::Client &, const Request &);
 	};
 }

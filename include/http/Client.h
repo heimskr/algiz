@@ -2,9 +2,11 @@
 
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <unordered_set>
 
+#include "http/Request.h"
 #include "net/GenericClient.h"
 
 namespace Algiz::HTTP {
@@ -17,14 +19,6 @@ namespace Algiz::HTTP {
 			void handleRequest();
 
 		public:
-			enum class Mode {Method, Headers, Content};
-
-			Mode mode = Mode::Method;
-			std::map<std::string, std::string> headers;
-			std::string content;
-			std::string method;
-			std::string path;
-
 			Client(HTTP::Server &server_, int id_): GenericClient(id_, true), server(server_) {}
 			Client(const Client &) = delete;
 			Client(Client &&) = delete;
@@ -32,8 +26,10 @@ namespace Algiz::HTTP {
 			Client & operator=(const Client &) = delete;
 			Client & operator=(Client &&) = delete;
 
+			std::optional<Request> request;
+
 			void send(const std::string &);
-			void handleInput(const std::string &) override;
+			void handleInput(const std::string &message) override;
 
 			static std::unordered_set<std::string> supportedMethods;
 	};

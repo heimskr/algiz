@@ -23,14 +23,36 @@ namespace Algiz {
 		stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		stream.open(path);
 		stream.exceptions(std::ifstream::goodbit);
-		std::string out;
 		if (!stream.is_open())
 			throw std::runtime_error("Couldn't open file for reading");
 		stream.seekg(0, std::ios::end);
+		std::string out;
 		out.reserve(stream.tellg());
 		stream.seekg(0, std::ios::beg);
 		out.assign((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
 		stream.close();
+		return out;
+	}
+
+	std::string readFile(const std::filesystem::path &path, size_t offset, size_t byte_count) {
+		std::ifstream stream;
+		stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		stream.open(path);
+		stream.exceptions(std::ifstream::goodbit);
+		if (!stream.is_open())
+			throw std::runtime_error("Couldn't open file for reading");
+		stream.seekg(offset, std::ios::beg);
+		char *buffer = new char[byte_count];
+		try {
+			stream.read(buffer, byte_count);
+			stream.close();
+		} catch (...) {
+			delete[] buffer;
+			throw;
+		}
+
+		std::string out(buffer, byte_count);
+		delete[] buffer;
 		return out;
 	}
 }

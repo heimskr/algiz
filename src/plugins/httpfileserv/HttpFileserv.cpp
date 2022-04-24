@@ -54,9 +54,13 @@ namespace Algiz::Plugins {
 			if (extension == ".t") {
 				http.server->send(client.id,
 					HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
+			} else if (false) {
+				
 			} else {
 				const std::string mime = getMIME(full_path.extension());
-				http.server->send(client.id, HTTP::Response(200, readFile(full_path)).setMIME(mime));
+				HTTP::Response response(200, "");
+				response["Accepts-Ranges"] = "bytes";
+				http.server->send(client.id, response.setMIME(mime));
 			}
 			http.server->removeClient(client.id);
 			return CancelableResult::Approve;
