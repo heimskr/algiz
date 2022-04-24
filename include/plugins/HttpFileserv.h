@@ -15,6 +15,9 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class HttpFileserv: public Plugin {
 		public:
+			/** Largest amount to read from a file at one time. */
+			size_t chunkSize = 1 << 24;
+
 			std::string getName()        const override { return "HTTP Fileserv"; }
 			std::string getDescription() const override { return "Serves files from the filesystem over HTTP."; }
 			std::string getVersion()     const override { return "0.0.1"; }
@@ -26,7 +29,7 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs>>(bind(*this, &HttpFileserv::handle));
 
 		private:
-			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+			Plugins::CancelableResult handle(HTTP::Server::HandlerArgs &, bool not_disabled);
 
 			std::vector<std::string> getDefaults(const HTTP::Server &);
 	};

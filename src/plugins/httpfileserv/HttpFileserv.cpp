@@ -20,12 +20,12 @@ namespace Algiz::Plugins {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
 	}
 
-	CancelableResult HttpFileserv::handle(const HTTP::Server::HandlerArgs &args, bool non_disabled) {
+	CancelableResult HttpFileserv::handle(HTTP::Server::HandlerArgs &args, bool non_disabled) {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, path, parts] = args;
-		auto full_path = (http.webRoot / ("./" + unescape(path, true))).lexically_normal();
+		auto &[http, client, request, parts] = args;
+		auto full_path = (http.webRoot / ("./" + unescape(request.path, true))).lexically_normal();
 
 		if (!isSubpath(http.webRoot, full_path)) {
 			ERROR("Not subpath of " << http.webRoot << ": " << full_path);
@@ -54,8 +54,33 @@ namespace Algiz::Plugins {
 			if (extension == ".t") {
 				http.server->send(client.id,
 					HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
-			} else if (false) {
-				
+			} else if (!request.ranges.empty() || request.suffixLength != 0) {
+				const size_t filesize = std::filesystem::file_size(full_path);
+				if (request.valid(filesize)) {
+					std::ifstream stream;
+					stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+					stream.open(full_path);
+					stream.exceptions(std::ifstream::goodbit);
+					if (!stream.is_open()) {
+						http.send403(client);
+					} else {
+						HTTP::Response response(206, "");
+						response["Accepts-Ranges"] = "bytes";
+						http.server->send(client.id, response.noContent());
+						for (const auto &[start, end]: request.ranges) {
+							size_t remaining = end - start;
+							auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
+							stream.seekg(start, std::ios::beg);
+							while (0 < remaining) {
+								const size_t to_read = std::min(chunkSize, remaining);
+								stream.read(buffer.get(), to_read);
+								http.server->send(client.id, std::string_view(buffer.get(), to_read));
+								remaining -= to_read;
+							}
+						}
+					}
+				} else
+					http.send400(client);
 			} else {
 				const std::string mime = getMIME(full_path.extension());
 				HTTP::Response response(200, "");

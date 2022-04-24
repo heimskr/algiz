@@ -21,7 +21,7 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, path, parts] = args;
+		auto &[http, client, request, parts] = args;
 
 		HTTP::Response response(404, "");
 		response.setMIME("text/html");
@@ -33,7 +33,7 @@ namespace Algiz::Plugins {
 				response.content = readFile(filename);
 				if (std::filesystem::path(filename).extension() == ".t")
 					response.content = renderTemplate(response.content, {
-						{"path", path}
+						{"path", request.path}
 					});
 			}
 		}

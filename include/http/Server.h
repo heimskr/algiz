@@ -20,11 +20,11 @@ namespace Algiz::HTTP {
 			struct HandlerArgs {
 				Server &server;
 				Client &client;
-				const std::string path;
+				Request request;
 				const std::vector<std::string> parts;
 
-				HandlerArgs(Server &server_, Client &client_, std::string &&path_, std::vector<std::string> &&parts_):
-					server(server_), client(client_), path(std::move(path_)), parts(std::move(parts_)) {}
+				HandlerArgs(Server &server_, Client &client_, Request &&request_, std::vector<std::string> &&parts_):
+					server(server_), client(client_), request(std::move(request_)), parts(std::move(parts_)) {}
 			};
 
 		private:
@@ -44,5 +44,7 @@ namespace Algiz::HTTP {
 			void run() override;
 			void stop() override;
 			void handleGet(HTTP::Client &, const Request &);
+			void send400(HTTP::Client &);
+			void send403(HTTP::Client &);
 	};
 }

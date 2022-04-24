@@ -31,5 +31,6 @@ namespace Algiz::HTTP {
 			const std::string & operator[](const std::string &) const;
 
 			operator std::string() const;
+			std::string noContent() const;
 	};
 }

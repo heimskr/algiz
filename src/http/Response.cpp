@@ -55,9 +55,13 @@ namespace Algiz::HTTP {
 	}
 
 	Response::operator std::string() const {
+		return noContent() + content;
+	}
+
+	std::string Response::noContent() const {
 		if (codeDescriptions.count(code) == 0)
 			return generate500();
-		
+
 		std::string out;
 		out.reserve(content.size() + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
@@ -67,7 +71,7 @@ namespace Algiz::HTTP {
 			out += "Content-Length: " + std::to_string(content.size()) + "\r\n";
 		for (const auto &[header, value]: headers)
 			out += header + ": " + value + "\r\n";
-		out += "\r\n" + content;
+		out += "\r\n";
 		return out;
 	}
 

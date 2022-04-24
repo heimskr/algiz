@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "error/ParseError.h"
 #include "error/UnsupportedMethod.h"
 #include "http/Request.h"
@@ -63,6 +65,8 @@ namespace Algiz::HTTP {
 					} catch (const std::invalid_argument &err) {
 						throw ParseError(err.what());
 					}
+				else if (header_name == "Range")
+					parseRange(header_content);
 				break;
 			}
 
@@ -86,5 +90,62 @@ namespace Algiz::HTTP {
 		}
 
 		return HandleResult::Continue;
+	}
+
+	void Request::parseRange(std::string_view content) {
+		if (content.substr(0, 6) != "bytes=")
+			throw ParseError("parseRange: invalid unit");
+		content.remove_prefix(6);
+		ranges.clear();
+		try {
+			while (!content.empty()) {
+				const size_t separator = content.find(", ");
+				std::string_view piece = content.substr(0, separator);
+
+				const size_t hyphen = piece.find('-');
+
+				size_t start = 0;
+				size_t end = -1;
+
+				if (hyphen == 0) {
+					if (piece.size() == 1)
+						throw ParseError("parseRange: invalid range");
+					suffixLength = parseUlong(piece.substr(1).begin());
+				} else {
+					start = parseUlong(piece.substr(0, hyphen).begin());
+					if (hyphen != piece.size() - 1)
+						end = parseUlong(piece.substr(hyphen + 1).begin());
+					ranges.emplace_back(start, end);
+				}
+
+				content.remove_prefix(separator + 2);
+			}
+		} catch (const std::invalid_argument &) {
+			throw ParseError("parseRange: number parsing failed");
+		}
+	}
+
+	bool Request::valid(size_t total_size) {
+		// Can't request a suffix larger than the total size.
+		if (total_size < suffixLength)
+			return false;
+
+		if (ranges.empty())
+			return true;
+
+		// Sort all the ranges so we can go through them in linear time.
+		std::sort(ranges.begin(), ranges.end(), [](const auto &left, const auto &right) {
+			return std::get<0>(left) < std::get<1>(right);
+		});
+
+		// Once the ranges are sorted, no range can begin before the previous one ends.
+		for (size_t i = 1, max = ranges.size(); i < max; ++i) {
+			const size_t start = std::get<0>(ranges[i]);
+			const size_t end = std::get<1>(ranges[i]);
+			if (end <= start || start < std::get<1>(ranges[i - 1]) || total_size <= start || total_size < end)
+				return false;
+		}
+
+		return std::get<1>(ranges.back()) <= total_size - suffixLength;
 	}
 }

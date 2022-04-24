@@ -20,7 +20,7 @@ namespace Algiz::Plugins {
 		if (!non_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, path, parts] = args;
+		auto &[http, client, request, parts] = args;
 		
 		if (parts.size() == 3) {
 			std::string_view oper = parts.front();
