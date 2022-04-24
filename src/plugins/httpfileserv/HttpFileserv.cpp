@@ -69,8 +69,20 @@ namespace Algiz::Plugins {
 						http.server->send(client.id, response.noContent());
 						for (const auto &[start, end]: request.ranges) {
 							size_t remaining = end - start;
-							auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
 							stream.seekg(start, std::ios::beg);
+							auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
+							while (0 < remaining) {
+								const size_t to_read = std::min(chunkSize, remaining);
+								stream.read(buffer.get(), to_read);
+								http.server->send(client.id, std::string_view(buffer.get(), to_read));
+								remaining -= to_read;
+							}
+						}
+
+						if (request.suffixLength != 0) {
+							size_t remaining = request.suffixLength;
+							stream.seekg(filesize - request.suffixLength, std::ios::beg);
+							auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
 							while (0 < remaining) {
 								const size_t to_read = std::min(chunkSize, remaining);
 								stream.read(buffer.get(), to_read);

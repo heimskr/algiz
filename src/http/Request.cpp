@@ -118,6 +118,9 @@ namespace Algiz::HTTP {
 					ranges.emplace_back(start, end);
 				}
 
+				if (separator == std::string_view::npos)
+					break;
+
 				content.remove_prefix(separator + 2);
 			}
 		} catch (const std::invalid_argument &) {
