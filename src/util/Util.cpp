@@ -1,3 +1,4 @@
+#include <charconv>
 #include <cstring>
 
 #include "util/Util.h"
@@ -46,6 +47,14 @@ namespace Algiz {
 		return parsed;
 	}
 
+	long parseLong(std::string_view view, int base) {
+		long out;
+		auto result = std::from_chars(view.begin(), view.end(), out, base);
+		if (result.ec == std::errc::invalid_argument)
+			throw std::invalid_argument("Not an integer: \"" + std::string(view) + "\"");
+		return out;
+	}
+
 	unsigned long parseUlong(const std::string &str, int base) {
 		const char *c_str = str.c_str();
 		char *end = nullptr;
@@ -61,6 +70,14 @@ namespace Algiz {
 		if (str + strlen(str) != end)
 			throw std::invalid_argument("Not an integer: \"" + std::string(str) + "\"");
 		return parsed;
+	}
+
+	unsigned long parseUlong(std::string_view view, int base) {
+		unsigned long out;
+		auto result = std::from_chars(view.begin(), view.end(), out, base);
+		if (result.ec == std::errc::invalid_argument)
+			throw std::invalid_argument("Not an integer: \"" + std::string(view) + "\"");
+		return out;
 	}
 
 	std::string toLower(std::string str) {

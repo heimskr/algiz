@@ -110,11 +110,11 @@ namespace Algiz::HTTP {
 				if (hyphen == 0) {
 					if (piece.size() == 1)
 						throw ParseError("parseRange: invalid range");
-					suffixLength = parseUlong(piece.substr(1).begin());
+					suffixLength = parseUlong(piece.substr(1));
 				} else {
-					start = parseUlong(piece.substr(0, hyphen).begin());
+					start = parseUlong(piece.substr(0, hyphen));
 					if (hyphen != piece.size() - 1)
-						end = parseUlong(piece.substr(hyphen + 1).begin());
+						end = parseUlong(piece.substr(hyphen + 1));
 					ranges.emplace_back(start, end);
 				}
 
