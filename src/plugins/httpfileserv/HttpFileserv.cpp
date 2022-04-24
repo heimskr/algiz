@@ -65,7 +65,14 @@ namespace Algiz::Plugins {
 						http.send403(client);
 					} else {
 						HTTP::Response response(206, "");
+
+						size_t length = request.suffixLength;
+						for (const auto &[start, end]: request.ranges)
+							length += end - start;
+
 						response["Accepts-Ranges"] = "bytes";
+						response["Content-Length"] = std::to_string(length);
+
 						http.server->send(client.id, response.noContent());
 						for (const auto &[start, end]: request.ranges) {
 							size_t remaining = end - start;
