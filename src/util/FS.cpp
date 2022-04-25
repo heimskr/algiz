@@ -55,4 +55,8 @@ namespace Algiz {
 		delete[] buffer;
 		return out;
 	}
+
+	std::time_t lastWritten(const std::filesystem::path &path) {
+		return std::chrono::file_clock::to_time_t(std::filesystem::last_write_time(path));
+	}
 }

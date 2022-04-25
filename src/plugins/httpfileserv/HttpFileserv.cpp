@@ -72,6 +72,7 @@ namespace Algiz::Plugins {
 
 						response.setAcceptsRanges();
 						response["Content-Length"] = std::to_string(length);
+						response.setLastModified(lastWritten(full_path));
 
 						http.server->send(client.id, response.noContent());
 						for (const auto &[start, end]: request.ranges) {
@@ -103,6 +104,7 @@ namespace Algiz::Plugins {
 			} else {
 				const std::string mime = getMIME(full_path.extension());
 				HTTP::Response response(200, readFile(full_path));
+				response.setLastModified(lastWritten(full_path));
 				http.server->send(client.id, response.setAcceptsRanges().setMIME(mime));
 			}
 			http.server->removeClient(client.id);

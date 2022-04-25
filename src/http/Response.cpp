@@ -1,4 +1,5 @@
 #include "http/Response.h"
+#include "util/Util.h"
 
 namespace Algiz::HTTP {
 	std::string Response::generate500() {
@@ -51,6 +52,11 @@ namespace Algiz::HTTP {
 			headers["Accepts-Ranges"] = "bytes";
 		else
 			headers.erase("Accepts-Ranges");
+		return *this;
+	}
+
+	Response & Response::setLastModified(time_t when) {
+		headers["Last-Modified"] = formatTime("%a, %-d %b %Y %T %Z");
 		return *this;
 	}
 
