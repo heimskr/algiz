@@ -68,14 +68,14 @@ namespace Algiz::Plugins {
 
 						size_t length = request.suffixLength;
 						for (const auto &[start, end]: request.ranges)
-							length += end - start;
+							length += end - start + 1;
 
 						response.setAcceptsRanges();
 						response["Content-Length"] = std::to_string(length);
 
 						http.server->send(client.id, response.noContent());
 						for (const auto &[start, end]: request.ranges) {
-							size_t remaining = end - start;
+							size_t remaining = end - start + 1;
 							stream.seekg(start, std::ios::beg);
 							auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
 							while (0 < remaining) {
