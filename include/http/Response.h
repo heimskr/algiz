@@ -26,7 +26,7 @@ namespace Algiz::HTTP {
 			Response & setHeader(const std::string &, const std::string &);
 			Response & setClose(bool = true);
 			Response & setNoContentType(bool = true);
-			Response & setAcceptsRanges(bool = true);
+			Response & setAcceptRanges(bool = true);
 			Response & setLastModified(time_t);
 
 			std::string & operator[](const std::string &);

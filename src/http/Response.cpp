@@ -47,11 +47,11 @@ namespace Algiz::HTTP {
 		return *this;
 	}
 
-	Response & Response::setAcceptsRanges(bool value) {
+	Response & Response::setAcceptRanges(bool value) {
 		if (value)
-			headers["Accepts-Ranges"] = "bytes";
+			headers["Accept-Ranges"] = "bytes";
 		else
-			headers.erase("Accepts-Ranges");
+			headers.erase("Accept-Ranges");
 		return *this;
 	}
 
