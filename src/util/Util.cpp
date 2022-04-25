@@ -115,7 +115,6 @@ namespace Algiz {
 			const char next  = path[i + 1];
 			const char after = path[i + 2];
 			if (!std::isxdigit(next) || !std::isxdigit(after)) {
-				WARN("Not hex: " << next << " or " << after);
 				out += ch;
 				continue;
 			}
@@ -136,12 +135,10 @@ namespace Algiz {
 			else
 				to_add += after - '0';
 
-			INFO("Adding '" << to_add << "'");
 			out += to_add;
 			i += 2;
 		}
 
-		INFO("Returning \"" << out << "\"");
 		return out;
 	}
 }
