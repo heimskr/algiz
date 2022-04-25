@@ -102,10 +102,29 @@ namespace Algiz::Plugins {
 				} else
 					http.send400(client);
 			} else {
-				const std::string mime = getMIME(full_path.extension());
-				HTTP::Response response(200, readFile(full_path));
-				response.setLastModified(lastWritten(full_path));
-				http.server->send(client.id, response.setAcceptsRanges().setMIME(mime));
+				std::ifstream stream;
+				stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+				stream.open(full_path);
+				stream.exceptions(std::ifstream::goodbit);
+				if (!stream.is_open()) {
+					http.send403(client);
+				} else {
+					const std::string mime = getMIME(full_path.extension());
+					const size_t filesize = std::filesystem::file_size(full_path);
+					HTTP::Response response(200, "");
+					response.setLastModified(lastWritten(full_path)).setAcceptsRanges().setMIME(mime);
+					response["Content-Length"] = std::to_string(filesize);
+					http.server->send(client.id, response.noContent());
+					size_t remaining = filesize;
+					stream.seekg(0, std::ios::beg);
+					auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
+					while (0 < remaining) {
+						const size_t to_read = std::min(chunkSize, remaining);
+						stream.read(buffer.get(), to_read);
+						http.server->send(client.id, std::string_view(buffer.get(), to_read));
+						remaining -= to_read;
+					}
+				}
 			}
 			http.server->removeClient(client.id);
 			return CancelableResult::Approve;
