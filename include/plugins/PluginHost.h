@@ -74,8 +74,10 @@ namespace Algiz::Plugins {
 		private:
 			std::list<PluginTuple> plugins {};
 
+		protected:
+			PluginHost() = default;
+
 		public:
-			PluginHost() = delete;
 			PluginHost(const PluginHost &) = delete;
 			PluginHost(PluginHost &&) = delete;
 

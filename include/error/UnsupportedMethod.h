@@ -5,6 +5,6 @@
 
 namespace Algiz {
 	struct UnsupportedMethod: std::runtime_error {
-		UnsupportedMethod(const std::string &message): std::runtime_error(message) {}
+		explicit UnsupportedMethod(const std::string &message): std::runtime_error(message) {}
 	};
 }

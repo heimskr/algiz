@@ -7,10 +7,10 @@ namespace Algiz {
 		public:
 			int statusCode;
 
-			ResolutionError(int status_code):
+			explicit ResolutionError(int status_code):
 				std::runtime_error("Resolution failed"), statusCode(status_code) {}
 
-			const char * what() const throw() override {
+			[[nodiscard]] const char * what() const noexcept override {
 				return gai_strerror(statusCode);
 			}
 	};

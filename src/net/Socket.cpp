@@ -7,10 +7,10 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "Log.h"
 #include "net/Socket.h"
 #include "net/NetError.h"
 #include "net/ResolutionError.h"
-#include "Log.h"
 
 namespace Algiz {
 	int Socket::socketCount = 0;
@@ -26,13 +26,12 @@ namespace Algiz {
 			throw ResolutionError(errno);
 	}
 
-	Socket & Socket::operator=(Socket &&other) {
+	Socket & Socket::operator=(Socket &&other) noexcept {
 		if (this == &other)
 			return *this;
 		close();
-		if (info)
+		if (info != nullptr)
 			freeaddrinfo(info);
-		socketCount = other.socketCount;
 		info = other.info;
 		other.info = nullptr;
 		netFD = other.netFD;

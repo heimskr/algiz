@@ -2,8 +2,10 @@
 
 namespace Algiz {
 	class ApplicationServer {
+		protected:
+			ApplicationServer() = default;
+
 		public:
-			ApplicationServer() = delete;
 			ApplicationServer(const ApplicationServer &) = delete;
 			ApplicationServer(ApplicationServer &&) = delete;
 

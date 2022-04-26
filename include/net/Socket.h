@@ -9,7 +9,7 @@ namespace Algiz {
 
 		protected:
 			static int socketCount;
-			struct addrinfo *info;
+			struct addrinfo *info = nullptr;
 			int netFD = -1, controlRead = -1, controlWrite = -1;
 			bool connected = false;
 			fd_set fds = {0};
@@ -25,7 +25,7 @@ namespace Algiz {
 			Socket() = delete;
 			Socket(const Socket &) = delete;
 			Socket & operator=(const Socket &) = delete;
-			Socket & operator=(Socket &&);
+			Socket & operator=(Socket &&) noexcept;
 
 			~Socket();
 

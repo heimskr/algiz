@@ -29,7 +29,7 @@ namespace Algiz::Plugins {
 		if (lib == nullptr)
 			throw std::runtime_error("dlopen returned nullptr. " + std::string(dlerror()));
 
-		auto *make_plugin = static_cast<Plugin * (*)()>(dlsym(lib, PLUGIN_CREATOR_FUNCTION_NAME));
+		auto *make_plugin = reinterpret_cast<Plugin * (*)()>(dlsym(lib, PLUGIN_CREATOR_FUNCTION_NAME));
 		if (make_plugin == nullptr)
 			throw std::runtime_error("Plugin creation function is null");
 

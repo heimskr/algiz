@@ -13,9 +13,9 @@ namespace Algiz::HTTP {
 		public:
 			int code;
 			std::string mime = "text/html";
-			std::string content;
-			std::string charset;
-			std::map<std::string, std::string> headers;
+			std::string content {};
+			std::string charset {};
+			std::map<std::string, std::string> headers {};
 			bool noContentType = false;
 
 			Response(int code_, const std::string &content_);
@@ -33,6 +33,6 @@ namespace Algiz::HTTP {
 			const std::string & operator[](const std::string &) const;
 
 			operator std::string() const;
-			std::string noContent() const;
+			[[nodiscard]] std::string noContent() const;
 	};
 }

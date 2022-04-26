@@ -19,9 +19,12 @@ namespace Algiz::HTTP {
 			void handleRequest();
 
 		public:
+			Client() = delete;
 			Client(HTTP::Server &server_, int id_): GenericClient(id_, true), server(server_) {}
 			Client(const Client &) = delete;
 			Client(Client &&) = delete;
+
+			~Client() = default;
 
 			Client & operator=(const Client &) = delete;
 			Client & operator=(Client &&) = delete;
