@@ -46,8 +46,9 @@ namespace Algiz {
 		});
 	}
 
-	/** Replaces '\x1b' bytes with "\x1b[2m\\x1b\x1b[22m". */
-	std::string unansi(std::string_view);
+	/** Replaces '\x1b' bytes with "\x1b[2m\\x1b\x1b[22m". Also replaces some special whitespace characters with their
+	 *  escaped representations. */
+	std::string escapeAnsi(std::string_view);
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 	#define SHARED_SUFFIX ".dll"

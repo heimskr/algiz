@@ -142,12 +142,30 @@ namespace Algiz {
 		return out;
 	}
 
-	std::string unansi(std::string_view view) {
+	std::string escapeAnsi(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());
 		for (char ch: view)
 			if (ch == '\x1b')
 				out += "\x1b[2m\\x1b\x1b[22m";
+			else if (ch == '\t')
+				out += "\\t";
+			else if (ch == '\r')
+				out += "\\r";
+			else if (ch == '\n')
+				out += "\\n";
+			else if (ch == '\v')
+				out += "\\v";
+			else if (ch == '\b')
+				out += "\\b";
+			else if (ch == '\a')
+				out += "\\a";
+			else if (ch == '\f')
+				out += "\\f";
+			else if (ch == '\0')
+				out += "\\0";
+			else if (ch == '\\')
+				out += "\\\\";
 			else
 				out += ch;
 		return out;
