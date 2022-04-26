@@ -17,7 +17,7 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Logger::handle(const HTTP::Server::HandlerArgs &args, bool) {
-		auto &[http, client, request, parts] = args;
+		const auto &[http, client, request, parts] = args;
 
 		if (request.path.size() <= 2048)
 			INFO("Received request for \"" << unansi(request.path) << "\"");
