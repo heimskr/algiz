@@ -5,12 +5,12 @@
 #include <map>
 #include <string>
 
+#include "ApplicationServer.h"
 #include "http/Request.h"
 #include "net/Server.h"
 #include "nlohmann/json.hpp"
 #include "plugins/PluginHost.h"
 #include "util/WeakCompare.h"
-#include "ApplicationServer.h"
 
 namespace Algiz::HTTP {
 	class Client;
@@ -23,14 +23,15 @@ namespace Algiz::HTTP {
 				Request request;
 				const std::vector<std::string> parts;
 
-				HandlerArgs(Server &server_, Client &client_, Request &&request_, std::vector<std::string> &&parts_):
+				explicit HandlerArgs(Server &server_, Client &client_, Request &&request_,
+				                     std::vector<std::string> &&parts_):
 					server(server_), client(client_), request(std::move(request_)), parts(std::move(parts_)) {}
 			};
 
 		private:
-			std::filesystem::path getWebRoot(const std::string &) const;
-			bool validatePath(const std::string_view &) const;
-			std::vector<std::string> getParts(const std::string_view &) const;
+			[[nodiscard]] std::filesystem::path getWebRoot(const std::string &) const;
+			[[nodiscard]] bool validatePath(const std::string_view &) const;
+			[[nodiscard]] std::vector<std::string> getParts(const std::string_view &) const;
 
 		public:
 			std::shared_ptr<Algiz::Server> server;
@@ -38,8 +39,15 @@ namespace Algiz::HTTP {
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs>> handlers;
 
+			Server() = delete;
+			Server(const Server &) = delete;
+			Server(Server &&) = delete;
 			Server(const std::shared_ptr<Algiz::Server> &, const nlohmann::json &options_);
-			~Server();
+
+			~Server() override;
+
+			Server & operator=(const Server &) = delete;
+			Server & operator=(Server &&) = delete;
 
 			void run() override;
 			void stop() override;

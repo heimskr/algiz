@@ -56,7 +56,7 @@ namespace Algiz {
 			Server & operator=(Server &&) = delete;
 			virtual ~Server();
 
-			inline int getPort() const { return port; }
+			[[nodiscard]] inline int getPort() const { return port; }
 			void readFromClient(int descriptor);
 			virtual void handleMessage(int client, const std::string &message);
 			virtual void end(int descriptor);
@@ -66,8 +66,8 @@ namespace Algiz {
 			void removeClient(int);
 			virtual void run();
 			void stop();
-			inline decltype(allClients) & getClients() { return allClients; }
-			inline const decltype(allClients) & getClients() const { return allClients; }
+			[[nodiscard]] inline decltype(allClients) & getClients() { return allClients; }
+			[[nodiscard]] inline const decltype(allClients) & getClients() const { return allClients; }
 
 			/** Given a buffer, this function returns {-1, *} if the message is still incomplete or the {i, l} if the
 			 *  buffer contains a complete message, where i is the index at which the message ends and l is the size of

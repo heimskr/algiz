@@ -1,9 +1,9 @@
-#include <getopt.h>
 #include <filesystem>
+#include <getopt.h>
 #include <iostream>
 #include <optional>
-#include <unistd.h>
 #include <sys/socket.h>
+#include <unistd.h>
 
 #include "Options.h"
 #include "util/FS.h"
@@ -12,7 +12,7 @@
 
 namespace Algiz {
 	Options Options::parse(int argc, char * const *argv) {
-		static option long_options[] = {
+		static option long_options[] {
 			{"config", required_argument, nullptr, 'c'},
 			{"ip4",    required_argument, nullptr, '4'},
 			{"ip6",    required_argument, nullptr, '6'},
@@ -29,7 +29,7 @@ namespace Algiz {
 		std::optional<int> address_family;
 
 		for (;;) {
-			int option_index;
+			int option_index = -1;
 			int opt = getopt_long(argc, argv, "4:6:p:c:", long_options, &option_index);
 			if (opt == -1)
 				break;

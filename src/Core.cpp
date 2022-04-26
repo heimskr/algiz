@@ -1,13 +1,13 @@
 #include <sys/socket.h>
 
+#include "Core.h"
 #include "error/ParseError.h"
 #include "http/Response.h"
 #include "http/Server.h"
+#include "Log.h"
 #include "net/SSLServer.h"
 #include "util/Braille.h"
 #include "util/Util.h"
-#include "Core.h"
-#include "Log.h"
 
 namespace Algiz {
 	static HTTP::Server * makeHTTP(std::unique_ptr<Server> &&server, const nlohmann::json &suboptions) {

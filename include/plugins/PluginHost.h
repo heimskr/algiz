@@ -27,7 +27,6 @@ namespace Algiz::Plugins {
 			template <typename T>
 			using PostPtr = std::weak_ptr<PostFn<T>>;
 
-		public:
 			/** Determines whether a pre-event should go through. */
 			template <typename T, typename C>
 			bool before(T &obj, const C &funcs) {
@@ -76,7 +75,14 @@ namespace Algiz::Plugins {
 			std::list<PluginTuple> plugins {};
 
 		public:
-			virtual ~PluginHost() {}
+			PluginHost() = delete;
+			PluginHost(const PluginHost &) = delete;
+			PluginHost(PluginHost &&) = delete;
+
+			virtual ~PluginHost() = default;
+
+			PluginHost & operator=(const PluginHost &) = delete;
+			PluginHost & operator=(PluginHost &&) = delete;
 
 			/** Unloads a plugin. */
 			void unloadPlugin(PluginTuple &);
@@ -110,18 +116,17 @@ namespace Algiz::Plugins {
 			void postinitPlugins();
 
 			/** If a plugin was loaded from a given path, a pointer to its corresponding plugin object is returned. */
-			std::shared_ptr<Plugins::Plugin> pluginForPath(const std::string &path) const;
+			[[nodiscard]] std::shared_ptr<Plugins::Plugin> pluginForPath(const std::string &path) const;
 
 			template <typename T>
 			static bool erase(std::list<T> &list, const T &item) {
 				auto locked = item.lock();
 
-				for (auto iter = list.begin(), end = list.end(); iter != end; ++iter) {
+				for (auto iter = list.begin(), end = list.end(); iter != end; ++iter)
 					if (iter->lock() == locked) {
 						list.erase(iter);
 						return true;
 					}
-				}
 
 				return false;
 			}

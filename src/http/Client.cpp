@@ -1,7 +1,7 @@
+#include "Log.h"
 #include "error/ParseError.h"
 #include "http/Client.h"
 #include "http/Server.h"
-#include "Log.h"
 
 namespace Algiz::HTTP {
 	void Client::send(const std::string &message) {

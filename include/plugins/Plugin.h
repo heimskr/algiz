@@ -36,11 +36,11 @@ namespace Algiz::Plugins {
 	struct Plugin {
 		PluginHost *parent = nullptr;
 
-		virtual ~Plugin() {}
+		virtual ~Plugin() = default;
 
-		virtual std::string getName()        const = 0;
-		virtual std::string getDescription() const = 0;
-		virtual std::string getVersion()     const = 0;
+		[[nodiscard]] virtual std::string getName()        const = 0;
+		[[nodiscard]] virtual std::string getDescription() const = 0;
+		[[nodiscard]] virtual std::string getVersion()     const = 0;
 
 		/** Called when the plugin first loads. */
 		virtual void preinit(PluginHost *) {}
@@ -52,6 +52,6 @@ namespace Algiz::Plugins {
 		virtual void cleanup(PluginHost *) {}
 
 		/** Tries to unload the plugin. Returns true if the plugin was successfully unloaded. */
-		bool unload();
+		bool unload() const;
 	};
 }
