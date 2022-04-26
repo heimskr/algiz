@@ -20,7 +20,13 @@ namespace Algiz {
 		public:
 			SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert, const std::string &key,
 			          size_t chunk_size = 1);
-			virtual ~SSLServer();
+			SSLServer(const SSLServer &) = delete;
+			SSLServer(SSLServer &&) = delete;
+
+			~SSLServer() override;
+
+			SSLServer & operator=(const SSLServer &) = delete;
+			SSLServer & operator=(SSLServer &&) = delete;
 
 			ssize_t send(int client, const std::string_view &) override;
 			ssize_t send(int client, const std::string &) override;

@@ -12,11 +12,9 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Default404: public Plugin {
 		public:
-			virtual ~Default404() {}
-
-			std::string getName()        const override { return "Default 404"; }
-			std::string getDescription() const override { return "Serves a 404 for unhandled requests."; }
-			std::string getVersion()     const override { return "0.0.1"; }
+			[[nodiscard]] std::string getName()        const override { return "Default 404"; }
+			[[nodiscard]] std::string getDescription() const override { return "Serves a 404 for unhandled requests."; }
+			[[nodiscard]] std::string getVersion()     const override { return "0.0.1"; }
 
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;

@@ -9,10 +9,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include "Log.h"
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/Server.h"
-#include "Log.h"
 
 namespace Algiz {
 	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t chunk_size):

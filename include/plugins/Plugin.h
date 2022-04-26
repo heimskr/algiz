@@ -34,24 +34,34 @@ namespace Algiz::Plugins {
 
 	/** Plugins modify the server's behavior. They're created by functions called "make_plugin" in shared objects. */
 	struct Plugin {
-		PluginHost *parent = nullptr;
+		protected:
+			Plugin() = default;
 
-		virtual ~Plugin() = default;
+		public:
+			PluginHost *parent = nullptr;
 
-		[[nodiscard]] virtual std::string getName()        const = 0;
-		[[nodiscard]] virtual std::string getDescription() const = 0;
-		[[nodiscard]] virtual std::string getVersion()     const = 0;
+			Plugin(const Plugin &) = delete;
+			Plugin(Plugin &&) = delete;
 
-		/** Called when the plugin first loads. */
-		virtual void preinit(PluginHost *) {}
+			virtual ~Plugin() = default;
 
-		/** Called after client initialization. */
-		virtual void postinit(PluginHost *) {}
+			Plugin & operator=(const Plugin &) = delete;
+			Plugin & operator=(Plugin &&) = delete;
 
-		/** Called when the client is shutting down. */
-		virtual void cleanup(PluginHost *) {}
+			[[nodiscard]] virtual std::string getName()        const = 0;
+			[[nodiscard]] virtual std::string getDescription() const = 0;
+			[[nodiscard]] virtual std::string getVersion()     const = 0;
 
-		/** Tries to unload the plugin. Returns true if the plugin was successfully unloaded. */
-		bool unload() const;
+			/** Called when the plugin first loads. */
+			virtual void preinit(PluginHost *) {}
+
+			/** Called after client initialization. */
+			virtual void postinit(PluginHost *) {}
+
+			/** Called when the client is shutting down. */
+			virtual void cleanup(PluginHost *) {}
+
+			/** Tries to unload the plugin. Returns true if the plugin was successfully unloaded. */
+			bool unload() const;
 	};
 }

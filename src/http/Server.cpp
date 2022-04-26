@@ -25,7 +25,7 @@ namespace Algiz::HTTP {
 		return std::filesystem::absolute(web_root.empty()? "./www" : web_root).lexically_normal();
 	}
 
-	bool Server::validatePath(const std::string_view &path) const {
+	bool Server::validatePath(const std::string_view &path) {
 		return !path.empty() && path.front() == '/';
 	}
 
@@ -60,7 +60,7 @@ namespace Algiz::HTTP {
 	}
 
 	std::vector<std::string> Server::getParts(const std::string_view &path) const {
-		std::vector<std::string> out;
+		std::vector<std::string> out {};
 		for (const auto &view: split(path.substr(1), "/", true))
 			out.push_back(unescape(view));
 		return out;

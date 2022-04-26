@@ -1,10 +1,10 @@
 #include <sys/socket.h>
 
 #include "Core.h"
+#include "Log.h"
 #include "error/ParseError.h"
 #include "http/Response.h"
 #include "http/Server.h"
-#include "Log.h"
 #include "net/SSLServer.h"
 #include "util/Braille.h"
 #include "util/Util.h"

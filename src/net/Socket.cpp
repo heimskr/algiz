@@ -49,7 +49,7 @@ namespace Algiz {
 	
 	Socket::~Socket() {
 		close();
-		if (info)
+		if (info != nullptr)
 			freeaddrinfo(info);
 	}
 
@@ -117,14 +117,12 @@ namespace Algiz {
 				throw NetError(errno);
 			}
 
-			if (message != ControlMessage::Close) {
+			if (message != ControlMessage::Close)
 				log << "Unknown control message: '" << static_cast<char>(message) << "'" << std::endl;
-			}
 
 			return 0;
-		} else {
+		} else
 			log << "No file descriptor is ready.";
-		}
 
 		return -1;
 	}

@@ -36,7 +36,7 @@ namespace Algiz {
 			throw std::invalid_argument("Socket not connected");
 
 		fd_set fds_copy = fds;
-		int status = select(FD_SETSIZE, &fds_copy, NULL, NULL, NULL);
+		int status = select(FD_SETSIZE, &fds_copy, nullptr, nullptr, nullptr);
 		if (status < 0) {
 			SPAM("select status: " << strerror(status));
 			throw NetError(errno);
@@ -44,7 +44,7 @@ namespace Algiz {
 			
 		if (FD_ISSET(netFD, &fds_copy)) {
 			bool read_blocked;
-			size_t bytes_read, total_bytes_read = 0;
+			size_t bytes_read = 0, total_bytes_read = 0;
 			int ssl_error;
 			do {
 				read_blocked = false;
@@ -60,7 +60,7 @@ namespace Algiz {
 					switch (ssl_error = SSL_get_error(ssl, status)) {
 						case SSL_ERROR_NONE:
 							SPAM("SSL_ERROR_NONE");
-							return bytes_read;
+							return ssize_t(bytes_read);
 							break;
 						
 						case SSL_ERROR_ZERO_RETURN:
@@ -93,10 +93,12 @@ namespace Algiz {
 						read_str.pop_back();
 					SPAM("SSLSocket::recv(status == 1): \"" << read_str << "\"");
 				}
-			} while (SSL_pending(ssl) && !read_blocked && 0 < bytes);
+			} while (SSL_pending(ssl) != 0 && !read_blocked && 0 < bytes);
 
-			return total_bytes_read;
-		} else if (FD_ISSET(controlRead, &fds_copy)) {
+			return ssize_t(total_bytes_read);
+		}
+
+		if (FD_ISSET(controlRead, &fds_copy)) {
 			ControlMessage message;
 			status = ::read(controlRead, &message, 1);
 			if (status < 0) {
@@ -104,17 +106,15 @@ namespace Algiz {
 				throw NetError(errno);
 			}
 
-			if (message != ControlMessage::Close) {
+			if (message != ControlMessage::Close)
 				SPAM("Unknown control message: '" << static_cast<char>(message) << "'");
-			}
 
 			SSL_free(ssl);
 			::close(netFD);
 			SSL_CTX_free(sslContext);
 			return 0;
-		} else {
+		} else
 			SPAM("No file descriptor is ready.");
-		}
 
 		return -1;
 	}
@@ -123,18 +123,16 @@ namespace Algiz {
 		const SSL_METHOD *method = TLS_client_method();
 		sslContext = SSL_CTX_new(method);
 
-		if (!sslContext)
+		if (sslContext == nullptr)
 			throw std::runtime_error("SSLSocket::connectSSL failed");
 
 		ssl = SSL_new(sslContext);
-		if (!ssl)
+		if (ssl == nullptr)
 			throw std::runtime_error("SSLSocket::connectSSL: SSL_new failed");
-
-		int status;
 
 		SSL_set_fd(ssl, netFD);
 
-		status = SSL_connect(ssl);
+		int status = SSL_connect(ssl);
 		if (status != 1) {
 			int error = SSL_get_error(ssl, status);
 			if (error != SSL_ERROR_WANT_READ)
@@ -155,10 +153,10 @@ namespace Algiz {
 		X509 *cert = SSL_get_peer_certificate(ssl);
 		if (cert != nullptr) {
 			SPAM("Server");
-			char *line = X509_NAME_oneline(X509_get_subject_name(cert), 0, 0);
+			char *line = X509_NAME_oneline(X509_get_subject_name(cert), nullptr, 0);
 			SPAM("Subject: " << line);
 			free(line);
-			line = X509_NAME_oneline(X509_get_issuer_name(cert), 0, 0);
+			line = X509_NAME_oneline(X509_get_issuer_name(cert), nullptr, 0);
 			SPAM("Issuer: " << line);
 			free(line);
 			X509_free(cert);

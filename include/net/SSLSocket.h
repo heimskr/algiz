@@ -5,7 +5,7 @@
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 #include <resolv.h>
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
 
 #include "net/Socket.h"

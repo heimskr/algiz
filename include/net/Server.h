@@ -73,6 +73,6 @@ namespace Algiz {
 			 *  buffer contains a complete message, where i is the index at which the message ends and l is the size of
 			 *  the delimiter that ended the message. By default, a message is considered complete after the first
 			 *  newline. */
-			std::pair<ssize_t, size_t> isMessageComplete(const std::string &);
+			static std::pair<ssize_t, size_t> isMessageComplete(const std::string &);
 	};
 }

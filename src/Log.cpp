@@ -1,4 +1,3 @@
-
 #include "Log.h"
 #include "util/Util.h"
 

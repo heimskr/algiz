@@ -17,10 +17,8 @@
 namespace Algiz {
 	SSLServer::SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert,
 	                     const std::string &key, size_t chunk_size):
-	Server(af_, ip_, port_, chunk_size) {
-		sslContext = SSL_CTX_new(TLS_server_method());
-
-		if (!sslContext) {
+	Server(af_, ip_, port_, chunk_size), sslContext(SSL_CTX_new(TLS_server_method())) {
+		if (sslContext == nullptr) {
 			perror("Unable to create SSL context");
 			ERR_print_errors_fp(stderr);
 			throw std::runtime_error("SSLServer OpenSSL context initialization failed");
@@ -40,7 +38,7 @@ namespace Algiz {
 	}
 
 	SSLServer::~SSLServer() {
-		if (sslContext) {
+		if (sslContext != nullptr) {
 			SSL_CTX_free(sslContext);
 			sslContext = nullptr;
 		}
@@ -77,7 +75,6 @@ namespace Algiz {
 
 	void SSLServer::run() {
 		struct sockaddr_in clientname;
-		size_t size;
 
 		int control_pipe[2];
 		if (pipe(control_pipe) < 0)
@@ -115,7 +112,7 @@ namespace Algiz {
 					if (i == sock) {
 						// Connection request on original socket.
 						int new_fd;
-						size = sizeof(clientname);
+						const size_t size = sizeof(clientname);
 						new_fd = ::accept(sock, (sockaddr *) &clientname, (socklen_t *) &size);
 						if (new_fd < 0)
 							throw NetError("accept()", errno);

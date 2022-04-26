@@ -99,17 +99,17 @@ namespace Algiz::Plugins {
 			void loadPlugins(const std::string &path);
 
 			/** Returns a pointer to a plugin tuple by path or name. Returns nullptr if no match was found. */
-			PluginTuple * getPlugin(const std::string &, bool insensitive = false);
+			[[nodiscard]] PluginTuple * getPlugin(const std::string &, bool insensitive = false);
 
 			/** Returns a pointer to a plugin's tuple. Returns nullptr if no match was found. */
-			PluginTuple * getPlugin(const Plugins::Plugin *);
+			[[nodiscard]] PluginTuple * getPlugin(const Plugins::Plugin *);
 
-			bool hasPlugin(const std::filesystem::path &) const;
+			[[nodiscard]] bool hasPlugin(const std::filesystem::path &) const;
 
-			bool hasPlugin(const std::string &name, bool insensitive = false) const;
+			[[nodiscard]] bool hasPlugin(const std::string &name, bool insensitive = false) const;
 
 			/** Returns a const reference to the plugin list. */
-			const std::list<PluginTuple> & getPlugins() const;
+			[[nodiscard]] const std::list<PluginTuple> & getPlugins() const;
 
 			/** Initializes all loaded plugins before client initialization. */
 			void preinitPlugins();

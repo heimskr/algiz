@@ -1,3 +1,4 @@
+#include "Log.h"
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
@@ -6,7 +7,6 @@
 #include "util/MIME.h"
 #include "util/Templates.h"
 #include "util/Util.h"
-#include "Log.h"
 
 namespace Algiz::Plugins {
 	void Default404::postinit(PluginHost *host) {
@@ -17,11 +17,11 @@ namespace Algiz::Plugins {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
 	}
 
-	CancelableResult Default404::handle(const HTTP::Server::HandlerArgs &args, bool non_disabled) {
-		if (!non_disabled)
+	CancelableResult Default404::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
+		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, request, parts] = args;
+		const auto &[http, client, request, parts] = args;
 
 		HTTP::Response response(404, "");
 		response.setMIME("text/html");

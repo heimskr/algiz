@@ -30,7 +30,7 @@ namespace Algiz::HTTP {
 
 		private:
 			[[nodiscard]] std::filesystem::path getWebRoot(const std::string &) const;
-			[[nodiscard]] bool validatePath(const std::string_view &) const;
+			[[nodiscard]] static bool validatePath(const std::string_view &);
 			[[nodiscard]] std::vector<std::string> getParts(const std::string_view &) const;
 
 		public:

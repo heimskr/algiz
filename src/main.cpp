@@ -5,13 +5,13 @@
 #include <thread>
 #include <vector>
 
+#include "ApplicationServer.h"
+#include "Core.h"
+#include "Options.h"
 #include "http/Server.h"
 #include "net/Server.h"
 #include "util/FS.h"
 #include "util/Util.h"
-#include "ApplicationServer.h"
-#include "Core.h"
-#include "Options.h"
 
 std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
 

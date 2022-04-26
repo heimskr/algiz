@@ -12,11 +12,11 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Calculator: public Plugin {
 		public:
-			virtual ~Calculator() {}
-
-			std::string getName()        const override { return "Calculator"; }
-			std::string getDescription() const override { return "Calculates simple expressions over HTTP."; }
-			std::string getVersion()     const override { return "0.0.1"; }
+			[[nodiscard]] std::string getName()        const override { return "Calculator"; }
+			[[nodiscard]] std::string getDescription() const override {
+				return "Calculates simple expressions over HTTP.";
+			}
+			[[nodiscard]] std::string getVersion()     const override { return "0.0.1"; }
 
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;

@@ -1,3 +1,4 @@
+#include "Log.h"
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
@@ -5,7 +6,6 @@
 #include "util/FS.h"
 #include "util/MIME.h"
 #include "util/Util.h"
-#include "Log.h"
 
 namespace Algiz::Plugins {
 	void Calculator::postinit(PluginHost *host) {
@@ -16,11 +16,11 @@ namespace Algiz::Plugins {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
 	}
 
-	CancelableResult Calculator::handle(const HTTP::Server::HandlerArgs &args, bool non_disabled) {
-		if (!non_disabled)
+	CancelableResult Calculator::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
+		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, request, parts] = args;
+		const auto &[http, client, request, parts] = args;
 		
 		if (parts.size() == 3) {
 			std::string_view oper = parts.front();

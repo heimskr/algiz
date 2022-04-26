@@ -1,5 +1,6 @@
 #include <inja.hpp>
 
+#include "Log.h"
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
@@ -9,7 +10,6 @@
 #include "util/Templates.h"
 #include "util/Usage.h"
 #include "util/Util.h"
-#include "Log.h"
 
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
@@ -20,8 +20,8 @@ namespace Algiz::Plugins {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
 	}
 
-	CancelableResult HttpFileserv::handle(HTTP::Server::HandlerArgs &args, bool non_disabled) {
-		if (!non_disabled)
+	CancelableResult HttpFileserv::handle(HTTP::Server::HandlerArgs &args, bool not_disabled) {
+		if (!not_disabled)
 			return CancelableResult::Pass;
 
 		auto &[http, client, request, parts] = args;

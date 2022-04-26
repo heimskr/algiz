@@ -12,11 +12,9 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Logger: public Plugin {
 		public:
-			virtual ~Logger() {}
-
-			std::string getName()        const override { return "Logger"; }
-			std::string getDescription() const override { return "Prints accesses to the console."; }
-			std::string getVersion()     const override { return "0.0.1"; }
+			[[nodiscard]] std::string getName()        const override { return "Logger"; }
+			[[nodiscard]] std::string getDescription() const override { return "Prints accesses to the console."; }
+			[[nodiscard]] std::string getVersion()     const override { return "0.0.1"; }
 
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;

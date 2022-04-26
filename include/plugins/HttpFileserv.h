@@ -18,9 +18,11 @@ namespace Algiz::Plugins {
 			/** Largest amount to read from a file at one time. */
 			size_t chunkSize = 1 << 24;
 
-			std::string getName()        const override { return "HTTP Fileserv"; }
-			std::string getDescription() const override { return "Serves files from the filesystem over HTTP."; }
-			std::string getVersion()     const override { return "0.0.1"; }
+			[[nodiscard]] std::string getName()        const override { return "HTTP Fileserv"; }
+			[[nodiscard]] std::string getDescription() const override {
+				return "Serves files from the filesystem over HTTP.";
+			}
+			[[nodiscard]] std::string getVersion()     const override { return "0.0.1"; }
 
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
