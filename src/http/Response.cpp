@@ -56,7 +56,7 @@ namespace Algiz::HTTP {
 	}
 
 	Response & Response::setLastModified(time_t when) {
-		headers["Last-Modified"] = formatTime("%a, %-d %b %Y %T %Z");
+		headers["Last-Modified"] = formatTime("%a, %-d %b %Y %T %Z", when);
 		return *this;
 	}
 
