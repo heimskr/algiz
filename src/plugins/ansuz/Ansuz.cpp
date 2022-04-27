@@ -31,15 +31,34 @@ namespace Algiz::Plugins {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		const auto &[http, client, request, parts] = args;
+		auto &[http, client, request, parts] = args;
 
 		if (!parts.empty() && parts.front() == "ansuz") {
 			try {
 				if (parts.size() == 1)
 					return serveIndex(http, client);
 
-				if (parts.size() == 2 && parts[1] == "bootstrap.min.css")
-					return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"));
+				if (parts.size() == 2) {
+					if (parts[1] == "bootstrap.min.css")
+						return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"), "text/css");
+					if (parts[1] == "bootstrap-utilities.min.css")
+						return serve(http, client, RESOURCE(bootstrap_util_css, "bootstrap-utilities.min.css"),
+							"text/css");
+				} else if (parts.size() == 3) {
+					if (parts[1] == "unload") {
+						const auto &to_unload = parts[2];
+						const std::string full_name = "plugin/" + to_unload;
+						auto *tuple = http.getPlugin(full_name);
+						if (!tuple)
+							return serve(http, client, RESOURCE(not_loaded, "not_loaded.t"), {
+								{"css", RESOURCE(css, "style.css")},
+								{"plugin", escapeHTML(to_unload)}});
+						http.unloadPlugin(*tuple);
+						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {
+							{"css", RESOURCE(css, "style.css")},
+							{"plugin", escapeHTML(to_unload)}});
+					}
+				}
 
 				http.server->send(client.id, HTTP::Response(404, "Invalid path").setMIME("text/plain"));
 				http.server->removeClient(client.id);
@@ -52,15 +71,25 @@ namespace Algiz::Plugins {
 		return CancelableResult::Pass;
 	}
 
-	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content) {
-		http.server->send(client.id, HTTP::Response(200, content).setMIME("text/html"));
+	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content,
+	                              nlohmann::json json, const char *mime) {
+		if (json.empty())
+			http.server->send(client.id, HTTP::Response(200, content).setMIME(mime));
+		else
+			http.server->send(client.id, HTTP::Response(200, inja::render(content, json)).setMIME(mime));
 		http.server->removeClient(client.id);
 		return CancelableResult::Approve;
 	}
 
 	CancelableResult Ansuz::serveIndex(HTTP::Server &http, HTTP::Client &client) {
 		const auto plugins = map(http.getPlugins(), [](const auto &tuple) {
-			return std::get<0>(tuple);
+			const auto &plugin = std::get<1>(tuple);
+			return std::vector<std::string> {
+				escapeHTML(std::string(std::filesystem::path(std::get<0>(tuple)).filename())),
+				escapeHTML(plugin->getName()),
+				escapeHTML(plugin->getDescription()),
+				escapeHTML(plugin->getVersion()),
+			};
 		});
 
 		nlohmann::json json {

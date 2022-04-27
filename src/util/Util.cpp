@@ -142,7 +142,7 @@ namespace Algiz {
 		return out;
 	}
 
-	std::string escapeAnsi(std::string_view view) {
+	std::string escapeANSI(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());
 		for (char ch: view)
@@ -168,6 +168,22 @@ namespace Algiz {
 				out += "\\\\";
 			else
 				out += ch;
+		return out;
+	}
+
+	std::string escapeHTML(std::string_view view) {
+		std::string out;
+		out.reserve(view.size());
+		for (char ch: view) {
+			if (ch == '<')
+				out += "&lt;";
+			else if (ch == '>')
+				out += "&gt;";
+			else if (ch == '"')
+				out += "&quot;";
+			else
+				out += ch;
+		}
 		return out;
 	}
 }

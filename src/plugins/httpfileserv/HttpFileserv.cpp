@@ -36,7 +36,7 @@ namespace Algiz::Plugins {
 			// Use the path as-is.
 		} else {
 			bool found = false;
-			for (const auto &default_filename: getDefaults(http)) {
+			for (const auto &default_filename: getDefaults()) {
 				auto new_path = full_path / default_filename;
 				if (std::filesystem::is_regular_file(new_path)) {
 					full_path = std::move(new_path);
@@ -136,7 +136,7 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	std::vector<std::string> HttpFileserv::getDefaults(const HTTP::Server &server) {
+	std::vector<std::string> HttpFileserv::getDefaults() {
 		if (config.contains("default")) {
 			const auto &defaults = config.at("default");
 			if (defaults.is_string())

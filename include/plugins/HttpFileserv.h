@@ -33,6 +33,6 @@ namespace Algiz::Plugins {
 		private:
 			Plugins::CancelableResult handle(HTTP::Server::HandlerArgs &, bool not_disabled);
 
-			std::vector<std::string> getDefaults(const HTTP::Server &);
+			std::vector<std::string> getDefaults();
 	};
 }

@@ -20,7 +20,7 @@ namespace Algiz::Plugins {
 		const auto &[http, client, request, parts] = args;
 
 		if (request.path.size() <= 2048)
-			INFO("Received request for \"" << escapeAnsi(request.path) << "\"");
+			INFO("Received request for \"" << escapeANSI(request.path) << "\"");
 		else
 			INFO("Received request for a really large path...");
 
