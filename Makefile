@@ -21,6 +21,7 @@ ifeq ($(shell uname -s), Darwin)
 	LIBPATHVAR  := DYLD_LIBRARY_PATH
 endif
 
+SOURCES_PL      := $(shell find -L src/plugins -name '*.cpp')
 OBJECTS_PL      := $(addsuffix .$(SHARED_EXT),$(addprefix plugin/,$(shell ls src/plugins)))
 
 ifeq ($(CHECK), asan)
@@ -80,7 +81,7 @@ DEPFLAGS = -f $(DEPFILE) -s $(DEPTOKEN)
 
 depend:
 	@ echo $(DEPTOKEN) > $(DEPFILE)
-	makedepend $(DEPFLAGS) -- $(COMPILER) $(CFLAGS) -- $(SOURCES) 2>/dev/null
+	makedepend $(DEPFLAGS) -- $(COMPILER) $(CFLAGS) -- $(SOURCES) $(SOURCES_PL) 2>/dev/null
 	@ rm $(DEPFILE).bak
 
 sinclude $(DEPFILE)
