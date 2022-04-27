@@ -1,0 +1,28 @@
+body {
+	background: black;
+	color: white;
+	font-family: sans-serif;
+}
+
+header {
+	text-align: center;
+	font-size: 5em;
+	font-family: "FreeMono", sans-serif;
+	font-weight: bold;
+	margin-top: 0.5em;
+	z-index: 2;
+}
+
+header:before {
+	position: fixed;
+	content: "ᚨ";
+	font-family: "FreeMono"; 
+	top: calc(50vh - 0.5em);
+	left: 20px;
+	text-align: center;
+	right: 20px;
+	font-size: 3em;
+	z-index: 1;
+	color: transparent;
+	text-shadow: #0a0 0px 0px 6.66px;
+}

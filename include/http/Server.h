@@ -10,6 +10,7 @@
 #include "net/Server.h"
 #include "nlohmann/json.hpp"
 #include "plugins/PluginHost.h"
+#include "util/StringVector.h"
 #include "util/WeakCompare.h"
 
 namespace Algiz::HTTP {
@@ -21,10 +22,10 @@ namespace Algiz::HTTP {
 				Server &server;
 				Client &client;
 				Request request;
-				const std::vector<std::string> parts;
+				const StringVector parts;
 
 				explicit HandlerArgs(Server &server_, Client &client_, Request &&request_,
-				                     std::vector<std::string> &&parts_):
+				                     StringVector &&parts_):
 					server(server_), client(client_), request(std::move(request_)), parts(std::move(parts_)) {}
 			};
 
@@ -54,5 +55,6 @@ namespace Algiz::HTTP {
 			void handleGet(HTTP::Client &, const Request &);
 			void send400(HTTP::Client &);
 			void send403(HTTP::Client &);
+			void send500(HTTP::Client &);
 	};
 }

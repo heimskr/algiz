@@ -43,9 +43,15 @@ namespace Algiz::HTTP {
 			server->removeClient(client.id);
 		} else {
 			HandlerArgs args {*this, client, Request(request), getParts(request.path)};
-			auto [should_pass, result] = beforeMulti(args, handlers);
-			if (result == Plugins::HandlerResult::Pass) {
-				server->send(client.id, Response(501, "Unhandled request"));
+			try {
+				auto [should_pass, result] = beforeMulti(args, handlers);
+				if (result == Plugins::HandlerResult::Pass) {
+					server->send(client.id, Response(501, "Unhandled request"));
+					server->removeClient(client.id);
+				}
+			} catch (const std::exception &err) {
+				ERROR(err.what());
+				send500(client);
 				server->removeClient(client.id);
 			}
 		}
@@ -57,6 +63,10 @@ namespace Algiz::HTTP {
 
 	void Server::send403(HTTP::Client &client) {
 		server->send(client.id, Response(403, "Forbidden").setMIME("text/html"));
+	}
+
+	void Server::send500(HTTP::Client &client) {
+		server->send(client.id, Response(500, "Internal Server Error").setMIME("text/html"));
 	}
 
 	std::vector<std::string> Server::getParts(const std::string_view &path) const {

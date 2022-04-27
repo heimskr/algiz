@@ -2,8 +2,12 @@
 <html>
 	<head>
 		<title>Ansuz</title>
+		<style>
+			{{css}}
+		</style>
 	</head>
 	<body>
-		Hello there. {{foo}}
+		<header>ᚨᚾᛊᚢᛉ</header>
+		Hello there.
 	</body>
 </html>

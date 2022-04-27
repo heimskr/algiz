@@ -3,6 +3,7 @@ plugin/ansuz.$(SHARED_EXT): $(patsubst %.cpp,%.o,$(addprefix src/plugins/ansuz/,
 
 ansuz_res: include/plugins/ansuz/resources.h
 
-include/plugins/ansuz/resources.h: res/ansuz/index.t
+include/plugins/ansuz/resources.h: res/ansuz/index.t res/ansuz/style.css
 	echo "#include <cstdlib>" > $@
-	bin2c ansuz_index_t < res/ansuz/index.t | tail -n +2 >> $@
+	bin2c ansuz_index < res/ansuz/index.t | tail -n +2 >> $@
+	bin2c ansuz_css < res/ansuz/style.css | tail -n +2 >> $@
