@@ -60,8 +60,9 @@ namespace Algiz {
 		// Hideous temporary hack.
 #ifdef __APPLE__
 		return std::chrono::file_clock::to_time_t(std::filesystem::last_write_time(path));
-#endif
+#else
 		return std::chrono::system_clock::to_time_t(std::chrono::file_clock::to_sys(
 			std::filesystem::last_write_time(path)));
+#endif
 	}
 }
