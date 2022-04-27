@@ -25,7 +25,7 @@ namespace Algiz {
 			int controlRead = -1, controlWrite = -1;
 			bool connected = false;
 
-			enum class ControlMessage: char {Close='C'};
+			enum class ControlMessage: char {Close = 'C'};
 
 			/** Maps client IDs to descriptors. */
 			std::map<int, int> descriptors;
