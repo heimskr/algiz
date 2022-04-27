@@ -27,6 +27,7 @@ namespace Algiz::Plugins {
 		private:
 			CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 
+			CancelableResult serve(HTTP::Server &, HTTP::Client &, std::string_view);
 			CancelableResult serveIndex(HTTP::Server &, HTTP::Client &client);
 	};
 }

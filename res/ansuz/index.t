@@ -8,6 +8,10 @@
 	</head>
 	<body>
 		<header>ᚨᚾᛊᚢᛉ</header>
-		Hello there.
+		<ul>
+			{% for plugin in plugins %}
+				<li>{{plugin}}</li>
+			{% endfor %}
+		</ul>
 	</body>
 </html>

@@ -13,7 +13,7 @@
 #define EXTERNAL_RESOURCES
 
 #ifdef EXTERNAL_RESOURCES
-#define RESOURCE(a, b) readFile("./.res/ansuz/" b)
+#define RESOURCE(a, b) readFile("res/ansuz/" b)
 #else
 #define RESOURCE(a, b) std::string_view(ansuz_##a, ansuz_##a##_len)
 #endif
@@ -38,6 +38,9 @@ namespace Algiz::Plugins {
 				if (parts.size() == 1)
 					return serveIndex(http, client);
 
+				if (parts.size() == 2 && parts[1] == "bootstrap.min.css")
+					return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"));
+
 				http.server->send(client.id, HTTP::Response(404, "Invalid path").setMIME("text/plain"));
 				http.server->removeClient(client.id);
 				return CancelableResult::Approve;
@@ -47,6 +50,12 @@ namespace Algiz::Plugins {
 		}
 
 		return CancelableResult::Pass;
+	}
+
+	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content) {
+		http.server->send(client.id, HTTP::Response(200, content).setMIME("text/html"));
+		http.server->removeClient(client.id);
+		return CancelableResult::Approve;
 	}
 
 	CancelableResult Ansuz::serveIndex(HTTP::Server &http, HTTP::Client &client) {
