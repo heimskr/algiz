@@ -25,6 +25,8 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs>>(bind(*this, &Ansuz::handle));
 
 		private:
-			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+			CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+
+			CancelableResult serveIndex(HTTP::Server &, HTTP::Client &client);
 	};
 }
