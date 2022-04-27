@@ -85,7 +85,9 @@ namespace Algiz::HTTP {
 	Response::operator std::string() const {
 		if (std::holds_alternative<std::string>(content))
 			return noContent() + std::get<std::string>(content);
-		return noContent().append(std::get<std::string_view>(content));
+		std::string no_content = noContent();
+		no_content.append(std::get<std::string_view>(content));
+		return no_content;
 	}
 
 	std::string Response::noContent() const {
