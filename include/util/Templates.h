@@ -5,5 +5,5 @@
 #include "nlohmann/json.hpp"
 
 namespace Algiz {
-	std::string renderTemplate(const std::string &, nlohmann::json = {});
+	std::string renderTemplate(std::string_view, nlohmann::json = {});
 }

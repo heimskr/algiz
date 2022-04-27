@@ -14,6 +14,14 @@ namespace Algiz::HTTP {
 		setClose(true);
 	}
 
+	Response::Response(int code_, std::string_view content_): code(code_), content(content_) {
+		setClose(true);
+	}
+
+	Response::Response(int code_, const char *content_): code(code_), content(std::string(content_)) {
+		setClose(true);
+	}
+
 	Response & Response::setMIME(const std::string &mime_) {
 		mime = mime_;
 		return *this;
@@ -60,6 +68,12 @@ namespace Algiz::HTTP {
 		return *this;
 	}
 
+	std::string_view Response::contentView() const {
+		if (std::holds_alternative<std::string>(content))
+			return std::string_view(std::get<std::string>(content));
+		return std::get<std::string_view>(content);
+	}
+
 	std::string & Response::operator[](const std::string &header_name) {
 		return headers[header_name];
 	}
@@ -69,7 +83,9 @@ namespace Algiz::HTTP {
 	}
 
 	Response::operator std::string() const {
-		return noContent() + content;
+		if (std::holds_alternative<std::string>(content))
+			return noContent() + std::get<std::string>(content);
+		return noContent().append(std::get<std::string_view>(content));
 	}
 
 	std::string Response::noContent() const {
@@ -77,12 +93,14 @@ namespace Algiz::HTTP {
 			return generate500();
 
 		std::string out;
-		out.reserve(content.size() + 1024);
+		const size_t content_size = std::holds_alternative<std::string>(content)?
+			std::get<std::string>(content).size() : std::get<std::string_view>(content).size();
+		out.reserve(content_size + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
 		if (!noContentType && headers.count("Content-Type") == 0)
 		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset = " + charset) + "\r\n";
 		if (headers.count("Content-Length") == 0)
-			out += "Content-Length: " + std::to_string(content.size()) + "\r\n";
+			out += "Content-Length: " + std::to_string(content_size) + "\r\n";
 		for (const auto &[header, value]: headers)
 			out += header + ": " + value + "\r\n";
 		out += "\r\n";

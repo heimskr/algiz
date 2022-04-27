@@ -32,14 +32,14 @@ namespace Algiz::Plugins {
 				const std::string &filename = default404.at("file");
 				response.content = readFile(filename);
 				if (std::filesystem::path(filename).extension() == ".t")
-					response.content = renderTemplate(response.content, {
+					response.content = renderTemplate(response.contentView(), {
 						{"path", request.path}
 					});
 			}
 		}
 
-		if (response.content.empty())
-			response.content = "404 Not Found";
+		if (response.contentView().empty())
+			response.content = std::string("404 Not Found");
 
 		http.server->send(client.id, response);
 		http.server->removeClient(client.id);

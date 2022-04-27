@@ -5,7 +5,7 @@
 #include "util/Util.h"
 
 namespace Algiz {
-	std::string renderTemplate(const std::string &input, nlohmann::json json) {
+	std::string renderTemplate(std::string_view input, nlohmann::json json) {
 		size_t virtual_memory, resident_memory;
 		if (!getMemoryUsage(virtual_memory, resident_memory)) {
 			json["virtual"] = "???";

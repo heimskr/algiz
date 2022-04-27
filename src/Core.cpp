@@ -15,8 +15,15 @@ namespace Algiz {
 		INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port") << ".");
 
 		if (suboptions.contains("plugins")) {
-			for (const auto &[key, value]: suboptions.at("plugins").items())
-				http->loadPlugin("plugin/" + value.get<std::string>() + SHARED_SUFFIX);
+			for (const auto &[key, value]: suboptions.at("plugins").items()) {
+				if (value.is_string()) {
+					http->loadPlugin("plugin/" + value.get<std::string>() + SHARED_SUFFIX);
+				} else {
+					auto [path, plugin, object] =
+						http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
+					
+				}
+			}
 			http->preinitPlugins();
 			http->postinitPlugins();
 		}
