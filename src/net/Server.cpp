@@ -23,12 +23,16 @@ namespace Algiz {
 		delete[] buffer;
 	}
 
-	int Server::makeSocket() {
-		int sock;
-
-		sock = ::socket(af, SOCK_STREAM, 0);
+	int Server::makeSocket(bool reusable) {
+		int sock = ::socket(af, SOCK_STREAM, 0);
 		if (sock < 0)
-			throw NetError(errno);
+			throw NetError("::socket", errno);
+
+		if (reusable) {
+			int one = 1;
+			if (setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &one, sizeof(one)) != 0)
+				throw NetError("setsockopt", errno);
+		}
 
 		sockaddr *name = nullptr;
 		size_t name_size = 0;
@@ -53,7 +57,7 @@ namespace Algiz {
 			throw std::invalid_argument("Couldn't parse IP address \"" + ip + "\"");
 
 		if (::bind(sock, name, name_size) < 0)
-			throw NetError(errno);
+			throw NetError("::bind", errno);
 
 		return sock;
 	}

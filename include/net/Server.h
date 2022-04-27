@@ -41,7 +41,7 @@ namespace Algiz {
 
 			std::unordered_map<int, std::unique_ptr<GenericClient>> allClients;
 
-			int makeSocket();
+			int makeSocket(bool reusable = true);
 			virtual void close(int descriptor);
 
 		public:
