@@ -21,7 +21,7 @@ namespace Algiz {
 				} else {
 					auto [path, plugin, object] =
 						http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
-					
+					plugin->setConfig(value.at(1));
 				}
 			}
 			http->preinitPlugins();

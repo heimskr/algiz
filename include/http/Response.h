@@ -31,9 +31,10 @@ namespace Algiz::HTTP {
 			Response & setAcceptRanges(bool = true);
 			Response & setLastModified(time_t);
 
+			std::string_view contentView() const;
+
 			std::string & operator[](const std::string &);
 			const std::string & operator[](const std::string &) const;
-			std::string_view contentView() const;
 
 			operator std::string() const;
 			[[nodiscard]] std::string noContent() const;

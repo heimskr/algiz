@@ -3,6 +3,8 @@
 #include <functional>
 #include <string>
 
+#include "nlohmann/json.hpp"
+
 namespace Algiz::Plugins {
 	constexpr const char *PLUGIN_CREATOR_FUNCTION_NAME = "make_plugin";
 
@@ -37,6 +39,8 @@ namespace Algiz::Plugins {
 		protected:
 			Plugin() = default;
 
+			nlohmann::json config;
+
 		public:
 			PluginHost *parent = nullptr;
 
@@ -63,5 +67,11 @@ namespace Algiz::Plugins {
 
 			/** Tries to unload the plugin. Returns true if the plugin was successfully unloaded. */
 			bool unload() const;
+
+			nlohmann::json & getConfig();
+
+			const nlohmann::json & getConfig() const;
+
+			Plugin & setConfig(const nlohmann::json &);
 	};
 }

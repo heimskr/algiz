@@ -13,4 +13,17 @@ namespace Algiz::Plugins {
 
 		return false;
 	}
+
+	nlohmann::json & Plugin::getConfig() {
+		return config;
+	}
+
+	const nlohmann::json & Plugin::getConfig() const {
+		return config;
+	}
+
+	Plugin & Plugin::setConfig(const nlohmann::json &config_) {
+		config = config_;
+		return *this;
+	}
 }
