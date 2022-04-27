@@ -33,6 +33,8 @@ endif
 
 all: $(OUTPUT) plugins
 
+sinclude $(shell find src -name 'targets.mk')
+
 define PLUGINRULE
 plugin/$P.$(SHARED_EXT): $(patsubst %.cpp,%.o,$(addprefix src/plugins/$P/,$(filter %.cpp,$(shell ls "src/plugins/$P"))))
 	$(COMPILER) $(SHARED_FLAG) $$+ -o $$@ $(LDFLAGS) -Wl,-undefined,dynamic_lookup
