@@ -40,9 +40,9 @@ namespace Algiz::Plugins {
 
 				if (parts.size() == 2) {
 					if (parts[1] == "bootstrap.min.css")
-						return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"), "text/css");
+						return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"), {}, "text/css");
 					if (parts[1] == "bootstrap-utilities.min.css")
-						return serve(http, client, RESOURCE(bootstrap_util_css, "bootstrap-utilities.min.css"),
+						return serve(http, client, RESOURCE(bootstrap_util_css, "bootstrap-utilities.min.css"), {},
 							"text/css");
 				} else if (parts.size() == 3) {
 					if (parts[1] == "unload") {
