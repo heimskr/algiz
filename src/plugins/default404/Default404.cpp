@@ -26,16 +26,13 @@ namespace Algiz::Plugins {
 		HTTP::Response response(404, "");
 		response.setMIME("text/html");
 
-		if (http.options.contains("default404")) {
-			const auto &default404 = http.options.at("default404");
-			if (default404.contains("file")) {
-				const std::string &filename = default404.at("file");
-				response.content = readFile(filename);
-				if (std::filesystem::path(filename).extension() == ".t")
-					response.content = renderTemplate(response.contentView(), {
-						{"path", request.path}
-					});
-			}
+		if (config.contains("file")) {
+			const std::string &filename = config.at("file");
+			response.content = readFile(filename);
+			if (std::filesystem::path(filename).extension() == ".t")
+				response.content = renderTemplate(response.contentView(), {
+					{"path", request.path}
+				});
 		}
 
 		if (response.contentView().empty())

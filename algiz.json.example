@@ -3,9 +3,11 @@
 		"ip": "::1",
 		"port": 8080,
 		"root": "./www",
-		"plugins": ["calculator", "httpfileserv", "default404"],
-		"httpfileserv": {"default": ["index.t", "index.html"]},
-		"default404": {"file": "www/404.t"}
+		"plugins": ["logger", "calculator", ["httpfileserv", {
+			"default": ["index.t", "index.html"]
+		}], ["default404", {
+			"file": "www/404.t"
+		}]]
 	},
 	"https": {
 		"ip": "::1",
@@ -13,8 +15,10 @@
 		"root": "./www",
 		"cert": "private.crt",
 		"key": "private.key",
-		"plugins": ["calculator", "httpfileserv", "default404"],
-		"httpfileserv": {"default": ["index.t", "index.html"]},
-		"default404": {"file": "www/404.t"}
+		"plugins": ["logger", "ansuz", "calculator", ["httpfileserv", {
+			"default": ["index.t", "index.html"]
+		}], ["default404", {
+			"file": "www/404.t"
+		}]]
 	}
 }
