@@ -3,7 +3,7 @@ COMPILER        ?= clang++
 OPTIMIZATION    ?= -O0 -g
 STANDARD        ?= c++20
 WARNINGS        ?= -Wall -Wextra
-INCLUDES        := -Iinclude -Ijson/include -Iinja/single_include/inja $(shell pkg-config --cflags openssl)
+INCLUDES        := -Iinclude -Iinclude/lib $(shell pkg-config --cflags openssl)
 CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl) -ldl
