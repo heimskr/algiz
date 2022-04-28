@@ -56,10 +56,14 @@ namespace Algiz::HTTP {
 					}
 
 					StringVector protocols;
-					if (request.headers.contains("Sec-WebSocket-Protocols"))
-						protocols = split(request.headers.at("Sec-WebSocket-Protocols"), " ");
+					if (request.headers.contains("Sec-WebSocket-Protocol"))
+						protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
 
 					WebSocketArgs args {*this, client, Request(request), getParts(request.path), std::move(protocols)};
+					client.isWebSocket = true;
+					client.webSocketPath = args.parts;
+					client.lineMode = false;
+
 					try {
 						auto [should_pass, result] = beforeMulti(args, webSocketConnectionHandlers);
 						if (result == Plugins::HandlerResult::Pass) {

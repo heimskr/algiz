@@ -3,6 +3,7 @@
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
+#include "util/Util.h"
 
 namespace Algiz::HTTP {
 	void Client::send(const std::string &message) {
@@ -10,11 +11,18 @@ namespace Algiz::HTTP {
 	}
 
 	void Client::handleInput(const std::string &message) {
-		const auto result = request.handleLine(message);
-		if (result == Request::HandleResult::DisableLineMode)
-			lineMode = false;
-		else if (result == Request::HandleResult::Done)
-			handleRequest();
+		if (isWebSocket) {
+			std::cerr << std::string(16, '=') << ' ' << message.size() << ' ' << std::string(16, '=') << '\n';
+			for (char ch: message)
+				std::cerr << hex(ch) << ' ' << escapeANSI(std::string(1, ch)) << '\n';
+			std::cerr << std::string(34 + std::to_string(message.size()).size(), '=') << '\n';
+		} else {
+			const auto result = request.handleLine(message);
+			if (result == Request::HandleResult::DisableLineMode)
+				lineMode = false;
+			else if (result == Request::HandleResult::Done)
+				handleRequest();
+		}
 	}
 
 	void Client::handleRequest() {

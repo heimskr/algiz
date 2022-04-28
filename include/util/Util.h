@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <chrono>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,27 @@ namespace Algiz {
 		return std::function<R(A...)>([&obj, func](A && ...args) -> R {
 			return std::invoke(func, obj, std::forward<A>(args)...);
 		});
+	}
+
+	template <typename T>
+	std::string hex(T n) {
+		std::stringstream ss;
+		ss << std::hex << n;
+		return ss.str();
+	}
+
+	template <template <typename...> typename C, typename T, typename D>
+	std::string join(const C<T> &container, D &&delimiter) {
+		std::stringstream ss;
+		bool first = true;
+		for (const T &item: container) {
+			if (first)
+				first = false;
+			else
+				ss << delimiter;
+			ss << item;
+		}
+		return ss.str();
 	}
 
 	/** Replaces '\x1b' bytes with "\x1b[2m\\x1b\x1b[22m". Also replaces some special whitespace characters with their

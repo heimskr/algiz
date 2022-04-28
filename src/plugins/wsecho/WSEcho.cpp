@@ -20,23 +20,25 @@ namespace Algiz::Plugins {
 		server.cleanWebSocketHandlers();
 	}
 
-	Plugins::CancelableResult WSEcho::handle(HTTP::Server::WebSocketArgs &args, bool not_disabled) {
+	Plugins::CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
 		if (args.protocols.contains("echo")) {
 			args.acceptedProtocol = "echo";
-			auto handler = std::make_shared<HTTP::Server::MessageHandler>([](std::string_view, bool) {
-
-				return CancelableResult::Approve;
-			});
+			auto handler = std::make_shared<HTTP::Server::MessageHandler>(bind(*this, &WSEcho::handleMessage));
 			webSocketMessageHandlers.push_back(handler);
 			args.server.registerWebSocketMessageHandler(args.client, std::weak_ptr(handler));
-
 			return CancelableResult::Approve;
 		}
 
 		return CancelableResult::Pass;
+	}
+
+	CancelableResult WSEcho::handleMessage(HTTP::Client &client, std::string_view message, bool not_disabled) {
+		if (!not_disabled)
+			return CancelableResult::Pass;
+		return CancelableResult::Approve;
 	}
 }
 

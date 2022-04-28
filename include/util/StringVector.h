@@ -12,6 +12,8 @@ namespace Algiz {
 		StringVector(std::vector<std::string> &&strings): std::vector<std::string>(strings) {}
 		StringVector(std::vector<std::string_view> &&strings);
 
+		std::string join(const char *delimiter) const;
+
 		bool operator==(std::initializer_list<const char *>) const;
 
 		template <typename T>

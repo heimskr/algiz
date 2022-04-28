@@ -44,7 +44,7 @@ namespace Algiz::HTTP {
 					protocols(std::move(protocols_)) {}
 			};
 
-			using MessageHandler = PreFn<std::string_view>;
+			using MessageHandler = PreFn<Client &, std::string_view>;
 			using MessageHandlerPtr = std::shared_ptr<MessageHandler>;
 			using WeakMessageHandlerPtr = std::weak_ptr<MessageHandler>;
 
