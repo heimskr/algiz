@@ -80,7 +80,7 @@ namespace Algiz {
 			auto &client = *allClients.at(client_id);
 
 			if (!client.lineMode) {
-				handleMessage(clients.at(descriptor), str);
+				handleMessage(clients.at(descriptor), {buffer, size_t(byte_count)});
 				buffers[descriptor].clear();
 			} else if (client.maxLineSize < str.size() + byte_count) {
 				client.onMaxLineSizeExceeded();

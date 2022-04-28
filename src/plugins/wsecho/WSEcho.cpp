@@ -38,6 +38,7 @@ namespace Algiz::Plugins {
 	CancelableResult WSEcho::handleMessage(HTTP::Client &client, std::string_view message, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
+		SPAM("WSEcho[" << message << "]");
 		return CancelableResult::Approve;
 	}
 }

@@ -51,7 +51,10 @@ namespace Algiz {
 	std::string hex(T n) {
 		std::stringstream ss;
 		ss << std::hex << n;
-		return ss.str();
+		const std::string out = ss.str();
+		if (out.size() == 1)
+			return "0" + out;
+		return out;
 	}
 
 	template <template <typename...> typename C, typename T, typename D>

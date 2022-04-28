@@ -39,6 +39,7 @@ namespace Algiz::HTTP {
 			void send(const std::string &);
 			void handleInput(const std::string &message) override;
 			void onMaxLineSizeExceeded() override;
+			void removeSelf();
 
 			static std::unordered_set<std::string> supportedMethods;
 	};
