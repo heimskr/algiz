@@ -47,7 +47,8 @@ namespace Algiz::HTTP {
 			if (request.headers.contains("Connection") && request.headers.at("Connection") == "Upgrade") {
 				if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
 					bool failed = !request.headers.contains("Sec-WebSocket-Key")
-					           || !request.headers.contains("Sec-WebSocket-Version");
+					           || !request.headers.contains("Sec-WebSocket-Version")
+					           ||  request.headers.at("Sec-WebSocket-Key").size() != 24;
 
 					if (failed) {
 						send400(client);
