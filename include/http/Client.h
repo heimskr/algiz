@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <cstdint>
 #include <functional>
 #include <map>
 #include <optional>
@@ -17,6 +18,7 @@ namespace Algiz::HTTP {
 	class Client: public GenericClient {
 		private:
 			HTTP::Server &server;
+			uint32_t webSocketMask = 0;
 
 			void handleRequest();
 
