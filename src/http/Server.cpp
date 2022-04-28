@@ -56,7 +56,6 @@ namespace Algiz::HTTP {
 					}
 
 					StringVector protocols;
-
 					if (request.headers.contains("Sec-WebSocket-Protocols"))
 						protocols = split(request.headers.at("Sec-WebSocket-Protocols"), " ");
 

@@ -82,6 +82,9 @@ namespace Algiz {
 			if (!client.lineMode) {
 				handleMessage(clients.at(descriptor), str);
 				buffers[descriptor].clear();
+			} else if (client.maxLineSize < str.size() + byte_count) {
+				client.onMaxLineSizeExceeded();
+				end(descriptor);
 			} else {
 				str.insert(str.size(), buffer, byte_count);
 				ssize_t index;

@@ -1,6 +1,7 @@
 #include "Log.h"
 #include "error/ParseError.h"
 #include "http/Client.h"
+#include "http/Response.h"
 #include "http/Server.h"
 
 namespace Algiz::HTTP {
@@ -24,6 +25,10 @@ namespace Algiz::HTTP {
 			default:
 				throw ParseError("Invalid method: " + std::to_string(int(request.method)));
 		}
+	}
+
+	void Client::onMaxLineSizeExceeded() {
+		send(Response(413, "Payload too large"));
 	}
 
 	std::unordered_set<std::string> Client::supportedMethods {"GET"};

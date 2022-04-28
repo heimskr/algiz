@@ -27,7 +27,7 @@ namespace Algiz::HTTP {
 			StringVector webSocketPath;
 
 			Client() = delete;
-			Client(HTTP::Server &server_, int id_): GenericClient(id_, true), server(server_) {}
+			Client(HTTP::Server &server_, int id_): GenericClient(id_, true, 8192), server(server_) {}
 			Client(const Client &) = delete;
 			Client(Client &&) = delete;
 
@@ -38,6 +38,7 @@ namespace Algiz::HTTP {
 
 			void send(const std::string &);
 			void handleInput(const std::string &message) override;
+			void onMaxLineSizeExceeded() override;
 
 			static std::unordered_set<std::string> supportedMethods;
 	};
