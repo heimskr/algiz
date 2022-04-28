@@ -58,7 +58,16 @@ namespace Algiz::HTTP {
 					throw ParseError("Invalid HTTP header: no separator");
 				std::string_view header_name = line.substr(0, separator);
 				std::string_view header_content = line.substr(separator + 2);
-				headers[std::string(header_name)] = header_content;
+				std::string header_name_string(header_name);
+				if (headers.contains(header_name_string)) {
+					if (headers[header_name_string].empty()) {
+						headers[header_name_string] = header_content;
+					} else {
+						headers[header_name_string] += " ";
+						headers[header_name_string] += header_content;
+					}
+				} else
+					headers.emplace(header_name_string, header_content);
 				if (header_name == "Content-Length")
 					try {
 						lengthRemaining = contentLength = parseUlong(header_content.begin());
