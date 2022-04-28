@@ -14,9 +14,9 @@ namespace Algiz::Plugins {
 		public:
 			using PluginTuple = std::tuple<std::string, std::shared_ptr<Plugin>, void *>; // path, plugin
 
-			template <typename T>
+			template <typename... Args>
 			// The bool argument indicates whether the result hasn't been disabled.
-			using PreFn = std::function<CancelableResult(T &, bool)>;
+			using PreFn = std::function<CancelableResult(Args..., bool)>;
 
 			template <typename T>
 			using PostFn = std::function<void(const T &)>;

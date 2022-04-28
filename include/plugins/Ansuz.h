@@ -21,8 +21,8 @@ namespace Algiz::Plugins {
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
 
-			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs>> handler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs>>(bind(*this, &Ansuz::handle));
+			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> handler =
+				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Ansuz::handle));
 
 		private:
 			CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);

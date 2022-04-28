@@ -59,8 +59,8 @@ namespace Algiz::HTTP {
 			std::shared_ptr<Algiz::Server> server;
 			nlohmann::json options;
 			std::filesystem::path webRoot;
-			std::list<PrePtr<HandlerArgs>> handlers;
-			WeakSet<PluginHost::PreFn<WebSocketArgs>> webSocketConnectionHandlers;
+			std::list<PrePtr<HandlerArgs &>> handlers;
+			WeakSet<PluginHost::PreFn<WebSocketArgs &>> webSocketConnectionHandlers;
 
 			Server() = delete;
 			Server(const Server &) = delete;

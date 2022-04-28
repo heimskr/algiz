@@ -13,7 +13,7 @@
 
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).handlers.push_back(handler);
+		dynamic_cast<HTTP::Server &>(*(parent = host)).handlers.push_back(std::weak_ptr(handler));
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
