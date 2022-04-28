@@ -3,8 +3,10 @@
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
+#include "util/Base64.h"
 #include "util/FS.h"
 #include "util/MIME.h"
+#include "util/SHA1.h"
 #include "util/Util.h"
 #include "Log.h"
 
@@ -42,6 +44,48 @@ namespace Algiz::HTTP {
 			server->send(client.id, Response(403, "Invalid path."));
 			server->removeClient(client.id);
 		} else {
+			if (request.headers.contains("Connection") && request.headers.at("Connection") == "Upgrade") {
+				if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
+					bool failed = !request.headers.contains("Sec-WebSocket-Key")
+					           || !request.headers.contains("Sec-WebSocket-Version");
+
+					if (failed) {
+						send400(client);
+						return;
+					}
+
+					StringVector protocols;
+
+					if (request.headers.contains("Sec-WebSocket-Protocols"))
+						protocols = split(request.headers.at("Sec-WebSocket-Protocols"), " ");
+
+					WebSocketArgs args {*this, client, Request(request), getParts(request.path), std::move(protocols)};
+					try {
+						auto [should_pass, result] = beforeMulti(args, webSocketConnectionHandlers);
+						if (result == Plugins::HandlerResult::Pass) {
+							server->send(client.id, Response(501, "Unhandled request"));
+							server->removeClient(client.id);
+						} else {
+							Response response(101, "");
+							response["Upgrade"] = "websocket";
+							response["Connection"] = "Upgrade";
+							response["Sec-WebSocket-Accept"] = base64Encode(sha1(request.headers.at("Sec-WebSocket-Key")
+								+ "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
+							if (!args.acceptedProtocol.empty())
+								response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
+							server->send(client.id, response);
+						}
+					} catch (const std::exception &err) {
+						ERROR(err.what());
+						send500(client);
+						server->removeClient(client.id);
+					}
+
+					return;
+				}
+			}
+
+
 			HandlerArgs args {*this, client, Request(request), getParts(request.path)};
 			try {
 				auto [should_pass, result] = beforeMulti(args, handlers);
@@ -74,5 +118,31 @@ namespace Algiz::HTTP {
 		for (const auto &view: split(path.substr(1), "/", true))
 			out.push_back(unescape(view));
 		return out;
+	}
+
+	void Server::cleanWebSocketHandlers() {
+		std::vector<WeakMessageHandlerPtr> handlers_to_remove;
+		std::vector<int> clients_to_remove;
+
+		clients_to_remove.reserve(webSocketMessageHandlers.size());
+
+		for (auto &[client_id, handlers]: webSocketMessageHandlers) {
+			handlers_to_remove.reserve(handlers.size());
+			for (const auto &handler: handlers)
+				if (handler.expired())
+					handlers_to_remove.push_back(handler);
+			for (const auto &handler: handlers_to_remove)
+				handlers.erase(handler);
+			handlers_to_remove.clear();
+			if (handlers.empty())
+				clients_to_remove.push_back(client_id);
+		}
+
+		for (int client_id: clients_to_remove)
+			webSocketMessageHandlers.erase(client_id);
+	}
+
+	void Server::registerWebSocketMessageHandler(const HTTP::Client &client, WeakMessageHandlerPtr handler) {
+		webSocketMessageHandlers[client.id].insert(handler);
 	}
 }

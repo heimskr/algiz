@@ -9,6 +9,7 @@
 
 #include "http/Request.h"
 #include "net/GenericClient.h"
+#include "util/StringVector.h"
 
 namespace Algiz::HTTP {
 	class Server;
@@ -20,7 +21,10 @@ namespace Algiz::HTTP {
 			void handleRequest();
 
 		public:
+			Request request;
 			std::map<std::string, std::any> session;
+			bool isWebSocket = false;
+			StringVector webSocketPath;
 
 			Client() = delete;
 			Client(HTTP::Server &server_, int id_): GenericClient(id_, true), server(server_) {}
@@ -31,8 +35,6 @@ namespace Algiz::HTTP {
 
 			Client & operator=(const Client &) = delete;
 			Client & operator=(Client &&) = delete;
-
-			Request request;
 
 			void send(const std::string &);
 			void handleInput(const std::string &message) override;
