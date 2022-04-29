@@ -10,17 +10,17 @@
 namespace Algiz::Plugins {
 	void WSEcho::postinit(PluginHost *host) {
 		auto &server = dynamic_cast<HTTP::Server &>(*(parent = host));
-		server.webSocketConnectionHandlers.insert(std::weak_ptr(connectionHandler));
+		server.webSocketConnectionHandlers.emplace_back(connectionHandler);
 	}
 
 	void WSEcho::cleanup(PluginHost *host) {
 		auto &server = dynamic_cast<HTTP::Server &>(*host);
 		webSocketMessageHandlers.clear();
-		server.webSocketConnectionHandlers.erase(std::weak_ptr(connectionHandler));
+		PluginHost::erase(server.webSocketConnectionHandlers, std::weak_ptr(connectionHandler));
 		server.cleanWebSocketHandlers();
 	}
 
-	Plugins::CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketArgs &args, bool not_disabled) {
+	Plugins::CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketConnectionArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
@@ -35,10 +35,11 @@ namespace Algiz::Plugins {
 		return CancelableResult::Pass;
 	}
 
-	CancelableResult WSEcho::handleMessage(HTTP::Client &client, std::string_view message, bool not_disabled) {
+	CancelableResult WSEcho::handleMessage(HTTP::Server::WebSocketMessageArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
-		SPAM("WSEcho[" << message << "]");
+		SPAM("WSEcho[" << args.message << "]");
+		args.client.sendWebSocket(args.message, false);
 		return CancelableResult::Approve;
 	}
 }

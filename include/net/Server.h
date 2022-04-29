@@ -60,7 +60,7 @@ namespace Algiz {
 			void readFromClient(int descriptor);
 			virtual void handleMessage(int client, const std::string &message);
 			virtual void end(int descriptor);
-			virtual ssize_t send(int client, const std::string_view &);
+			virtual ssize_t send(int client, std::string_view);
 			virtual ssize_t send(int client, const std::string &);
 			virtual ssize_t read(int descriptor, void *, size_t);
 			void removeClient(int);

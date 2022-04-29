@@ -8,7 +8,7 @@ CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl) -ldl
 
-CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja --not-match-f='^algiz.json$$'
+CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res --not-match-f='^.\/algiz.json$$' --fullpath --not-match-d='^.\/include\/lib'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
 OBJECTS         := $(SOURCES:.cpp=.o)
 

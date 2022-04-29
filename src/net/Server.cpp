@@ -125,7 +125,7 @@ namespace Algiz {
 		freePool.insert(client);
 	}
 
-	ssize_t Server::send(int client, const std::string_view &message) {
+	ssize_t Server::send(int client, std::string_view message) {
 		return ::write(descriptors.at(client), message.begin(), message.size());
 	}
 

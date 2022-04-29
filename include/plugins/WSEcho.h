@@ -22,13 +22,14 @@ namespace Algiz::Plugins {
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
 
-			std::shared_ptr<PluginHost::PreFn<HTTP::Server::WebSocketArgs &>> connectionHandler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::WebSocketArgs &>>(bind(*this, &WSEcho::handleConnect));
+			std::shared_ptr<PluginHost::PreFn<HTTP::Server::WebSocketConnectionArgs &>> connectionHandler =
+				std::make_shared<PluginHost::PreFn<HTTP::Server::WebSocketConnectionArgs &>>(bind(*this,
+					&WSEcho::handleConnect));
 
 			std::vector<HTTP::Server::MessageHandlerPtr> webSocketMessageHandlers;
 
 		private:
-			CancelableResult handleConnect(HTTP::Server::WebSocketArgs &, bool not_disabled);
-			CancelableResult handleMessage(HTTP::Client &, std::string_view, bool not_disabled);
+			CancelableResult handleConnect(HTTP::Server::WebSocketConnectionArgs &, bool not_disabled);
+			CancelableResult handleMessage(HTTP::Server::WebSocketMessageArgs &, bool not_disabled);
 	};
 }

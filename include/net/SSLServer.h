@@ -28,7 +28,7 @@ namespace Algiz {
 			SSLServer & operator=(const SSLServer &) = delete;
 			SSLServer & operator=(SSLServer &&) = delete;
 
-			ssize_t send(int client, const std::string_view &) override;
+			ssize_t send(int client, std::string_view) override;
 			ssize_t send(int client, const std::string &) override;
 			ssize_t read(int descriptor, void *, size_t) override;
 			void run() override;

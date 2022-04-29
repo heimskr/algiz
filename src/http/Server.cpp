@@ -14,7 +14,7 @@ namespace Algiz::HTTP {
 	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const nlohmann::json &options_):
 	server(server_), options(options_), webRoot(getWebRoot(options_.contains("root")? options_.at("root") : "")) {
 		server->addClient = [this](int new_client) {
-			auto http_client = std::make_unique<HTTP::Client>(*this, new_client);
+			auto http_client = std::make_unique<Client>(*this, new_client);
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
 	}
@@ -39,7 +39,7 @@ namespace Algiz::HTTP {
 		server->stop();
 	}
 
-	void Server::handleGet(HTTP::Client &client, const Request &request) {
+	void Server::handleGet(Client &client, const Request &request) {
 		if (!validatePath(request.path)) {
 			server->send(client.id, Response(403, "Invalid path."));
 			server->removeClient(client.id);
@@ -59,7 +59,9 @@ namespace Algiz::HTTP {
 					if (request.headers.contains("Sec-WebSocket-Protocol"))
 						protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
 
-					WebSocketArgs args {*this, client, Request(request), getParts(request.path), std::move(protocols)};
+					WebSocketConnectionArgs args {
+						*this, client, Request(request), getParts(request.path), std::move(protocols)
+					};
 					client.isWebSocket = true;
 					client.webSocketPath = args.parts;
 					client.lineMode = false;
@@ -89,9 +91,8 @@ namespace Algiz::HTTP {
 				}
 			}
 
-
-			HandlerArgs args {*this, client, Request(request), getParts(request.path)};
 			try {
+				HandlerArgs args {*this, client, Request(request), getParts(request.path)};
 				auto [should_pass, result] = beforeMulti(args, handlers);
 				if (result == Plugins::HandlerResult::Pass) {
 					server->send(client.id, Response(501, "Unhandled request"));
@@ -105,15 +106,35 @@ namespace Algiz::HTTP {
 		}
 	}
 
-	void Server::send400(HTTP::Client &client) {
+	void Server::handleWebSocketMessage(Client &client, std::string_view message) {
+		if (webSocketMessageHandlers.contains(client.id))
+			try {
+				WebSocketMessageArgs args {*this, client, message};
+				beforeMulti(args, webSocketMessageHandlers.at(client.id));
+			} catch (const std::exception &err) {
+				ERROR(err.what());
+				send500(client);
+				server->removeClient(client.id);
+			}
+	}
+
+	void Server::closeWebSocket(Client &client) {
+		if (webSocketCloseHandlers.contains(client.id))
+			for (auto &fnptr: webSocketCloseHandlers.at(client.id))
+				if (auto fn = fnptr.lock())
+					(*fn)(*this, client);
+		server->removeClient(client.id);
+	}
+
+	void Server::send400(Client &client) {
 		server->send(client.id, Response(400, "Invalid request").setMIME("text/html"));
 	}
 
-	void Server::send403(HTTP::Client &client) {
+	void Server::send403(Client &client) {
 		server->send(client.id, Response(403, "Forbidden").setMIME("text/html"));
 	}
 
-	void Server::send500(HTTP::Client &client) {
+	void Server::send500(Client &client) {
 		server->send(client.id, Response(500, "Internal Server Error").setMIME("text/html"));
 	}
 
@@ -136,7 +157,7 @@ namespace Algiz::HTTP {
 				if (handler.expired())
 					handlers_to_remove.push_back(handler);
 			for (const auto &handler: handlers_to_remove)
-				handlers.erase(handler);
+				PluginHost::erase(handlers, handler);
 			handlers_to_remove.clear();
 			if (handlers.empty())
 				clients_to_remove.push_back(client_id);
@@ -146,7 +167,7 @@ namespace Algiz::HTTP {
 			webSocketMessageHandlers.erase(client_id);
 	}
 
-	void Server::registerWebSocketMessageHandler(const HTTP::Client &client, WeakMessageHandlerPtr handler) {
-		webSocketMessageHandlers[client.id].insert(handler);
+	void Server::registerWebSocketMessageHandler(const Client &client, WeakMessageHandlerPtr handler) {
+		webSocketMessageHandlers[client.id].push_back(handler);
 	}
 }

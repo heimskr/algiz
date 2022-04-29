@@ -42,7 +42,6 @@ namespace Algiz {
 			SSL_CTX_free(sslContext);
 			sslContext = nullptr;
 		}
-
 	}
 
 	void SSLServer::close(int descriptor) {
@@ -53,7 +52,7 @@ namespace Algiz {
 		::close(descriptor);
 	}
 
-	ssize_t SSLServer::send(int client, const std::string_view &message) {
+	ssize_t SSLServer::send(int client, std::string_view message) {
 		SSL *ssl = ssls.at(descriptors.at(client));
 		size_t written = 0;
 		if (SSL_write_ex(ssl, message.begin(), message.size(), &written) <= 0)

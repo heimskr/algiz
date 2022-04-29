@@ -20,7 +20,7 @@ namespace Algiz {
 		GenericClient & operator=(const GenericClient &) = delete;
 		GenericClient & operator=(GenericClient &&) = delete;
 
-		virtual void handleInput(const std::string &message) = 0;
+		virtual void handleInput(std::string_view) = 0;
 		virtual void onMaxLineSizeExceeded() {}
 	};
 }
