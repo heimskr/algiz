@@ -28,7 +28,6 @@ namespace Algiz::HTTP {
 			const size_t message_size = message.size();
 
 			if (awaitingWebSocketHeader) {
-
 				CHECKSIZE(2);
 
 				const uint8_t byte1 = message[0];
@@ -76,11 +75,10 @@ namespace Algiz::HTTP {
 				}
 
 				if (opcode == 9) {
-					if (payload_length <= 125) {
+					if (payload_length <= 125)
 						sendWebSocket(packet, true, 10);
-					} else {
+					else // Pings cannot have a payload greater than 125 bytes in length.
 						closeWebSocket();
-					}
 				} else {
 					const uint64_t end = payload_length_here + mask_index + 4;
 					if (end < message.size()) {
@@ -93,7 +91,15 @@ namespace Algiz::HTTP {
 							closeWebSocket();
 						packet.clear();
 					} else {
-						awaitingWebSocketHeader = false;
+						if (end == message.size() && remainingBytesInPacket == 0) {
+							awaitingWebSocketHeader = true;
+							if (fin)
+								server.handleWebSocketMessage(*this, packet);
+							else
+								closeWebSocket();
+							packet.clear();
+						} else
+							awaitingWebSocketHeader = false;
 						leftoverMessage.clear();
 					}
 				}

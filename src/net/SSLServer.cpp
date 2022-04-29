@@ -55,8 +55,11 @@ namespace Algiz {
 	ssize_t SSLServer::send(int client, std::string_view message) {
 		SSL *ssl = ssls.at(descriptors.at(client));
 		size_t written = 0;
-		if (SSL_write_ex(ssl, message.begin(), message.size(), &written) <= 0)
+		if (SSL_write_ex(ssl, message.begin(), message.size(), &written) <= 0) {
+			ERROR("SSLServer::send failed:");
 			ERR_print_errors_fp(stderr);
+		}
+
 		return ssize_t(written);
 	}
 
@@ -67,8 +70,11 @@ namespace Algiz {
 	ssize_t SSLServer::read(int descriptor, void *buffer, size_t size) {
 		SSL *ssl = ssls.at(descriptor);
 		size_t read_bytes;
-		if (SSL_read_ex(ssl, buffer, size, &read_bytes) <= 0)
+		if (SSL_read_ex(ssl, buffer, size, &read_bytes) <= 0) {
+			ERROR("SSLServer::read failed:");
 			ERR_print_errors_fp(stderr);
+		}
+
 		return ssize_t(read_bytes);
 	}
 
@@ -120,6 +126,7 @@ namespace Algiz {
 						SSL_set_fd(ssl, new_fd);
 
 						if (SSL_accept(ssl) <= 0) {
+							ERROR("SSL_accept failed:");
 							ERR_print_errors_fp(stderr);
 							SSL_shutdown(ssl);
 							SSL_free(ssl);
