@@ -71,6 +71,7 @@ namespace Algiz {
 		str.reserve(chunkSize);
 
 		ssize_t byte_count = read(descriptor, buffer, chunkSize);
+
 		if (byte_count < 0) {
 			throw NetError("Reading", errno);
 		} else if (byte_count == 0) {
@@ -105,11 +106,10 @@ namespace Algiz {
 	}
 
 	void Server::handleMessage(int client, const std::string &message) {
-		if (messageHandler) {
+		if (messageHandler)
 			messageHandler(client, message);
-		} else {
+		else
 			std::cerr << "Server: got message from client " << client << ": \"" << message << "\"\n";
-		}
 	}
 
 	void Server::end(int descriptor) {
@@ -119,7 +119,11 @@ namespace Algiz {
 		buffers.erase(descriptor);
 		clients.erase(descriptor);
 		allClients.erase(client);
-		FD_CLR(descriptor, &activeSet);
+		for (auto iter = activeSet.begin(), end = activeSet.end(); iter != end; ++iter)
+			if (iter->fd == descriptor) {
+				activeSet.erase(iter);
+				break;
+			}
 		if (onEnd)
 			onEnd(client, descriptor);
 		freePool.insert(client);
@@ -156,34 +160,39 @@ namespace Algiz {
 		if (::listen(sock, 1) < 0)
 			throw NetError("Listening", errno);
 
-		FD_ZERO(&activeSet);
-		FD_SET(sock, &activeSet);
-		FD_SET(controlRead, &activeSet);
+		activeSet.clear();
+		activeSet.push_back(pollfd {controlRead, POLL_EVENTS, 0});
+		activeSet.push_back(pollfd {sock, POLL_EVENTS, 0});
+
 		connected = true;
 
-		fd_set read_set;
+		std::vector<pollfd> read_set;
 		for (;;) {
 			// Block until input arrives on one or more active sockets.
-			read_set = activeSet;
-			if (::select(FD_SETSIZE, &read_set, NULL, NULL, NULL) < 0)
-				throw NetError("select()", errno);
 
-			if (FD_ISSET(controlRead, &read_set)) {
+			// TODO: can we just use activeSet directly?
+			read_set = activeSet;
+
+			const int poll_result = ::poll(read_set.data(), read_set.size(), 1000);
+			if (poll_result < 0)
+				throw NetError("poll()", errno);
+
+			if ((read_set.front().revents & POLLIN) != 0) {
 				::close(sock);
 				break;
 			}
 
 			// Service all the sockets with input pending.
-			for (int i = 0; i < FD_SETSIZE; ++i) {
-				if (FD_ISSET(i, &read_set)) {
-					if (i == sock) {
+			for (const pollfd &poll_fd: read_set) {
+				if ((poll_fd.revents & POLLIN) != 0) {
+					if (poll_fd.fd == sock) {
 						// Connection request on original socket.
 						int new_fd;
 						size = sizeof(clientname);
 						new_fd = ::accept(sock, (sockaddr *) &clientname, (socklen_t *) &size);
 						if (new_fd < 0)
 							throw NetError("accept()", errno);
-						FD_SET(new_fd, &activeSet);
+						activeSet.push_back(pollfd {new_fd, POLL_EVENTS, 0});
 						int new_client;
 						if (freePool.size() != 0) {
 							new_client = *freePool.begin();
@@ -195,13 +204,13 @@ namespace Algiz {
 						clients.emplace(new_fd, new_client);
 						if (addClient)
 							addClient(new_client);
-					} else if (i != controlRead) {
+					} else if (poll_fd.fd != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {
-							readFromClient(i);
+							readFromClient(poll_fd.fd);
 						} catch (const NetError &err) {
 							std::cerr << err.what() << "\n";
-							removeClient(clients.at(i));
+							removeClient(clients.at(poll_fd.fd));
 						}
 					}
 				}

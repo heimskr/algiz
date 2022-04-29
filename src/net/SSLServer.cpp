@@ -2,6 +2,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -92,19 +93,22 @@ namespace Algiz {
 		if (::listen(sock, 1) < 0)
 			throw NetError("Listening", errno);
 
-		FD_ZERO(&activeSet);
-		FD_SET(sock, &activeSet);
-		FD_SET(controlRead, &activeSet);
+		activeSet.clear();
+		activeSet.push_back(pollfd {controlRead, POLL_EVENTS, 0});
+		activeSet.push_back(pollfd {sock, POLL_EVENTS, 0});
+
 		connected = true;
 
-		fd_set read_set;
+		std::vector<pollfd> read_set;
 		for (;;) {
 			// Block until input arrives on one or more active sockets.
 			read_set = activeSet;
-			if (::select(FD_SETSIZE, &read_set, NULL, NULL, NULL) < 0)
-				throw NetError("select()", errno);
 
-			if (FD_ISSET(controlRead, &read_set)) {
+			const int poll_result = ::poll(read_set.data(), read_set.size(), 1000);
+			if (poll_result < 0)
+				throw NetError("poll()", errno);
+
+			if ((read_set.front().revents & POLLIN) != 0) {
 				::close(sock);
 				SSL_CTX_free(sslContext);
 				sslContext = nullptr;
@@ -112,9 +116,9 @@ namespace Algiz {
 			}
 
 			// Service all the sockets with input pending.
-			for (int i = 0; i < FD_SETSIZE; ++i) {
-				if (FD_ISSET(i, &read_set)) {
-					if (i == sock) {
+			for (const pollfd &poll_fd: read_set) {
+				if ((poll_fd.revents & POLLIN) != 0) {
+					if (poll_fd.fd == sock) {
 						// Connection request on original socket.
 						int new_fd;
 						const size_t size = sizeof(clientname);
@@ -125,13 +129,25 @@ namespace Algiz {
 						SSL *ssl = SSL_new(sslContext);
 						SSL_set_fd(ssl, new_fd);
 
+						const int flags = fcntl(new_fd, F_GETFL, 0);
+						if (flags < 0) {
+							ERROR("fcntl (get) failed: " << strerror(errno));
+							SSL_shutdown(ssl);
+							SSL_free(ssl);
+							continue;
+						} else if (fcntl(new_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
+							ERROR("fcntl (set) failed: " << strerror(errno));
+							SSL_shutdown(ssl);
+							SSL_free(ssl);
+						}
+
 						if (SSL_accept(ssl) <= 0) {
 							ERROR("SSL_accept failed:");
 							ERR_print_errors_fp(stderr);
 							SSL_shutdown(ssl);
 							SSL_free(ssl);
 						} else {
-							FD_SET(new_fd, &activeSet);
+							activeSet.push_back(pollfd {new_fd, POLL_EVENTS, 0});
 							int new_client;
 							if (freePool.size() != 0) {
 								new_client = *freePool.begin();
@@ -146,13 +162,13 @@ namespace Algiz {
 							if (addClient)
 								addClient(new_client);
 						}
-					} else if (i != controlRead) {
+					} else if (poll_fd.fd != controlRead) {
 						// Data arriving on an already-connected socket.
 						try {
-							readFromClient(i);
+							readFromClient(poll_fd.fd);
 						} catch (const NetError &err) {
 							std::cerr << err.what() << "\n";
-							removeClient(clients.at(i));
+							removeClient(clients.at(poll_fd.fd));
 						}
 					}
 				}

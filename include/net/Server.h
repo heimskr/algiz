@@ -3,6 +3,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <poll.h>
 #include <set>
 #include <string>
 #include <sys/types.h>
@@ -14,6 +15,8 @@
 namespace Algiz {
 	class Server {
 		protected:
+			constexpr static short POLL_EVENTS = POLLIN;
+
 			int af;
 			std::string ip;
 			int port;
@@ -21,7 +24,7 @@ namespace Algiz {
 			char *buffer;
 			int lastClient = -1;
 			int sock = -1;
-			fd_set activeSet;
+			std::vector<pollfd> activeSet;
 			int controlRead = -1, controlWrite = -1;
 			bool connected = false;
 
