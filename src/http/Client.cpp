@@ -20,7 +20,6 @@ namespace Algiz::HTTP {
 	while (false)
 
 	void Client::handleInput(std::string_view message_in) {
-
 		if (isWebSocket) {
 			const bool has_leftover = !leftoverMessage.empty();
 			if (has_leftover)
@@ -34,6 +33,7 @@ namespace Algiz::HTTP {
 
 				const uint8_t byte1 = message[0];
 				const bool fin = ((byte1 >> 7) & 1) == 1;
+				lastFin = fin;
 				const uint8_t opcode = byte1 & 0xf;
 				const uint8_t byte2 = message[1];
 				const bool use_mask = ((byte2 >> 7) & 1) == 1;
@@ -75,26 +75,27 @@ namespace Algiz::HTTP {
 					maskOffset = (maskOffset + 1) % 4;
 				}
 
-				if (opcode == 0 || opcode == 1 || opcode == 2) {
-					if (fin) {
-						remainingBytesInPacket = 0;
-						server.handleWebSocketMessage(*this, packet);
-					}
-				} else if (opcode == 9) {
+				if (opcode == 9) {
 					if (payload_length <= 125) {
 						sendWebSocket(packet, true, 10);
 					} else {
 						closeWebSocket();
 					}
-				}
-
-				const uint64_t end = payload_length_here + mask_index + 4;
-				if (end < message.size()) {
-					awaitingWebSocketHeader = true;
-					leftoverMessage = message.substr(end);
 				} else {
-					awaitingWebSocketHeader = false;
-					leftoverMessage.clear();
+					const uint64_t end = payload_length_here + mask_index + 4;
+					if (end < message.size()) {
+						awaitingWebSocketHeader = true;
+						leftoverMessage = message.substr(end);
+						if (fin) {
+							remainingBytesInPacket = 0;
+							server.handleWebSocketMessage(*this, packet);
+						} else
+							closeWebSocket();
+						packet.clear();
+					} else {
+						awaitingWebSocketHeader = false;
+						leftoverMessage.clear();
+					}
 				}
 			} else {
 				const uint64_t payload_length_here = std::min(remainingBytesInPacket, uint64_t(message_size));
@@ -109,6 +110,14 @@ namespace Algiz::HTTP {
 					remainingBytesInPacket = 0;
 				} else
 					remainingBytesInPacket -= payload_length_here;
+
+				if (remainingBytesInPacket == 0) {
+					awaitingWebSocketHeader = true;
+					if (lastFin) {
+						server.handleWebSocketMessage(*this, packet);
+						packet.clear();
+					}
+				}
 			}
 		} else {
 			const auto result = request.handleLine(message_in);

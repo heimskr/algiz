@@ -21,6 +21,7 @@ namespace Algiz::HTTP {
 		private:
 			HTTP::Server &server;
 			bool awaitingWebSocketHeader = true;
+			bool lastFin = false;
 			uint32_t webSocketMask = 0;
 			uint32_t maskOffset = 0;
 			uint64_t remainingBytesInPacket = 0;

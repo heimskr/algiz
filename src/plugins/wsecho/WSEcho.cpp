@@ -38,7 +38,6 @@ namespace Algiz::Plugins {
 	CancelableResult WSEcho::handleMessage(HTTP::Server::WebSocketMessageArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
-		SPAM("WSEcho[" << args.message << "]");
 		args.client.sendWebSocket(args.message, false);
 		return CancelableResult::Approve;
 	}
