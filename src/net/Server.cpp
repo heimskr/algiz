@@ -100,7 +100,11 @@ namespace Algiz {
 	}
 
 	ssize_t Server::send(int client, std::string_view message) {
-		return bufferevent_write(getBufferEvent(getDescriptor(client)), message.begin(), message.size());
+		try {
+			return bufferevent_write(getBufferEvent(getDescriptor(client)), message.begin(), message.size());
+		} catch (const std::out_of_range &err) {
+			return -1;
+		}
 	}
 
 	ssize_t Server::send(int descriptor, const std::string &message) {
