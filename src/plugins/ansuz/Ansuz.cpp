@@ -60,7 +60,7 @@ namespace Algiz::Plugins {
 				}
 
 				http.server->send(client.id, HTTP::Response(404, "Invalid path").setMIME("text/plain"));
-				http.server->removeClient(client.id);
+				http.server->close(client.id);
 				return CancelableResult::Approve;
 			} catch (const inja::RenderError &err) {
 				ERROR(err.what());
@@ -76,7 +76,7 @@ namespace Algiz::Plugins {
 			http.server->send(client.id, HTTP::Response(200, content).setMIME(mime));
 		else
 			http.server->send(client.id, HTTP::Response(200, inja::render(content, json)).setMIME(mime));
-		http.server->removeClient(client.id);
+		http.server->close(client.id);
 		return CancelableResult::Approve;
 	}
 
@@ -98,7 +98,7 @@ namespace Algiz::Plugins {
 
 		http.server->send(client.id, HTTP::Response(200, inja::render(RESOURCE(index, "index.t"),
 			json)).setMIME("text/html"));
-		http.server->removeClient(client.id);
+		http.server->close(client.id);
 		return CancelableResult::Approve;
 	}
 }

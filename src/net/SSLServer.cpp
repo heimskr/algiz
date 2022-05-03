@@ -10,6 +10,8 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <event2/bufferevent_ssl.h>
+
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/SSLServer.h"
@@ -17,8 +19,8 @@
 
 namespace Algiz {
 	SSLServer::SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert,
-	                     const std::string &key, size_t chunk_size):
-	Server(af_, ip_, port_, chunk_size), sslContext(SSL_CTX_new(TLS_server_method())) {
+							const std::string &key, size_t thread_count, size_t chunk_size):
+	Server(af_, ip_, port_, thread_count, chunk_size), sslContext(SSL_CTX_new(TLS_server_method())) {
 		if (sslContext == nullptr) {
 			perror("Unable to create SSL context");
 			ERR_print_errors_fp(stderr);
@@ -45,134 +47,104 @@ namespace Algiz {
 		}
 	}
 
-	void SSLServer::close(int descriptor) {
-		SSL *ssl = ssls.at(descriptor);
-		SSL_shutdown(ssl);
-		SSL_free(ssl);
-		ssls.erase(descriptor);
-		::close(descriptor);
-	}
-
-	ssize_t SSLServer::send(int client, std::string_view message) {
-		SSL *ssl = ssls.at(descriptors.at(client));
-		size_t written = 0;
-		if (SSL_write_ex(ssl, message.begin(), message.size(), &written) <= 0) {
-			ERROR("SSLServer::send failed:");
-			ERR_print_errors_fp(stderr);
+	void SSLServer::Worker::remove(bufferevent *buffer_event) {
+		int descriptor;
+		{
+			auto descriptors_lock = server.lockDescriptors();
+			descriptor = server.bufferEventDescriptors.at(buffer_event);
+			server.bufferEventDescriptors.erase(buffer_event);
+			server.bufferEvents.erase(descriptor);
 		}
-
-		return ssize_t(written);
-	}
-
-	ssize_t SSLServer::send(int client, const std::string &message) {
-		return send(client, std::string_view(message));
-	}
-
-	ssize_t SSLServer::read(int descriptor, void *buffer, size_t size) {
-		SSL *ssl = ssls.at(descriptor);
-		size_t read_bytes;
-		if (SSL_read_ex(ssl, buffer, size, &read_bytes) <= 0) {
-			ERROR("SSLServer::read failed:");
-			ERR_print_errors_fp(stderr);
+		{
+			auto client_lock = server.lockClients();
+			const int client_id = server.clients.at(descriptor);
+			server.allClients.erase(client_id);
+			server.freePool.insert(client_id);
 		}
+		readBuffers.erase(descriptor);
+		writeBuffers.erase(descriptor);
 
-		return ssize_t(read_bytes);
-	}
+		auto &ssl_server = dynamic_cast<SSLServer &>(server);
 
-	void SSLServer::run() {
-		struct sockaddr_in clientname;
-
-		int control_pipe[2];
-		if (pipe(control_pipe) < 0)
-			throw NetError("pipe()", errno);
-
-		controlRead  = control_pipe[0];
-		controlWrite = control_pipe[1];
-
-		sock = makeSocket();
-		if (::listen(sock, 1) < 0)
-			throw NetError("Listening", errno);
-
-		activeSet.clear();
-		activeSet.push_back(pollfd {controlRead, POLL_EVENTS, 0});
-		activeSet.push_back(pollfd {sock, POLL_EVENTS, 0});
-
-		connected = true;
-
-		std::vector<pollfd> read_set;
-		for (;;) {
-			// Block until input arrives on one or more active sockets.
-			read_set = activeSet;
-
-			const int poll_result = ::poll(read_set.data(), read_set.size(), 1000);
-			if (poll_result < 0)
-				throw NetError("poll()", errno);
-
-			if ((read_set.front().revents & POLLIN) != 0) {
-				::close(sock);
-				SSL_CTX_free(sslContext);
-				sslContext = nullptr;
-				break;
+		{
+			auto ssls_lock = std::unique_lock(ssl_server.sslsMutex);
+			{
+				auto ssl_lock = std::unique_lock(ssl_server.sslMutexes.at(descriptor));
+				SSL *ssl = ssl_server.ssls.at(descriptor);
+				SSL_shutdown(ssl);
+				SSL_free(ssl);
 			}
-
-			// Service all the sockets with input pending.
-			for (const pollfd &poll_fd: read_set) {
-				if ((poll_fd.revents & POLLIN) != 0) {
-					if (poll_fd.fd == sock) {
-						// Connection request on original socket.
-						int new_fd;
-						const size_t size = sizeof(clientname);
-						new_fd = ::accept(sock, (sockaddr *) &clientname, (socklen_t *) &size);
-						if (new_fd < 0)
-							throw NetError("accept()", errno);
-
-						SSL *ssl = SSL_new(sslContext);
-						SSL_set_fd(ssl, new_fd);
-
-						const int flags = fcntl(new_fd, F_GETFL, 0);
-						if (flags < 0) {
-							ERROR("fcntl (get) failed: " << strerror(errno));
-							SSL_shutdown(ssl);
-							SSL_free(ssl);
-							continue;
-						} else if (fcntl(new_fd, F_SETFL, flags | O_NONBLOCK) < 0) {
-							ERROR("fcntl (set) failed: " << strerror(errno));
-							SSL_shutdown(ssl);
-							SSL_free(ssl);
-						}
-
-						if (SSL_accept(ssl) <= 0) {
-							ERROR("SSL_accept failed:");
-							ERR_print_errors_fp(stderr);
-							SSL_shutdown(ssl);
-							SSL_free(ssl);
-						} else {
-							activeSet.push_back(pollfd {new_fd, POLL_EVENTS, 0});
-							int new_client;
-							if (freePool.size() != 0) {
-								new_client = *freePool.begin();
-								freePool.erase(new_client);
-							} else
-								new_client = ++lastClient;
-
-							descriptors.emplace(new_client, new_fd);
-							ssls.emplace(new_fd, ssl);
-							clients.erase(new_fd);
-							clients.emplace(new_fd, new_client);
-							if (addClient)
-								addClient(new_client);
-						}
-					} else if (poll_fd.fd != controlRead) {
-						// Data arriving on an already-connected socket.
-						try {
-							readFromClient(poll_fd.fd);
-						} catch (const NetError &err) {
-							std::cerr << err.what() << "\n";
-							removeClient(clients.at(poll_fd.fd));
-						}
-					}
-				}
-			}
+			ssl_server.ssls.erase(descriptor);
 		}
+
+		bufferevent_free(buffer_event);
+	}
+
+	void SSLServer::Worker::accept(int new_fd) {
+		auto &ssl_server = dynamic_cast<SSLServer &>(server);
+
+		SSL *ssl = nullptr;
+
+		{
+			auto context_lock = std::unique_lock(ssl_server.sslContextMutex);
+			ssl = SSL_new(ssl_server.sslContext);
+		}
+
+		if (ssl == nullptr)
+			throw std::runtime_error("ssl is null");
+
+		int new_client;
+
+		{
+			auto lock = server.lockClients();
+			if (!server.freePool.empty()) {
+				new_client = *server.freePool.begin();
+				server.freePool.erase(new_client);
+			} else
+				new_client = ++server.lastClient;
+			server.descriptors.emplace(new_client, new_fd);
+			server.clients.erase(new_fd);
+			server.clients.emplace(new_fd, new_client);
+		}
+
+		evutil_make_socket_nonblocking(new_fd);
+
+		bufferevent *buffer_event = bufferevent_openssl_socket_new(base, new_fd, ssl, BUFFEREVENT_SSL_ACCEPTING,
+			BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS);
+
+		if (!buffer_event) {
+			event_base_loopbreak(base);
+			throw std::runtime_error("buffer_event is null");
+		}
+
+		{
+			auto lock = server.lockDescriptors();
+			if (server.bufferEvents.contains(new_fd))
+				throw std::runtime_error("File descriptor " + std::to_string(new_fd) + " already has a bufferevent "
+					"struct");
+			server.bufferEvents.emplace(new_fd, buffer_event);
+			server.bufferEventDescriptors.emplace(buffer_event, new_fd);
+		}
+
+		{
+			auto lock = std::unique_lock(ssl_server.sslsMutex);
+			ssl_server.ssls.emplace(new_fd, ssl);
+			ssl_server.sslMutexes.try_emplace(new_fd);
+		}
+
+		{
+			auto lock = server.lockWorkerMap();
+			server.workerMap.emplace(buffer_event, shared_from_this());
+		}
+
+		bufferevent_setcb(buffer_event, conn_readcb, nullptr, conn_eventcb, this);
+		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
+
+		if (server.addClient)
+			server.addClient(*this, new_client);
+	}
+
+	std::shared_ptr<Server::Worker> SSLServer::makeWorker(size_t buffer_size) {
+		return std::make_shared<SSLServer::Worker>(*this, buffer_size);
 	}
 }

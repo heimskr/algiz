@@ -28,13 +28,13 @@ namespace Algiz {
 			http->postinitPlugins();
 		}
 
-		http->server->messageHandler = [server = http->server](int client, const std::string &message) {
+		http->server->messageHandler = [server = http->server](int client, std::string_view message) {
 			try {
 				server->getClients().at(client)->handleInput(message);
 			} catch (const ParseError &error) {
 				INFO("Disconnecting client " << client << ": " << error.what());
 				server->send(client, HTTP::Response(400, "Couldn't parse request."));
-				server->removeClient(client);
+				server->close(client);
 			}
 		};
 

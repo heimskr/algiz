@@ -14,12 +14,9 @@
 
 namespace Algiz {
 	class SSLServer: public Server {
-		protected:
-			void close(int descriptor) override;
-
 		public:
 			SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert, const std::string &key,
-			          size_t chunk_size = 1);
+					size_t thread_count, size_t chunk_size = 1);
 			SSLServer(const SSLServer &) = delete;
 			SSLServer(SSLServer &&) = delete;
 
@@ -28,15 +25,27 @@ namespace Algiz {
 			SSLServer & operator=(const SSLServer &) = delete;
 			SSLServer & operator=(SSLServer &&) = delete;
 
-			ssize_t send(int client, std::string_view) override;
-			ssize_t send(int client, const std::string &) override;
-			ssize_t read(int descriptor, void *, size_t) override;
-			void run() override;
-
-		private:
+		public:
 			SSL_CTX *sslContext = nullptr;
+			std::mutex sslContextMutex;
 
 			/** Maps descriptors to SSL pointers. */
 			std::map<int, SSL *> ssls;
+			std::mutex sslsMutex;
+
+			/** Maps descriptors to mutexes that need to be locked when using an SSL object. */
+			std::map<int, std::mutex> sslMutexes;
+
+			std::shared_ptr<Worker> makeWorker(size_t buffer_size) override;
+
+			class Worker: public Server::Worker {
+				public:
+					using Server::Worker::Worker;
+
+					void remove(bufferevent *) override;
+					void accept(int new_fd) override;
+			};
+
+			friend class Worker;
 	};
 }
