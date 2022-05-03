@@ -128,7 +128,6 @@ namespace Algiz {
 		{
 			auto client_lock = server.lockClients();
 			const int client_id = server.clients.at(descriptor);
-			INFO("Removing d=" << descriptor << ", c=" << client_id);
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 		}
@@ -199,18 +198,8 @@ namespace Algiz {
 			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(strerror(errno)));
 		}
 
-		signalEvent = evsignal_new(base, SIGINT, signal_cb, this);
-
-		if (signalEvent == nullptr || event_add(signalEvent, nullptr) < 0) {
-			event_base_free(base);
-			evconnlistener_free(listener);
-			throw std::runtime_error("Couldn't listen for SIGINT: " + std::string(strerror(errno)));
-		}
-
 		event_base_dispatch(base);
-
 		evconnlistener_free(listener);
-		event_free(signalEvent);
 		event_base_free(base);
 	}
 
@@ -229,7 +218,6 @@ namespace Algiz {
 			server.clients.emplace(new_fd, new_client);
 		}
 
-		INFO("Accepting " << new_fd);
 		evutil_make_socket_nonblocking(new_fd);
 		bufferevent *buffer_event = bufferevent_socket_new(base, new_fd, BEV_OPT_CLOSE_ON_FREE);
 
