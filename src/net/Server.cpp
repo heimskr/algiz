@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <arpa/inet.h>
+#include <csignal>
 #include <errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
@@ -45,7 +46,7 @@ namespace Algiz {
 		event_base_free(base);
 	}
 
-	void Server::Worker::work(size_t id) {
+	void Server::Worker::work(size_t) {
 		event_base_loop(base, EVLOOP_NO_EXIT_ON_EMPTY);
 	}
 
