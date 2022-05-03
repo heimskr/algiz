@@ -71,7 +71,7 @@ namespace Algiz::HTTP {
 
 				// There must be a more efficient way than doing this byte by byte.
 				for (uint64_t i = 0; i < payload_length_here; ++i) {
-					packet += message[i + mask_index + 4] ^ uint8_t(webSocketMask >> (8 * (3 - maskOffset)));
+					packet += char(message[i + mask_index + 4] ^ uint8_t(webSocketMask >> (8 * (3 - maskOffset))));
 					maskOffset = (maskOffset + 1) % 4;
 				}
 
@@ -108,7 +108,7 @@ namespace Algiz::HTTP {
 				const uint64_t payload_length_here = std::min(remainingBytesInPacket, uint64_t(message_size));
 
 				for (uint64_t i = 0; i < payload_length_here; ++i) {
-					packet += message[i] ^ uint8_t(webSocketMask >> (8 * (3 - maskOffset)));
+					packet += char(message[i] ^ uint8_t(webSocketMask >> (8 * (3 - maskOffset))));
 					maskOffset = (maskOffset + 1) % 4;
 				}
 

@@ -104,8 +104,8 @@ namespace Algiz {
 
 			sockaddr *name = nullptr;
 			size_t nameSize = 0;
-			sockaddr_in  name4;
-			sockaddr_in6 name6;
+			sockaddr_in  name4 {};
+			sockaddr_in6 name6 {};
 
 			bool removeClient(int);
 

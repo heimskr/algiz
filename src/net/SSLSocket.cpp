@@ -2,9 +2,10 @@
 #include <iostream>
 #include <stdexcept>
 
-#include "Log.h"
-#include "net/SSLSocket.h"
 #include "net/NetError.h"
+#include "net/SSLSocket.h"
+
+#include "Log.h"
 
 namespace Algiz {
 	void SSLSocket::connect() {
@@ -36,16 +37,20 @@ namespace Algiz {
 			throw std::invalid_argument("Socket not connected");
 
 		fd_set fds_copy = fds;
-		int status = select(FD_SETSIZE, &fds_copy, nullptr, nullptr, nullptr);
+		ssize_t status = select(FD_SETSIZE, &fds_copy, nullptr, nullptr, nullptr);
+
 		if (status < 0) {
-			SPAM("select status: " << strerror(status));
+			char error[64] = "?";
+			strerror_r(status, error, sizeof(error));
+			SPAM("select status: " << error);
 			throw NetError(errno);
 		}
 			
 		if (FD_ISSET(netFD, &fds_copy)) {
-			bool read_blocked;
-			size_t bytes_read = 0, total_bytes_read = 0;
-			int ssl_error;
+			bool read_blocked = false;
+			size_t bytes_read = 0;
+			size_t total_bytes_read = 0;
+
 			do {
 				read_blocked = false;
 				status = SSL_read_ex(ssl, data, bytes, &bytes_read);
@@ -57,7 +62,7 @@ namespace Algiz {
 					bytes -= bytes_read;
 
 				if (status == 0)
-					switch (ssl_error = SSL_get_error(ssl, status)) {
+					switch (SSL_get_error(ssl, status)) {
 						case SSL_ERROR_NONE:
 							SPAM("SSL_ERROR_NONE");
 							return ssize_t(bytes_read);
@@ -88,7 +93,7 @@ namespace Algiz {
 							break;
 					}
 				else {
-					std::string read_str((const char *) data, bytes_read);
+					std::string read_str(static_cast<const char *>(data), bytes_read);
 					while (!read_str.empty() && (read_str.back() == '\r' || read_str.back() == '\n'))
 						read_str.pop_back();
 					SPAM("SSLSocket::recv(status == 1): \"" << read_str << "\"");
@@ -99,10 +104,12 @@ namespace Algiz {
 		}
 
 		if (FD_ISSET(controlRead, &fds_copy)) {
-			ControlMessage message;
+			ControlMessage message = ControlMessage::None;
 			status = ::read(controlRead, &message, 1);
 			if (status < 0) {
-				SPAM("control_fd status: " << strerror(status));
+				char error[64] = "?";
+				strerror_r(errno, error, sizeof(error));
+				SPAM("control_fd status: " << error);
 				throw NetError(errno);
 			}
 
@@ -113,9 +120,9 @@ namespace Algiz {
 			::close(netFD);
 			SSL_CTX_free(sslContext);
 			return 0;
-		} else
-			SPAM("No file descriptor is ready.");
+		}
 
+		SPAM("No file descriptor is ready.");
 		return -1;
 	}
 

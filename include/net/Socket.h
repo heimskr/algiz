@@ -14,7 +14,7 @@ namespace Algiz {
 			bool connected = false;
 			fd_set fds = {0};
 
-			enum class ControlMessage: char {Close='C'};
+			enum class ControlMessage: char {None = 0, Close='C'};
 
 		public:
 			std::string hostname;

@@ -8,6 +8,7 @@
 #include "util/MIME.h"
 #include "util/SHA1.h"
 #include "util/Util.h"
+
 #include "Log.h"
 
 namespace Algiz::HTTP {
@@ -23,7 +24,7 @@ namespace Algiz::HTTP {
 		server->messageHandler = {};
 	}
 
-	std::filesystem::path Server::getWebRoot(const std::string &web_root) const {
+	std::filesystem::path Server::getWebRoot(const std::string &web_root) {
 		return std::filesystem::absolute(web_root.empty()? "./www" : web_root).lexically_normal();
 	}
 
@@ -138,8 +139,8 @@ namespace Algiz::HTTP {
 		server->send(client.id, Response(500, "Internal Server Error").setMIME("text/html"));
 	}
 
-	std::vector<std::string> Server::getParts(const std::string_view &path) const {
-		std::vector<std::string> out {};
+	std::vector<std::string> Server::getParts(std::string_view path) {
+		std::vector<std::string> out;
 		for (const auto &view: split(path.substr(1), "/", true))
 			out.push_back(unescape(view));
 		return out;
@@ -167,7 +168,11 @@ namespace Algiz::HTTP {
 			webSocketMessageHandlers.erase(client_id);
 	}
 
-	void Server::registerWebSocketMessageHandler(const Client &client, WeakMessageHandlerPtr handler) {
+	void Server::registerWebSocketMessageHandler(const Client &client, const WeakMessageHandlerPtr &handler) {
 		webSocketMessageHandlers[client.id].push_back(handler);
+	}
+
+	void Server::registerWebSocketCloseHandler(const Client &client, const WeakCloseHandlerPtr &handler) {
+		webSocketCloseHandlers[client.id].push_back(handler);
 	}
 }

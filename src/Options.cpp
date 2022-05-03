@@ -5,10 +5,11 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "Options.h"
 #include "util/FS.h"
 #include "util/Util.h"
+
 #include "Log.h"
+#include "Options.h"
 
 namespace Algiz {
 	Options Options::parse(int argc, char * const *argv) {
@@ -50,7 +51,7 @@ namespace Algiz {
 					break;
 				
 				case 'p': {
-					unsigned long long_port = parseUlong(optarg, 10);
+					uint64_t long_port = parseUlong(optarg, 10);
 					if (65535 < long_port)
 						throw std::invalid_argument("Port out of range: " + std::to_string(long_port));
 					port = uint16_t(long_port);

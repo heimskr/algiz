@@ -1,5 +1,6 @@
 #pragma once
 
+#include <netdb.h>
 #include <stdexcept>
 
 namespace Algiz {

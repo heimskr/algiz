@@ -18,30 +18,36 @@
 std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
 
 int main(int argc, char **argv) {
-	evthread_use_pthreads();
+	try {
+		evthread_use_pthreads();
 
-	signal(SIGPIPE, SIG_IGN);
-	signal(SIGINT, +[](int) {
-		for (auto &server: global_servers)
-			server->stop();
-	});
+		if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
+			throw std::runtime_error("Couldn't register SIGPIPE handler");
 
-	nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
+		if (signal(SIGINT, +[](int) { for (auto &server: global_servers) server->stop(); }) == SIG_ERR)
+			throw std::runtime_error("Couldn't register SIGINT handler");
 
-	global_servers = map(Algiz::run(options), [](auto *server) {
-		return std::unique_ptr<Algiz::ApplicationServer>(server);
-	});
+		nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
 
-	std::vector<std::thread> threads;
-	threads.reserve(global_servers.size());
-
-	for (auto &server: global_servers)
-		threads.emplace_back([server = server.get()] {
-			server->run();
+		global_servers = map(Algiz::run(options), [](auto *server) {
+			return std::unique_ptr<Algiz::ApplicationServer>(server);
 		});
 
-	for (auto &thread: threads)
-		thread.join();
+		std::vector<std::thread> threads;
+		threads.reserve(global_servers.size());
 
-	global_servers.clear();
+		for (auto &server: global_servers)
+			threads.emplace_back([server = server.get()] {
+				server->run();
+			});
+
+		for (auto &thread: threads)
+			thread.join();
+
+		global_servers.clear();
+		return 0;
+	} catch (const std::exception &err) {
+		ERROR(err.what());
+		return 1;
+	}
 }

@@ -45,7 +45,7 @@ namespace Algiz::HTTP {
 	Response & Response::setClose(bool close) {
 		if (close)
 			return setHeader("Connection", "close");
-		if (headers.count("Connection") != 0 && headers.at("Connection") == "close")
+		if (headers.contains("Connection") && headers.at("Connection") == "close")
 			headers.erase("Connection");
 		return *this;
 	}
@@ -91,7 +91,7 @@ namespace Algiz::HTTP {
 	}
 
 	std::string Response::noContent() const {
-		if (codeDescriptions.count(code) == 0)
+		if (!codeDescriptions.contains(code))
 			return generate500();
 
 		std::string out;
@@ -99,9 +99,9 @@ namespace Algiz::HTTP {
 			std::get<std::string>(content).size() : std::get<std::string_view>(content).size();
 		out.reserve(content_size + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
-		if (!noContentType && headers.count("Content-Type") == 0)
+		if (!noContentType && !headers.contains("Content-Type"))
 		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset = " + charset) + "\r\n";
-		if (headers.count("Content-Length") == 0)
+		if (!headers.contains("Content-Length"))
 			out += "Content-Length: " + std::to_string(content_size) + "\r\n";
 		for (const auto &[header, value]: headers)
 			out += header + ": " + value + "\r\n";

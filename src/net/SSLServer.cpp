@@ -1,12 +1,12 @@
 #include <iostream>
 
 #include <arpa/inet.h>
-#include <errno.h>
+#include <cerrno>
+#include <cstdio>
+#include <cstdlib>
 #include <fcntl.h>
-#include <netinet/in.h>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -15,6 +15,7 @@
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/SSLServer.h"
+
 #include "Log.h"
 
 namespace Algiz {
@@ -48,7 +49,7 @@ namespace Algiz {
 	}
 
 	void SSLServer::Worker::remove(bufferevent *buffer_event) {
-		int descriptor;
+		int descriptor = -1;
 		{
 			auto descriptors_lock = server.lockDescriptors();
 			descriptor = server.bufferEventDescriptors.at(buffer_event);
@@ -87,7 +88,7 @@ namespace Algiz {
 		if (ssl == nullptr)
 			throw std::runtime_error("ssl is null");
 
-		int new_client;
+		int new_client = -1;
 
 		{
 			auto lock = server.lockClients();
@@ -106,7 +107,7 @@ namespace Algiz {
 		bufferevent *buffer_event = bufferevent_openssl_socket_new(base, new_fd, ssl, BUFFEREVENT_SSL_ACCEPTING,
 			BEV_OPT_CLOSE_ON_FREE);
 
-		if (!buffer_event) {
+		if (buffer_event == nullptr) {
 			event_base_loopbreak(base);
 			throw std::runtime_error("buffer_event is null");
 		}

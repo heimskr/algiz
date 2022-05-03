@@ -1,19 +1,20 @@
 #include <iostream>
 
 #include <arpa/inet.h>
+#include <cerrno>
 #include <csignal>
-#include <errno.h>
-#include <netinet/in.h>
+#include <cstdio>
+#include <cstdlib>
 #include <netdb.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "Log.h"
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/Server.h"
+
+#include "Log.h"
 
 namespace Algiz {
 	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size):
@@ -37,8 +38,11 @@ namespace Algiz {
 		acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
 		if (acceptEvent == nullptr)
 			throw std::runtime_error("Couldn't allocate acceptEvent");
-		if (event_add(acceptEvent, nullptr) < 0)
-			throw std::runtime_error("Couldn't add acceptEvent: " + std::string(strerror(errno)));
+		if (event_add(acceptEvent, nullptr) < 0) {
+			char error[64] = "?";
+			strerror_r(errno, error, sizeof(error));
+			throw std::runtime_error("Couldn't add acceptEvent: " + std::string(error));
+		}
 	}
 
 	Server::Worker::~Worker() {
@@ -117,7 +121,7 @@ namespace Algiz {
 	}
 
 	void Server::Worker::remove(bufferevent *buffer_event) {
-		int descriptor;
+		int descriptor = -1;
 		{
 			auto descriptors_lock = server.lockDescriptors();
 			descriptor = server.bufferEventDescriptors.at(buffer_event);
@@ -187,15 +191,20 @@ namespace Algiz {
 
 	void Server::mainLoop() {
 		base = event_base_new();
-		if (!base)
-			throw std::runtime_error("Couldn't initialize libevent: " + std::string(strerror(errno)));
+		if (base == nullptr) {
+			char error[64] = "?";
+			strerror_r(errno, error, sizeof(error));
+			throw std::runtime_error("Couldn't initialize libevent: " + std::string(error));
+		}
 
 		evconnlistener *listener = evconnlistener_new_bind(base, listener_cb, this,
 			LEV_OPT_REUSEABLE | LEV_OPT_CLOSE_ON_FREE | LEV_OPT_CLOSE_ON_EXEC | LEV_OPT_THREADSAFE, -1, name, nameSize);
 
 		if (listener == nullptr) {
 			event_base_free(base);
-			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(strerror(errno)));
+			char error[64] = "?";
+			strerror_r(errno, error, sizeof(error));
+			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(error));
 		}
 
 		event_base_dispatch(base);
@@ -204,7 +213,7 @@ namespace Algiz {
 	}
 
 	void Server::Worker::accept(int new_fd) {
-		int new_client;
+		int new_client = -1;
 
 		{
 			auto lock = server.lockClients();
@@ -221,7 +230,7 @@ namespace Algiz {
 		evutil_make_socket_nonblocking(new_fd);
 		bufferevent *buffer_event = bufferevent_socket_new(base, new_fd, BEV_OPT_CLOSE_ON_FREE);
 
-		if (!buffer_event) {
+		if (buffer_event == nullptr) {
 			event_base_loopbreak(base);
 			throw std::runtime_error("buffer_event is null");
 		}
@@ -247,7 +256,7 @@ namespace Algiz {
 	}
 
 	void Server::Worker::handleEOF(bufferevent *buffer_event) {
-		bool contains;
+		bool contains = false;
 		{
 			auto lock = lockCloseQueue();
 			if ((contains = closeQueue.contains(buffer_event)))
@@ -275,41 +284,40 @@ namespace Algiz {
 
 				const int byte_count = evbuffer_remove(input, buffer.get(), std::min(bufferSize, readable));
 
-				if (byte_count < 0) {
+				if (byte_count < 0)
 					throw NetError("Reading", errno);
-				} else {
-					auto &clients = server.clients;
-					auto clients_lock = server.lockClients();
-					const int client_id = clients.at(descriptor);
-					auto &client = *server.allClients.at(client_id);
 
-					if (!client.lineMode) {
-						server.handleMessage(clients.at(descriptor), {buffer.get(), size_t(byte_count)});
-						str.clear();
-					} else if (client.maxLineSize < str.size() + size_t(byte_count)) {
-						client.onMaxLineSizeExceeded();
-						removeDescriptor(descriptor);
-					} else {
-						str.insert(str.size(), buffer.get(), size_t(byte_count));
-						ssize_t index;
-						size_t delimiter_size;
-						bool done = false;
-						std::tie(index, delimiter_size) = isMessageComplete(str);
-						size_t to_erase = 0;
-						std::string_view view = str;
-						do {
-							if (index != -1) {
-								server.handleMessage(clients.at(descriptor), view.substr(0, index));
-								if (clients.contains(descriptor)) {
-									view.remove_prefix(index + delimiter_size);
-									to_erase += index + delimiter_size;
-									std::tie(index, delimiter_size) = isMessageComplete(view);
-								} else done = true;
+				auto &clients = server.clients;
+				auto clients_lock = server.lockClients();
+				const int client_id = clients.at(descriptor);
+				auto &client = *server.allClients.at(client_id);
+
+				if (!client.lineMode) {
+					server.handleMessage(clients.at(descriptor), {buffer.get(), size_t(byte_count)});
+					str.clear();
+				} else if (client.maxLineSize < str.size() + size_t(byte_count)) {
+					client.onMaxLineSizeExceeded();
+					removeDescriptor(descriptor);
+				} else {
+					str.insert(str.size(), buffer.get(), size_t(byte_count));
+					ssize_t index = -1;
+					size_t delimiter_size = 0;
+					bool done = false;
+					std::tie(index, delimiter_size) = isMessageComplete(str);
+					size_t to_erase = 0;
+					std::string_view view = str;
+					do {
+						if (index != -1) {
+							server.handleMessage(clients.at(descriptor), view.substr(0, index));
+							if (clients.contains(descriptor)) {
+								view.remove_prefix(index + delimiter_size);
+								to_erase += index + delimiter_size;
+								std::tie(index, delimiter_size) = isMessageComplete(view);
 							} else done = true;
-						} while (!done);
-						if (to_erase != 0)
-							str.erase(0, to_erase);
-					}
+						} else done = true;
+					} while (!done);
+					if (to_erase != 0)
+						str.erase(0, to_erase);
 				}
 
 				readable = evbuffer_get_length(input);
@@ -343,13 +351,13 @@ namespace Algiz {
 	}
 
 	bool Server::removeClient(int client) {
-		int descriptor;
+		int descriptor = -1;
 		{
 			auto lock = lockClients();
 			descriptor = descriptors.at(client);
 		}
 
-		bufferevent *buffer_event;
+		bufferevent *buffer_event = nullptr;
 		{
 			auto lock = lockDescriptors();
 			buffer_event = bufferEvents.at(descriptor);
@@ -359,7 +367,7 @@ namespace Algiz {
 	}
 
 	bool Server::close(int client_id) {
-		bufferevent *buffer_event;
+		bufferevent *buffer_event = nullptr;
 		try {
 			buffer_event = getBufferEvent(getDescriptor(client_id));
 		} catch (const std::out_of_range &) {
@@ -395,7 +403,7 @@ namespace Algiz {
 	}
 
 	void conn_eventcb(bufferevent *buffer_event, short events, void *data) {
-		if (events & BEV_EVENT_EOF)
+		if ((events & BEV_EVENT_EOF) != 0)
 			reinterpret_cast<Server::Worker *>(data)->handleEOF(buffer_event);
 		else if ((events & (BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT)) != 0)
 			reinterpret_cast<Server::Worker *>(data)->server.remove(buffer_event);
@@ -411,9 +419,9 @@ namespace Algiz {
 		auto *worker = reinterpret_cast<Server::Worker *>(data);
 		auto lock = worker->lockAcceptQueue();
 		while (!worker->acceptQueue.empty()) {
-			const int fd = worker->acceptQueue.back();
+			const int descriptor = worker->acceptQueue.back();
 			worker->acceptQueue.pop_back();
-			worker->accept(fd);
+			worker->accept(descriptor);
 		}
 	}
 }

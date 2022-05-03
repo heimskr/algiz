@@ -65,9 +65,9 @@ namespace Algiz::HTTP {
 			std::map<int, std::list<WeakMessageHandlerPtr>> webSocketMessageHandlers;
 			std::map<int, std::list<WeakCloseHandlerPtr>> webSocketCloseHandlers;
 
-			[[nodiscard]] std::filesystem::path getWebRoot(const std::string &) const;
+			[[nodiscard]] static std::filesystem::path getWebRoot(const std::string &);
 			[[nodiscard]] static bool validatePath(const std::string_view &);
-			[[nodiscard]] std::vector<std::string> getParts(const std::string_view &) const;
+			[[nodiscard]] static std::vector<std::string> getParts(std::string_view);
 
 		public:
 			std::shared_ptr<Algiz::Server> server;
@@ -96,7 +96,7 @@ namespace Algiz::HTTP {
 			void send403(Client &);
 			void send500(Client &);
 			void cleanWebSocketHandlers();
-			void registerWebSocketMessageHandler(const Client &, WeakMessageHandlerPtr);
-			void registerWebSocketCloseHandler(const Client &, WeakCloseHandlerPtr);
+			void registerWebSocketMessageHandler(const Client &, const WeakMessageHandlerPtr &);
+			void registerWebSocketCloseHandler(const Client &, const WeakCloseHandlerPtr &);
 	};
 }

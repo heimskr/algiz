@@ -4,6 +4,7 @@
 #include "error/UnsupportedMethod.h"
 #include "http/Request.h"
 #include "util/Util.h"
+
 #include "Log.h"
 
 namespace Algiz::HTTP {
@@ -17,7 +18,7 @@ namespace Algiz::HTTP {
 
 		if (line.empty() && mode == Mode::Headers) {
 			mode = Mode::Content;
-			return headers.count("Content-Length") == 0? HandleResult::Done : HandleResult::DisableLineMode;
+			return headers.contains("Content-Length")? HandleResult::DisableLineMode : HandleResult::Done;
 		}
 
 		switch (mode) {

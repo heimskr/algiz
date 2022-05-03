@@ -1,5 +1,5 @@
-#include <cstring>
 #include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <sys/types.h>
 #include <sys/select.h>
@@ -7,10 +7,11 @@
 #include <sys/un.h>
 #include <unistd.h>
 
-#include "Log.h"
-#include "net/Socket.h"
 #include "net/NetError.h"
 #include "net/ResolutionError.h"
+#include "net/Socket.h"
+
+#include "Log.h"
 
 namespace Algiz {
 	int Socket::socketCount = 0;
