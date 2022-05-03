@@ -2,6 +2,7 @@
 
 #include "Log.h"
 #include "error/ParseError.h"
+#include "error/UnsupportedMethod.h"
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
@@ -81,7 +82,7 @@ namespace Algiz::HTTP {
 						closeWebSocket();
 				} else {
 					const uint64_t end = payload_length_here + mask_index + 4;
-					if (end < message.size()) {
+					if (end < message_size) {
 						awaitingWebSocketHeader = true;
 						leftoverMessage = message.substr(end);
 						if (fin) {
@@ -91,7 +92,7 @@ namespace Algiz::HTTP {
 							closeWebSocket();
 						packet.clear();
 					} else {
-						if (end == message.size() && remainingBytesInPacket == 0) {
+						if (end == message_size && remainingBytesInPacket == 0) {
 							awaitingWebSocketHeader = true;
 							if (fin)
 								server.handleWebSocketMessage(*this, packet);
@@ -126,11 +127,16 @@ namespace Algiz::HTTP {
 				}
 			}
 		} else {
-			const auto result = request.handleLine(message_in);
-			if (result == Request::HandleResult::DisableLineMode)
-				lineMode = false;
-			else if (result == Request::HandleResult::Done)
-				handleRequest();
+			try {
+				const auto result = request.handleLine(message_in);
+				if (result == Request::HandleResult::DisableLineMode)
+					lineMode = false;
+				else if (result == Request::HandleResult::Done)
+					handleRequest();
+			} catch (const UnsupportedMethod &) {
+				server.send400(*this);
+				removeSelf();
+			}
 		}
 	}
 
@@ -190,7 +196,7 @@ namespace Algiz::HTTP {
 	}
 
 	void Client::removeSelf() {
-		server.server->removeClient(id);
+		server.server->close(id);
 	}
 
 	std::unordered_set<std::string> Client::supportedMethods {"GET"};
