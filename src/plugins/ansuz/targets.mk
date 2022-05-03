@@ -3,6 +3,9 @@ plugin/ansuz.$(SHARED_EXT): $(patsubst %.cpp,%.o,$(addprefix src/plugins/ansuz/,
 
 ansuz_res: include/plugins/ansuz/resources.h
 
+ansuz_clean:
+	rm -f include/plugins/ansuz/resources.h
+
 include/plugins/ansuz/resources.h: res/ansuz/index.t res/ansuz/style.css res/ansuz/bootstrap.min.css \
 res/ansuz/bootstrap-utilities.min.css res/ansuz/not_loaded.t res/ansuz/unloaded.t
 	echo "#include <cstdlib>" > $@
