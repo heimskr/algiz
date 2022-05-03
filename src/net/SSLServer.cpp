@@ -68,12 +68,6 @@ namespace Algiz {
 
 		{
 			auto ssls_lock = std::unique_lock(ssl_server.sslsMutex);
-			{
-				auto ssl_lock = std::unique_lock(ssl_server.sslMutexes.at(descriptor));
-				SSL *ssl = ssl_server.ssls.at(descriptor);
-				SSL_shutdown(ssl);
-				SSL_free(ssl);
-			}
 			ssl_server.ssls.erase(descriptor);
 		}
 
@@ -110,7 +104,7 @@ namespace Algiz {
 		evutil_make_socket_nonblocking(new_fd);
 
 		bufferevent *buffer_event = bufferevent_openssl_socket_new(base, new_fd, ssl, BUFFEREVENT_SSL_ACCEPTING,
-			BEV_OPT_CLOSE_ON_FREE | BEV_OPT_DEFER_CALLBACKS);
+			BEV_OPT_CLOSE_ON_FREE);
 
 		if (!buffer_event) {
 			event_base_loopbreak(base);
