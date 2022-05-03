@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 
+#include <event2/thread.h>
+
 #include "ApplicationServer.h"
 #include "Core.h"
 #include "Options.h"
@@ -16,8 +18,9 @@
 std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
 
 int main(int argc, char **argv) {
-	signal(SIGPIPE, SIG_IGN);
+	evthread_use_pthreads();
 
+	signal(SIGPIPE, SIG_IGN);
 	signal(SIGINT, +[](int) {
 		for (auto &server: global_servers)
 			server->stop();

@@ -46,7 +46,7 @@ namespace Algiz::Plugins {
 				return CancelableResult::Pass;
 
 			http.server->send(client.id, HTTP::Response(200, out).setMIME("text/plain"));
-			http.server->removeClient(client.id);
+			http.server->close(client.id);
 			return CancelableResult::Approve;
 		}
 

@@ -39,7 +39,7 @@ namespace Algiz::Plugins {
 			response.content = std::string("404 Not Found");
 
 		http.server->send(client.id, response);
-		http.server->removeClient(client.id);
+		http.server->close(client.id);
 		return CancelableResult::Approve;
 	}
 }

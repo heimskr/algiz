@@ -1,8 +1,8 @@
 #pragma once
 
+#include <cstring>
 #include <stdexcept>
 #include <string>
-#include <string.h>
 
 namespace Algiz {
 	class NetError: public std::runtime_error {

@@ -3,10 +3,11 @@ COMPILER        ?= clang++
 OPTIMIZATION    ?= -O0 -g
 STANDARD        ?= c++20
 WARNINGS        ?= -Wall -Wextra
-INCLUDES        := -Iinclude -Iinclude/lib $(shell pkg-config --cflags openssl)
+DEPENDENCIES    := openssl libevent libevent_pthreads libevent_openssl
+INCLUDES        := -Iinclude -Iinclude/lib $(shell pkg-config --cflags $(DEPENDENCIES))
 CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
-LDFLAGS         ?= -pthread $(shell pkg-config --libs openssl) -ldl
+LDFLAGS         ?= -pthread $(shell pkg-config --libs $(DEPENDENCIES)) -ldl
 
 CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res --not-match-f='^.\/algiz.json$$' --fullpath --not-match-d='^.\/include\/lib'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
