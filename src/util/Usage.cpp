@@ -25,7 +25,7 @@ namespace Algiz {
 			stat_stream >> skip >> skip >> skip >> skip >> skip >> skip
 			            >> skip >> skip >> skip >> skip >> skip >> skip
 			            >> skip >> skip >> skip >> skip >> skip >> skip
-			            >> skip >> skip >> skip >> skip >> skip >> resident_memory;
+			            >> skip >> skip >> skip >> skip >> virtual_memory >> resident_memory;
 		} catch (const std::exception &) {
 			return false;
 		}
