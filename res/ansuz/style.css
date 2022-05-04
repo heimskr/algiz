@@ -26,7 +26,7 @@ header:before {
 	position: fixed;
 	content: "ᚨ";
 	font-family: "FreeMono"; 
-	top: calc(50vh - 0.5em);
+	top: calc(50vh - 0.75em);
 	left: 20px;
 	text-align: center;
 	right: 20px;
