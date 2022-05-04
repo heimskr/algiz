@@ -137,11 +137,13 @@ namespace Algiz {
 			server.workerMap.emplace(buffer_event, shared_from_this());
 		}
 
+		if (server.addClient) {
+			auto lock = server.lockClients();
+			server.addClient(*this, new_client);
+		}
+
 		bufferevent_setcb(buffer_event, conn_readcb, nullptr, conn_eventcb, this);
 		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
-
-		if (server.addClient)
-			server.addClient(*this, new_client);
 	}
 
 	std::shared_ptr<Server::Worker> SSLServer::makeWorker(size_t buffer_size, size_t id) {

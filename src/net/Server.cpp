@@ -295,15 +295,24 @@ namespace Algiz {
 				std::string &str = readBuffers[descriptor];
 				str.reserve(bufferSize);
 
+				auto &clients = server.clients;
+				auto clients_lock = server.lockClients();
+				const int client_id = clients.at(descriptor);
+
+				GenericClient *client_pointer;
+				try {
+					client_pointer = server.allClients.at(client_id).get();
+				} catch (const std::out_of_range &) {
+					// Seems the client isn't ready for reading yet.
+					ERROR("Client " << client_id << " doesn't have an instance yet");
+					return;
+				}
+				auto &client = *client_pointer;
+
 				const int byte_count = evbuffer_remove(input, buffer.get(), std::min(bufferSize, readable));
 
 				if (byte_count < 0)
 					throw NetError("Reading", errno);
-
-				auto &clients = server.clients;
-				auto clients_lock = server.lockClients();
-				const int client_id = clients.at(descriptor);
-				auto &client = *server.allClients.at(client_id);
 
 				if (!client.lineMode) {
 					server.handleMessage(clients.at(descriptor), {buffer.get(), size_t(byte_count)});
