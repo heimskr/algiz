@@ -1,13 +1,14 @@
-#include "inja.hpp"
-#include "Log.h"
-#include "plugins/ansuz/resources.h"
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
 #include "plugins/Ansuz.h"
+#include "plugins/ansuz/resources.h"
 #include "util/FS.h"
 #include "util/MIME.h"
 #include "util/Util.h"
+
+#include "inja.hpp"
+#include "Log.h"
 
 #define EXTERNAL_RESOURCES
 
@@ -30,7 +31,7 @@ namespace Algiz::Plugins {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		auto &[http, client, request, parts] = args;
+		const auto &[http, client, request, parts] = args;
 
 		if (!parts.empty() && parts.front() == "ansuz") {
 			try {
@@ -48,7 +49,7 @@ namespace Algiz::Plugins {
 						const auto &to_unload = parts[2];
 						const std::string full_name = "plugin/" + to_unload;
 						auto *tuple = http.getPlugin(full_name);
-						if (!tuple)
+						if (tuple == nullptr)
 							return serve(http, client, RESOURCE(not_loaded, "not_loaded.t"), {
 								{"css", RESOURCE(css, "style.css")},
 								{"plugin", escapeHTML(to_unload)}});
@@ -71,7 +72,7 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content,
-	                              nlohmann::json json, const char *mime) {
+	                              const nlohmann::json &json, const char *mime) {
 		if (json.empty())
 			http.server->send(client.id, HTTP::Response(200, content).setMIME(mime));
 		else

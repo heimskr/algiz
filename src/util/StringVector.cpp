@@ -15,7 +15,7 @@ namespace Algiz {
 		if (others.size() != size())
 			return false;
 		
-		auto iter = others.begin();
+		const auto *iter = others.begin();
 		
 		for (const auto &string: *this) {
 			if (*iter != nullptr && *iter != string)

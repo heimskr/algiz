@@ -24,7 +24,8 @@ namespace Algiz::Plugins {
 		
 		if (parts.size() == 3) {
 			std::string_view oper = parts.front();
-			long left, right;
+			int64_t left = 0;
+			int64_t right = 0;
 			try {
 				left = parseLong(std::string(parts.at(1)));
 				right = parseLong(std::string(parts.at(2)));
