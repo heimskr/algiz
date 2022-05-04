@@ -54,7 +54,9 @@ namespace Algiz {
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
 			const size_t threads = suboptions.contains("threads")?
 				suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
-			out.emplace_back(makeHTTP(std::make_unique<Server>(af, ip, port, threads, 1024), suboptions));
+			auto server = std::make_unique<Server>(af, ip, port, threads, 1024);
+			server->id = "http";
+			out.emplace_back(makeHTTP(std::move(server), suboptions));
 		}
 
 		if (json.contains("https")) {
@@ -66,7 +68,9 @@ namespace Algiz {
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
 			const size_t threads = suboptions.contains("threads")?
 				suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
-			out.emplace_back(makeHTTP(std::make_unique<SSLServer>(af, ip, port, cert, key, threads, 1024), suboptions));
+			auto server = std::make_unique<SSLServer>(af, ip, port, cert, key, threads, 1024);
+			server->id = "https";
+			out.emplace_back(makeHTTP(std::move(server), suboptions));
 		}
 
 		return out;

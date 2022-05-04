@@ -109,6 +109,8 @@ namespace Algiz {
 			bool removeClient(int);
 
 		public:
+			std::string id = "server";
+
 			/** Maps bufferevents to Workers. Lock workerMapMutex before using. */
 			std::map<bufferevent *, std::shared_ptr<Worker>> workerMap;
 
