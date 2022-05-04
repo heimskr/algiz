@@ -7,7 +7,7 @@ body {
 header {
 	text-align: center;
 	font-size: 5em;
-	font-family: "FreeMono", sans-serif;
+	font-family: FreeMono, sans-serif;
 	font-weight: bold;
 	margin-top: 0.5em;
 	z-index: 2;
@@ -25,7 +25,7 @@ header > a:hover {
 header:before {
 	position: fixed;
 	content: "ᚨ";
-	font-family: "FreeMono"; 
+	font-family: FreeMono;
 	top: calc(50vh - 0.75em);
 	left: 20px;
 	text-align: center;
@@ -34,4 +34,14 @@ header:before {
 	z-index: -1;
 	color: transparent;
 	text-shadow: #300 0px 0px 6.66px;
+}
+
+#home {
+	position: absolute;
+	top: 10px;
+	left: 5px;
+	font: 1.5em FreeMono;
+	text-decoration: none;
+	color: white;
+	opacity: 0.5;
 }

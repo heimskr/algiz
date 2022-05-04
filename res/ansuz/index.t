@@ -10,6 +10,7 @@
 	</head>
 	<body>
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
+		<a href="/" id="home">ᚺᛖᛁᛗ</a>
 		<main class="container">
 			<table class="table text-white">
 				<thead>
