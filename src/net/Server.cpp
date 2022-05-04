@@ -112,8 +112,8 @@ namespace Algiz {
 		}
 	}
 
-	ssize_t Server::send(int descriptor, const std::string &message) {
-		return send(descriptor, std::string_view(message));
+	ssize_t Server::send(int client, const std::string &message) {
+		return send(client, std::string_view(message));
 	}
 
 	void Server::Worker::removeClient(int client) {

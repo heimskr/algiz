@@ -159,8 +159,8 @@ namespace Algiz {
 			[[nodiscard]] inline int getPort() const { return port; }
 			void handleMessage(int client, const std::string_view &message);
 			void mainLoop();
-			ssize_t send(int descriptor, std::string_view);
-			ssize_t send(int descriptor, const std::string &);
+			ssize_t send(int client, std::string_view);
+			ssize_t send(int client, const std::string &);
 			void run();
 			void stop();
 			virtual std::shared_ptr<Worker> makeWorker(size_t buffer_size, size_t id);
