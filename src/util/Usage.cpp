@@ -21,14 +21,11 @@ namespace Algiz {
 		// https://stackoverflow.com/a/671389/227663
 		try {
 			std::ifstream stat_stream("/proc/self/stat", std::ios_base::in);
-			std::string pid, comm, state, ppid, pgrp, session, tty_nr;
-			std::string tpgid, flags, minflt, cminflt, majflt, cmajflt;
-			std::string utime, stime, cutime, cstime, priority, nice;
-			std::string O, itrealvalue, starttime;
-			stat_stream >> pid >> comm >> state >> ppid >> pgrp >> session >> tty_nr
-			            >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
-			            >> utime >> stime >> cutime >> cstime >> priority >> nice
-			            >> O >> itrealvalue >> starttime >> virtual_memory >> resident_memory;
+			std::string skip;
+			stat_stream >> skip >> skip >> skip >> skip >> skip >> skip
+			            >> skip >> skip >> skip >> skip >> skip >> skip
+			            >> skip >> skip >> skip >> skip >> skip >> skip
+			            >> skip >> skip >> skip >> skip >> skip >> resident_memory;
 		} catch (const std::exception &) {
 			return false;
 		}
