@@ -62,16 +62,19 @@ namespace Algiz {
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 		}
-		readBuffers.erase(descriptor);
-		writeBuffers.erase(descriptor);
-
-		auto &ssl_server = dynamic_cast<SSLServer &>(server);
-
 		{
+			auto read_lock = lockReadBuffers();
+			readBuffers.erase(descriptor);
+		}
+		{
+			auto worker_lock = server.lockWorkerMap();
+			server.workerMap.erase(buffer_event);
+		}
+		{
+			auto &ssl_server = dynamic_cast<SSLServer &>(server);
 			auto ssls_lock = std::unique_lock(ssl_server.sslsMutex);
 			ssl_server.ssls.erase(descriptor);
 		}
-
 		bufferevent_free(buffer_event);
 	}
 
@@ -139,7 +142,7 @@ namespace Algiz {
 			server.addClient(*this, new_client);
 	}
 
-	std::shared_ptr<Server::Worker> SSLServer::makeWorker(size_t buffer_size) {
-		return std::make_shared<SSLServer::Worker>(*this, buffer_size);
+	std::shared_ptr<Server::Worker> SSLServer::makeWorker(size_t buffer_size, size_t id) {
+		return std::make_shared<SSLServer::Worker>(*this, buffer_size, id);
 	}
 }

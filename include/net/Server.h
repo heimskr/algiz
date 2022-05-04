@@ -24,6 +24,7 @@
 namespace Algiz {
 	void listener_cb(evconnlistener *, evutil_socket_t, sockaddr *, int socklen, void *);
 	void conn_readcb(bufferevent *, void *);
+	void conn_writecb(bufferevent *, void *);
 	void conn_eventcb(bufferevent *, short, void *);
 	void signal_cb(evutil_socket_t, short, void *);
 	void worker_acceptcb(evutil_socket_t, short, void *);
@@ -36,40 +37,38 @@ namespace Algiz {
 					size_t bufferSize;
 					std::unique_ptr<char[]> buffer;
 					event_base *base = nullptr;
+					size_t id;
 
 					/** Maps descriptors to read buffers. */
 					std::map<int, std::string> readBuffers;
-
-					/** Maps descriptors to write buffers. */
-					std::map<int, std::string> writeBuffers;
 
 					std::unordered_set<bufferevent *> managedBufferEvents;
 
 					std::vector<int> acceptQueue;
 
-					explicit Worker(Server &server_, size_t buffer_size);
+					explicit Worker(Server &server_, size_t buffer_size, size_t id_);
 
 					virtual ~Worker();
 
 					virtual void removeClient(int client);
 					virtual void work(size_t id);
 					virtual void accept(int new_fd);
+					virtual void handleWriteEmpty(bufferevent *);
 					virtual void handleEOF(bufferevent *);
 					void stop();
 					void queueAccept(int new_fd);
 					void queueClose(int client);
 					void queueClose(bufferevent *);
 					[[nodiscard]] auto lockReadBuffers() { return std::unique_lock(readMutex); }
-					[[nodiscard]] auto lockWriteBuffers() { return std::unique_lock(writeMutex); }
 					[[nodiscard]] auto lockAcceptQueue() { return std::unique_lock(acceptQueueMutex); }
 
 					friend Server;
 					friend void conn_readcb(bufferevent *, void *);
+					friend void conn_writecb(bufferevent *, void *);
 					friend void worker_acceptcb(evutil_socket_t, short, void *);
 
 				private:
 					std::recursive_mutex readMutex;
-					std::recursive_mutex writeMutex;
 					std::recursive_mutex acceptQueueMutex;
 					std::recursive_mutex closeQueueMutex;
 
@@ -164,7 +163,7 @@ namespace Algiz {
 			virtual ssize_t send(int descriptor, const std::string &);
 			virtual void run();
 			virtual void stop();
-			virtual std::shared_ptr<Worker> makeWorker(size_t buffer_size);
+			virtual std::shared_ptr<Worker> makeWorker(size_t buffer_size, size_t id);
 			bool remove(bufferevent *);
 			bool close(int client_id);
 			bool close(GenericClient &);
@@ -181,6 +180,7 @@ namespace Algiz {
 
 			friend void listener_cb(evconnlistener *, evutil_socket_t, sockaddr *, int socklen, void *);
 			friend void conn_readcb(bufferevent *, void *);
+			friend void conn_writecb(bufferevent *, void *);
 			friend void conn_eventcb(bufferevent *, short, void *);
 			friend void signal_cb(evutil_socket_t, short, void *);
 			friend void worker_acceptcb(evutil_socket_t, short, void *);

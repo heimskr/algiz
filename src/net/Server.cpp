@@ -29,9 +29,9 @@ namespace Algiz {
 			bufferevent_free(buffer);
 	}
 
-	Server::Worker::Worker(Server &server_, size_t buffer_size):
-	server(server_), bufferSize(buffer_size), buffer(std::make_unique<char[]>(buffer_size)),
-	base(event_base_new()) {
+	Server::Worker::Worker(Server &server_, size_t buffer_size, size_t id_):
+	server(server_), bufferSize(buffer_size), buffer(std::make_unique<char[]>(buffer_size)), base(event_base_new()),
+	id(id_) {
 		if (base == nullptr)
 			throw std::runtime_error("Couldn't allocate a new event_base");	
 
@@ -134,9 +134,17 @@ namespace Algiz {
 			const int client_id = server.clients.at(descriptor);
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
+			server.descriptors.erase(client_id);
+			server.clients.erase(descriptor);
 		}
-		readBuffers.erase(descriptor);
-		writeBuffers.erase(descriptor);
+		{
+			auto read_lock = lockReadBuffers();
+			readBuffers.erase(descriptor);
+		}
+		{
+			auto worker_lock = server.lockWorkerMap();
+			server.workerMap.erase(buffer_event);
+		}
 	}
 
 	void Server::Worker::removeDescriptor(int descriptor) {
@@ -156,7 +164,9 @@ namespace Algiz {
 	}
 
 	void Server::Worker::queueClose(bufferevent *buffer_event) {
-		{
+		if (evbuffer_get_length(bufferevent_get_output(buffer_event)) == 0) {
+			remove(buffer_event);
+		} else {
 			auto lock = lockCloseQueue();
 			closeQueue.insert(buffer_event);
 		}
@@ -175,7 +185,7 @@ namespace Algiz {
 		});
 
 		for (size_t i = 0; i < threadCount; ++i) {
-			workers.emplace_back(makeWorker(chunkSize));
+			workers.emplace_back(makeWorker(chunkSize, i));
 			threads.emplace_back(std::thread([i, &worker = *workers.back()] {
 				worker.work(i);
 			}));
@@ -223,8 +233,7 @@ namespace Algiz {
 			} else
 				new_client = ++server.lastClient;
 			server.descriptors.emplace(new_client, new_fd);
-			server.clients.erase(new_fd);
-			server.clients.emplace(new_fd, new_client);
+			server.clients[new_fd] = new_client;
 		}
 
 		evutil_make_socket_nonblocking(new_fd);
@@ -248,14 +257,14 @@ namespace Algiz {
 			server.workerMap.emplace(buffer_event, shared_from_this());
 		}
 
-		bufferevent_setcb(buffer_event, conn_readcb, nullptr, conn_eventcb, this);
+		bufferevent_setcb(buffer_event, conn_readcb, conn_writecb, conn_eventcb, this);
 		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
 
 		if (server.addClient)
 			server.addClient(*this, new_client);
 	}
 
-	void Server::Worker::handleEOF(bufferevent *buffer_event) {
+	void Server::Worker::handleWriteEmpty(bufferevent *buffer_event) {
 		bool contains = false;
 		{
 			auto lock = lockCloseQueue();
@@ -265,6 +274,10 @@ namespace Algiz {
 
 		if (contains)
 			remove(buffer_event);
+	}
+
+	void Server::Worker::handleEOF(bufferevent *buffer_event) {
+		remove(buffer_event);
 	}
 
 	void Server::Worker::handleRead(bufferevent *buffer_event) {
@@ -334,8 +347,8 @@ namespace Algiz {
 			worker->stop();
 	}
 
-	std::shared_ptr<Server::Worker> Server::makeWorker(size_t buffer_size) {
-		return std::make_shared<Server::Worker>(*this, buffer_size);
+	std::shared_ptr<Server::Worker> Server::makeWorker(size_t buffer_size, size_t id) {
+		return std::make_shared<Server::Worker>(*this, buffer_size, id);
 	}
 
 	bool Server::remove(bufferevent *buffer_event) {
@@ -378,7 +391,7 @@ namespace Algiz {
 			auto lock = lockWorkerMap();
 			worker = workerMap.at(buffer_event);
 		}
-		worker->queueClose(client_id);
+		worker->queueClose(buffer_event);
 		return true;
 	}
 
@@ -400,6 +413,13 @@ namespace Algiz {
 	void conn_readcb(bufferevent *buffer_event, void *data) {
 		auto *worker = reinterpret_cast<Server::Worker *>(data);
 		worker->handleRead(buffer_event);
+	}
+
+	void conn_writecb(bufferevent *buffer_event, void *data) {
+		if (evbuffer_get_length(bufferevent_get_output(buffer_event)) == 0) {
+			auto *worker = reinterpret_cast<Server::Worker *>(data);
+			worker->handleWriteEmpty(buffer_event);
+		}
 	}
 
 	void conn_eventcb(bufferevent *buffer_event, short events, void *data) {

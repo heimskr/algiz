@@ -36,7 +36,7 @@ namespace Algiz {
 			/** Maps descriptors to mutexes that need to be locked when using an SSL object. */
 			std::map<int, std::mutex> sslMutexes;
 
-			std::shared_ptr<Worker> makeWorker(size_t buffer_size) override;
+			std::shared_ptr<Worker> makeWorker(size_t buffer_size, size_t id) override;
 
 			class Worker: public Server::Worker {
 				public:
