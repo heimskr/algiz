@@ -61,6 +61,8 @@ namespace Algiz {
 			const int client_id = server.clients.at(descriptor);
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
+			server.descriptors.erase(client_id);
+			server.clients.erase(descriptor);
 		}
 		{
 			auto read_lock = lockReadBuffers();
