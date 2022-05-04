@@ -50,11 +50,11 @@ namespace Algiz {
 
 					virtual ~Worker();
 
-					virtual void removeClient(int client);
-					virtual void work(size_t id);
+					void removeClient(int client);
+					void work(size_t id);
 					virtual void accept(int new_fd);
-					virtual void handleWriteEmpty(bufferevent *);
-					virtual void handleEOF(bufferevent *);
+					void handleWriteEmpty(bufferevent *);
+					void handleEOF(bufferevent *);
 					void stop();
 					void queueAccept(int new_fd);
 					void queueClose(int client);
@@ -78,7 +78,7 @@ namespace Algiz {
 
 					virtual void remove(bufferevent *);
 					void removeDescriptor(int);
-					virtual void handleRead(bufferevent *);
+					void handleRead(bufferevent *);
 
 					[[nodiscard]] auto lockCloseQueue() { return std::unique_lock(closeQueueMutex); }
 			};
@@ -157,12 +157,12 @@ namespace Algiz {
 			virtual ~Server();
 
 			[[nodiscard]] inline int getPort() const { return port; }
-			virtual void handleMessage(int client, const std::string_view &message);
-			virtual void mainLoop();
-			virtual ssize_t send(int descriptor, std::string_view);
-			virtual ssize_t send(int descriptor, const std::string &);
-			virtual void run();
-			virtual void stop();
+			void handleMessage(int client, const std::string_view &message);
+			void mainLoop();
+			ssize_t send(int descriptor, std::string_view);
+			ssize_t send(int descriptor, const std::string &);
+			void run();
+			void stop();
 			virtual std::shared_ptr<Worker> makeWorker(size_t buffer_size, size_t id);
 			bool remove(bufferevent *);
 			bool close(int client_id);
