@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <csignal>
+#include <execinfo.h>
 #include <iostream>
 #include <string>
 #include <thread>
@@ -20,6 +21,17 @@ std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
 int main(int argc, char **argv) {
 	try {
 		evthread_use_pthreads();
+
+		std::set_terminate(+[] {
+			void *trace_elems[64];
+			int trace_elem_count = backtrace(trace_elems, sizeof(trace_elems) / sizeof(trace_elems[0]));
+			char **stack_syms = backtrace_symbols(trace_elems, trace_elem_count);
+			std::cerr << '\n';
+			for (int i = 0; i < trace_elem_count; ++i)
+				std::cerr << stack_syms[i] << '\n';
+			free(stack_syms);
+			exit(1);
+		});
 
 		if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 			throw std::runtime_error("Couldn't register SIGPIPE handler");
