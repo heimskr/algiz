@@ -74,10 +74,10 @@ namespace Algiz {
 			auto worker_lock = server.lockWorkerMap();
 			server.workerMap.erase(buffer_event);
 		}
-		{
-			auto &ssl_server = dynamic_cast<SSLServer &>(server);
-			auto ssls_lock = std::unique_lock(ssl_server.sslsMutex);
-			ssl_server.ssls.erase(descriptor);
+		// Sometimes this is called during ~Server after ~SSLServer, in which case the dynamic_cast will return nullptr.
+		if (auto *ssl_server = dynamic_cast<SSLServer *>(&server)) {
+			auto ssls_lock = std::unique_lock(ssl_server->sslsMutex);
+			ssl_server->ssls.erase(descriptor);
 		}
 		bufferevent_free(buffer_event);
 	}
