@@ -59,8 +59,9 @@ namespace Algiz {
 	}
 
 	void Server::makeName() {
-		name4 = {.sin_family  = AF_INET,  .sin_port  = htons(port)};
-		name6 = {.sin6_family = AF_INET6, .sin6_port = htons(port)};
+		name4 = {.sin_family  = AF_INET,  .sin_port  = htons(port), .sin_addr = {}, .sin_zero = {0}};
+		name6 = {.sin6_family = AF_INET6, .sin6_port = htons(port), .sin6_flowinfo = {}, .sin6_addr = {},
+			.sin6_scope_id = 0};
 
 		int status;
 
