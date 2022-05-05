@@ -20,7 +20,7 @@ namespace Algiz::Plugins {
 		server.cleanWebSocketHandlers();
 	}
 
-	Plugins::CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketConnectionArgs &args, bool not_disabled) {
+	CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketConnectionArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 

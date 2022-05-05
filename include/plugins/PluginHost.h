@@ -72,7 +72,7 @@ namespace Algiz::Plugins {
 			}
 
 		private:
-			std::list<PluginTuple> plugins {};
+			std::list<PluginTuple> plugins;
 
 		protected:
 			PluginHost() = default;

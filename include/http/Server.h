@@ -57,6 +57,10 @@ namespace Algiz::HTTP {
 			using MessageHandlerPtr = std::shared_ptr<MessageHandler>;
 			using WeakMessageHandlerPtr = std::weak_ptr<MessageHandler>;
 
+			using ConnectionHandler = PreFn<WebSocketConnectionArgs &>;
+			using ConnectionHandlerPtr = std::shared_ptr<ConnectionHandler>;
+			using WeakConnectionHandlerPtr = std::weak_ptr<ConnectionHandler>;
+
 			using CloseHandler = std::function<void(Server &, Client &)>;
 			using CloseHandlerPtr = std::shared_ptr<CloseHandler>;
 			using WeakCloseHandlerPtr = std::weak_ptr<CloseHandler>;
@@ -74,7 +78,7 @@ namespace Algiz::HTTP {
 			nlohmann::json options;
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs &>> handlers;
-			std::list<PrePtr<WebSocketConnectionArgs &>> webSocketConnectionHandlers;
+			std::list<WeakConnectionHandlerPtr> webSocketConnectionHandlers;
 
 			Server() = delete;
 			Server(const Server &) = delete;

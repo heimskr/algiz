@@ -22,9 +22,8 @@ namespace Algiz::Plugins {
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
 
-			std::shared_ptr<PluginHost::PreFn<HTTP::Server::WebSocketConnectionArgs &>> connectionHandler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::WebSocketConnectionArgs &>>(bind(*this,
-					&WSEcho::handleConnect));
+			HTTP::Server::ConnectionHandlerPtr connectionHandler =
+				std::make_shared<HTTP::Server::ConnectionHandler>(bind(*this, &WSEcho::handleConnect));
 
 			std::vector<HTTP::Server::MessageHandlerPtr> webSocketMessageHandlers;
 

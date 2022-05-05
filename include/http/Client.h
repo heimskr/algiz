@@ -54,6 +54,7 @@ namespace Algiz::HTTP {
 			void closeWebSocket();
 			void onMaxLineSizeExceeded() override;
 			void removeSelf();
+			std::string getID() const;
 
 			static std::unordered_set<std::string> supportedMethods;
 	};

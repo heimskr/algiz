@@ -199,5 +199,9 @@ namespace Algiz::HTTP {
 		server.server->close(id);
 	}
 
+	std::string Client::getID() const {
+		return server.server->id + ":" + std::to_string(id);
+	}
+
 	std::unordered_set<std::string> Client::supportedMethods {"GET"};
 }

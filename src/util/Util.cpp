@@ -142,6 +142,19 @@ namespace Algiz {
 		return out;
 	}
 
+	bool isNumeric(char ch) {
+		return '0' <= ch && ch <= '9';
+	}
+
+	bool isNumeric(std::string_view str) {
+		if (str.empty())
+			return false;
+		for (char ch: str)
+			if (!isNumeric(ch))
+				return false;
+		return true;
+	}
+
 	std::string escapeANSI(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());

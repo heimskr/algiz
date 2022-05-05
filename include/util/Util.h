@@ -21,6 +21,16 @@ namespace Algiz {
 	std::string toLower(std::string);
 	std::string toUpper(std::string);
 	std::string unescape(const std::string_view &, bool plus_to_space = true);
+	bool isNumeric(char);
+	bool isNumeric(std::string_view);
+
+	/** Replaces '\x1b' bytes with "\x1b[2m\\x1b\x1b[22m". Also replaces some special whitespace characters with their
+	 *  escaped representations. */
+	std::string escapeANSI(std::string_view);
+	std::string escapeHTML(std::string_view);
+	std::string escapeURL(std::string_view);
+	std::string charHex(uint8_t);
+	std::string escapeQuotes(std::string_view);
 
 	template <size_t BL = 128>
 	std::string formatTime(const char *format,
@@ -70,18 +80,6 @@ namespace Algiz {
 		}
 		return ss.str();
 	}
-
-	/** Replaces '\x1b' bytes with "\x1b[2m\\x1b\x1b[22m". Also replaces some special whitespace characters with their
-	 *  escaped representations. */
-	std::string escapeANSI(std::string_view);
-
-	std::string escapeHTML(std::string_view);
-
-	std::string escapeURL(std::string_view);
-
-	std::string charHex(uint8_t);
-
-	std::string escapeQuotes(std::string_view);
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 	#define SHARED_SUFFIX ".dll"
