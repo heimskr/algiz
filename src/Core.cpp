@@ -32,7 +32,7 @@ namespace Algiz {
 			try {
 				server->getClients().at(client)->handleInput(message);
 			} catch (const ParseError &error) {
-				INFO("Disconnecting client " << client << ": " << error.what());
+				ERROR("[" << server->id << "] Disconnecting client " << client << ": " << error.what());
 				server->send(client, HTTP::Response(400, "Couldn't parse request."));
 				server->close(client);
 			}
