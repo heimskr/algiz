@@ -93,6 +93,7 @@ namespace Algiz::HTTP {
 			/** Doesn't send a close packet to the client; that should be done by the caller. */
 			void closeWebSocket(Client &);
 			void send400(Client &);
+			void send401(Client &, std::string_view realm);
 			void send403(Client &);
 			void send500(Client &);
 			void cleanWebSocketHandlers();

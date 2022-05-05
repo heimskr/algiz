@@ -209,4 +209,15 @@ namespace Algiz {
 			out += nibble + (nibble < 10? '0' : 'a' - 10);
 		return out;
 	}
+
+	std::string escapeQuotes(std::string_view view) {
+		std::string out;
+		out.reserve(view.size());
+		for (char ch: view)
+			if (ch == '"')
+				out += "\\\"";
+			else
+				out += ch;
+		return out;
+	}
 }

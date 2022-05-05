@@ -128,15 +128,21 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::send400(Client &client) {
-		server->send(client.id, Response(400, "Invalid request").setMIME("text/html"));
+		server->send(client.id, Response(400, "Invalid request"));
+	}
+
+	void Server::send401(Client &client, std::string_view realm) {
+		Response response(400, "Unauthorized");
+		response["WWW-Authenticate"] = "Basic realm=\"" + escapeQuotes(realm) + "\"";
+		server->send(client.id, response);
 	}
 
 	void Server::send403(Client &client) {
-		server->send(client.id, Response(403, "Forbidden").setMIME("text/html"));
+		server->send(client.id, Response(403, "Forbidden"));
 	}
 
 	void Server::send500(Client &client) {
-		server->send(client.id, Response(500, "Internal Server Error").setMIME("text/html"));
+		server->send(client.id, Response(500, "Internal Server Error"));
 	}
 
 	std::vector<std::string> Server::getParts(std::string_view path) {
