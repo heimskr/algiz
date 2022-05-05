@@ -21,7 +21,6 @@ namespace Algiz::HTTP {
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
 		server->closeHandler = [this](int client_id) {
-			INFO("closeHandler(" << client_id << ")");
 			closeWebSocket(dynamic_cast<Client &>(*server->getClients().at(client_id)));
 		};
 	}

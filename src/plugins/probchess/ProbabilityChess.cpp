@@ -41,6 +41,7 @@ namespace Algiz::Plugins {
 			args.server.registerWebSocketMessageHandler(args.client, std::weak_ptr(messageHandler));
 			args.server.registerWebSocketCloseHandler(args.client, std::weak_ptr(closeHandler));
 			connections.insert(args.client.id);
+			clients.insert(&args.client);
 			return CancelableResult::Approve;
 		}
 
