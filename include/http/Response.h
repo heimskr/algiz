@@ -14,14 +14,14 @@ namespace Algiz::HTTP {
 		public:
 			int code;
 			std::string mime = "text/html";
-			std::variant<std::string, std::string_view> content {};
-			std::string charset {};
-			std::map<std::string, std::string> headers {};
+			std::variant<std::string, std::string_view> content;
+			std::string charset;
+			std::map<std::string, std::string> headers;
 			bool noContentType = false;
 
-			Response(int code_, const std::string &content_);
-			Response(int code_, std::string_view content_);
-			Response(int code_, const char *content_);
+			Response(int code_, const std::string &content_, std::string_view mime_ = "text/html");
+			Response(int code_, std::string_view content_, std::string_view mime_ = "text/html");
+			Response(int code_, const char *content_, std::string_view mime_ = "text/html");
 
 			Response & setMIME(const std::string &);
 			Response & setCharset(const std::string &);

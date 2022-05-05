@@ -10,15 +10,18 @@ namespace Algiz::HTTP {
 		     + "\r\n" + body;
 	}
 
-	Response::Response(int code_, const std::string &content_): code(code_), content(content_) {
+	Response::Response(int code_, const std::string &content_, std::string_view mime_):
+	code(code_), mime(mime_), content(content_) {
 		setClose(true);
 	}
 
-	Response::Response(int code_, std::string_view content_): code(code_), content(content_) {
+	Response::Response(int code_, std::string_view content_, std::string_view mime_):
+	code(code_), mime(mime_), content(content_) {
 		setClose(true);
 	}
 
-	Response::Response(int code_, const char *content_): code(code_), content(std::string(content_)) {
+	Response::Response(int code_, const char *content_, std::string_view mime_):
+	code(code_), mime(mime_), content(std::string(content_)) {
 		setClose(true);
 	}
 
