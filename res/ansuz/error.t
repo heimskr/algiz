@@ -13,7 +13,7 @@
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
 		<a href="/" id="home">ᚺᛖᛁᛗ</a>
 		<main class="container">
-			Plugin {{plugin}} not loaded.
+			{{error}}
 		</main>
 	</body>
 </html>

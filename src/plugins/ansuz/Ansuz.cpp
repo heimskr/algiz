@@ -48,7 +48,7 @@ namespace Algiz::Plugins {
 						std::vector<std::pair<std::string, std::string>> plugins;
 						for (const auto &entry: std::filesystem::directory_iterator("plugin")) {
 							const auto &path = entry.path();
-							const std::string filename = path.filename();
+							const std::string filename = "plugin/" + path.filename().string();
 							if (!http.hasPlugin(path))
 								plugins.emplace_back(escapeHTML(filename), escapeURL(filename));
 						}
@@ -62,13 +62,21 @@ namespace Algiz::Plugins {
 						const std::string full_name = "plugin/" + to_unload;
 						auto *tuple = http.getPlugin(full_name);
 						if (tuple == nullptr)
-							return serve(http, client, RESOURCE(not_loaded, "not_loaded.t"), {
+							return serve(http, client, RESOURCE(error, "error.t"), {
 								{"css", RESOURCE(css, "style.css")},
-								{"plugin", escapeHTML(to_unload)}});
+								{"error", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
 						http.unloadPlugin(*tuple);
 						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {
 							{"css", RESOURCE(css, "style.css")},
 							{"plugin", escapeHTML(to_unload)}});
+					}
+					if (parts[1] == "load") {
+						std::filesystem::path load_path = parts[2];
+						if (http.hasPlugin(load_path))
+							return serve(http, client, RESOURCE(error, "error.t"), {
+								{"css", RESOURCE(css, "style.css")},
+								{"error", "Plugin " + escapeHTML(parts[2]) + " already loaded."}});
+						return serve(http, client, http.hasPlugin(load_path)? "true" : "false");
 					}
 				}
 

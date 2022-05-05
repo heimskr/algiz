@@ -206,7 +206,7 @@ namespace Algiz {
 		std::string out;
 		out.reserve(2);
 		for (char nibble: {(ch >> 4) & 0xf, ch & 0xf})
-			out += nibble + (nibble < 10? '0' : 'a');
+			out += nibble + (nibble < 10? '0' : 'a' - 10);
 		return out;
 	}
 }

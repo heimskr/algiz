@@ -45,3 +45,9 @@ header:before {
 	color: white;
 	opacity: 0.5;
 }
+
+#load {
+	color: #700;
+	text-decoration: none;
+	font: 2em FreeMono;
+}
