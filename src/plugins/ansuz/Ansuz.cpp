@@ -19,6 +19,7 @@
 #endif
 
 #define CSS {"css", RESOURCE(css, "style.css")}
+#define MESSAGE RESOURCE(message, "message.t")
 
 namespace Algiz::Plugins {
 	void Ansuz::postinit(PluginHost *host) {
@@ -37,8 +38,8 @@ namespace Algiz::Plugins {
 
 		if (!parts.empty() && parts.front() == "ansuz") {
 			if (!config.contains("password") || !config.at("password").is_string())
-				return serve(http, client, RESOURCE(error, "error.t"), {CSS,
-					{"error", "Ansuz needs a password in its configuration."}});
+				return serve(http, client, MESSAGE, {CSS,
+					{"message", "Ansuz needs a password in its configuration."}});
 
 			const auto auth = request.checkAuthentication("ansuz", config.at("password").get<std::string>());
 			if (auth == HTTP::AuthenticationResult::Missing) {
@@ -46,7 +47,8 @@ namespace Algiz::Plugins {
 				return CancelableResult::Approve;
 			}
 			if (auth != HTTP::AuthenticationResult::Success)
-				return serve(http, client, RESOURCE(error, "error.t"), {CSS, {"error", "Bad authentication."}}, 401);
+				return serve(http, client, MESSAGE, {CSS, {"message", "Bad authentication."}},
+					401);
 
 			try {
 				if (parts.size() == 1)
@@ -75,8 +77,8 @@ namespace Algiz::Plugins {
 						const std::string full_name = "plugin/" + to_unload;
 						auto *tuple = http.getPlugin(full_name);
 						if (tuple == nullptr)
-							return serve(http, client, RESOURCE(error, "error.t"), {CSS,
-								{"error", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
+							return serve(http, client, MESSAGE, {CSS,
+								{"message", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
 						http.unloadPlugin(*tuple);
 						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {CSS,
 							{"plugin", escapeHTML(to_unload)}});
@@ -84,9 +86,15 @@ namespace Algiz::Plugins {
 					if (parts[1] == "load") {
 						std::filesystem::path load_path = parts[2];
 						if (http.hasPlugin(load_path))
-							return serve(http, client, RESOURCE(error, "error.t"), {CSS,
-								{"error", "Plugin " + escapeHTML(parts[2]) + " already loaded."}});
-						return serve(http, client, http.hasPlugin(load_path)? "true" : "false");
+							return serve(http, client, MESSAGE, {CSS,
+								{"message", "Plugin " + escapeHTML(parts[2]) + " already loaded."}});
+						try {
+							auto result = http.loadPlugin(load_path);
+						} catch (const std::exception &err) {
+							return serve(http, client, MESSAGE, {CSS, {"message", escapeHTML(err.what())}});
+						}
+						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin " + escapeHTML(parts[2]) +
+							" loaded."}});
 					}
 				}
 

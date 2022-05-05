@@ -13,6 +13,9 @@
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
 		<a href="/" id="home">ᚺᛖᛁᛗ</a>
 		<main class="container">
+			{% if length(plugins) == 0 %}
+			No plugins available.
+			{% else %}
 			<table class="table text-white">
 				<thead>
 					<th scope="col-12">Plugin</th>
@@ -27,6 +30,7 @@
 				{% endfor %}
 				</tbody>
 			</table>
+			{% endif %}
 		</main>
 	</body>
 </html>
