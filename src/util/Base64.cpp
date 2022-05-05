@@ -5,12 +5,12 @@
 
 namespace Algiz {
 	static constexpr const char *CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-	static std::array<int, 64> t;
-	static bool b = [] {
-		t.fill(-1);
+	static constexpr std::array<int, 256> t = [] {
+		std::array<int, 256> out;
+		out.fill(-1);
 		for (uint8_t i = 0; i < 64; ++i)
-			t[CHARS[i]] = i;
-		return false;
+			out[CHARS[i]] = i;
+		return out;
 	}();
 
 	// https://stackoverflow.com/a/34571089/227663
