@@ -17,7 +17,7 @@ namespace Algiz::Plugins {
 namespace ProbChess {
 	class Match {
 		public:
-			std::weak_ptr<Algiz::Plugins::ProbabilityChess> parent;
+			Algiz::Plugins::ProbabilityChess *parent = nullptr;
 			const std::string matchID;
 			bool hidden, noSkip;
 			std::optional<std::unique_ptr<Player>> host, guest;
@@ -66,8 +66,5 @@ namespace ProbChess {
 			Player & getWhite();
 			Player & getBlack();
 			Player & get(Color);
-
-		private:
-			std::shared_ptr<Algiz::Plugins::ProbabilityChess> getParent() const;
 	};
 }

@@ -37,10 +37,6 @@ namespace Algiz::Plugins {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		INFO("WebSocket connection (protocol count: " << args.protocols.size() << ")");
-		for (const auto &protocol: args.protocols)
-			INFO("- " << protocol);
-
 		if (args.protocols.contains("probchess")) {
 			args.acceptedProtocol = "probchess";
 			auto handler = std::make_shared<HTTP::Server::MessageHandler>(bind(*this,
@@ -151,26 +147,6 @@ namespace Algiz::Plugins {
 			return CancelableResult::Approve;
 		}
 
-		// :Show <column>
-		if (verb == "Show") {
-			if (words.size() != 2 || words[1].size() != 2 || words[1].find_first_not_of("01234567") != std::string::npos) {
-				client.sendWebSocket(":Error Invalid message.");
-				return CancelableResult::Approve;
-			}
-
-			std::shared_ptr<ProbChess::Match> match;
-			try {
-				match = matchesByClient.at(client.id);
-			} catch (std::out_of_range &) {
-				client.sendWebSocket(":Error Not in a match.");
-				return CancelableResult::Approve;
-			}
-
-			std::cerr << "Show[" << (words[1][0] - '0') << "][" << (words[1][1] - '0') << "]\n";
-			std::cerr << match->board.toString(match->board.at(words[1][0] - '0', words[1][1] - '0')) << "\n";
-			return CancelableResult::Approve;
-		}
-
 		// :GetMatches
 		if (verb == "GetMatches") {
 			client.sendWebSocket(":ClearMatches");
@@ -190,7 +166,6 @@ namespace Algiz::Plugins {
 				return CancelableResult::Approve;
 			}
 
-			std::cerr << "FEN: " << match->board.toFEN(match->currentTurn) << "\n";
 			client.sendWebSocket(":FEN " + match->board.toFEN(match->currentTurn));
 			return CancelableResult::Approve;
 		}
@@ -251,20 +226,19 @@ namespace Algiz::Plugins {
 		}
 
 		std::shared_ptr<ProbChess::Match> match;
-		auto weak_this = std::weak_ptr(shared_from_this());
 		if (type == "human") {
-			match = std::make_shared<ProbChess::HumanMatch>(weak_this, id, hidden, noskip, column_count, color);
+			match = std::make_shared<ProbChess::HumanMatch>(this, id, hidden, noskip, column_count, color);
 		} else if (type == "random") {
-			match = ProbChess::AIMatch::create<ProbChess::RandomPlayer>(weak_this, id, hidden, noskip, column_count,
+			match = ProbChess::AIMatch::create<ProbChess::RandomPlayer>(this, id, hidden, noskip, column_count,
 				color);
 		} else if (type == "cccp") {
-			match = ProbChess::AIMatch::create<ProbChess::CCCPPlayer>(weak_this, id, hidden, noskip, column_count,
+			match = ProbChess::AIMatch::create<ProbChess::CCCPPlayer>(this, id, hidden, noskip, column_count,
 				color);
 		} else if (type == "cccp2") {
-			match = ProbChess::AIMatch::create<ProbChess::CCCP2Player>(weak_this, id, hidden, noskip, column_count,
+			match = ProbChess::AIMatch::create<ProbChess::CCCP2Player>(this, id, hidden, noskip, column_count,
 				color);
 		} else if (type == "null") {
-			match = std::make_shared<ProbChess::NullMatch>(weak_this, id, hidden, noskip, column_count, color);
+			match = std::make_shared<ProbChess::NullMatch>(this, id, hidden, noskip, column_count, color);
 		} else {
 			client.sendWebSocket(":Error Invalid match type.");
 			return;
@@ -274,7 +248,7 @@ namespace Algiz::Plugins {
 		matchesByID.emplace(id, match);
 		matchesByClient.emplace(client.id, match);
 		client.sendWebSocket(":Joined " + id + " " + ProbChess::colorName(color));
-		std::cerr << "Client created " << (match->hidden? "hidden " : "") << "match \e[32m" << id << "\e[39m.\n";
+		INFO("Client created " << (match->hidden? "hidden " : "") << "match \e[32m" << id << "\e[39m.");
 		if (!match->hidden)
 			broadcast(":Match " + match->matchID + " " + (match->isReady()? "closed" : "open"));
 
@@ -350,7 +324,6 @@ namespace Algiz::Plugins {
 		if (!as_spectator)
 			client.sendWebSocket(":Start");
 
-		std::cerr << "Joining as " << as << ": match is " << (match->isReady()? "ready" : "not ready") << ".\n";
 		if (match->isReady())
 			match->sendAll(":Turn " + colorName(match->currentTurn));
 
@@ -373,19 +346,19 @@ namespace Algiz::Plugins {
 		if (!as_spectator && !match->hidden)
 			broadcast(":Match " + match->matchID + " " + (match->isReady()? "closed" : "open"));
 
-		std::cerr << "Client joined match \e[32m" << id << "\e[39m as \e[1m" << as << "\e[22m.\n";
+		INFO("Client joined match \e[32m" << id << "\e[39m as \e[1m" << as << "\e[22m.");
 	}
 
 	void ProbabilityChess::leaveMatch(HTTP::Client &client) {
 		auto lock = lockClients();
 
 		if (!matchesByClient.contains(client.id)) {
-			std::cerr << "Client not in a match attempted to leave a match.\n";
+			WARN("Client not in a match attempted to leave a match.");
 			return;
 		}
 
 		auto match = matchesByClient.at(client.id);
-		std::cerr << "Disconnecting client from match \e[33m" << match->matchID << "\e[39m.\n";
+		INFO("Disconnecting client " << client.id << " from match \e[33m" << match->matchID << "\e[39m.");
 		match->disconnect(client.id);
 		matchesByClient.erase(client.id);
 	}

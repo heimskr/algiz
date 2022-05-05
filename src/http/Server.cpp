@@ -11,6 +11,8 @@
 
 #include "Log.h"
 
+// #define CATCH_WEBSOCKET
+
 namespace Algiz::HTTP {
 	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const nlohmann::json &options_):
 	server(server_), options(options_), webRoot(getWebRoot(options_.contains("root")? options_.at("root") : "")) {
@@ -67,7 +69,9 @@ namespace Algiz::HTTP {
 					client.webSocketPath = args.parts;
 					client.lineMode = false;
 
+#ifdef CATCH_WEBSOCKET
 					try {
+#endif
 						auto [should_pass, result] = beforeMulti(args, webSocketConnectionHandlers);
 						if (result == Plugins::HandlerResult::Pass) {
 							server->send(client.id, Response(501, "Unhandled request"));
@@ -82,41 +86,52 @@ namespace Algiz::HTTP {
 								response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
 							server->send(client.id, response);
 						}
+#ifdef CATCH_WEBSOCKET
 					} catch (const std::exception &err) {
 						ERROR(err.what());
 						send500(client);
 						server->close(client.id);
 					}
+#endif
 
 					return;
 				}
 			}
 
+#ifdef CATCH_WEBSOCKET
 			try {
+#endif
 				HandlerArgs args {*this, client, Request(request), getParts(request.path)};
 				auto [should_pass, result] = beforeMulti(args, handlers);
 				if (result == Plugins::HandlerResult::Pass) {
 					server->send(client.id, Response(501, "Unhandled request"));
 					server->close(client.id);
 				}
+#ifdef CATCH_WEBSOCKET
 			} catch (const std::exception &err) {
 				ERROR(err.what());
 				send500(client);
 				server->close(client.id);
 			}
+#endif
 		}
 	}
 
 	void Server::handleWebSocketMessage(Client &client, std::string_view message) {
-		if (webSocketMessageHandlers.contains(client.id))
+		if (webSocketMessageHandlers.contains(client.id)) {
+#ifdef CATCH_WEBSOCKET
 			try {
+#endif
 				WebSocketMessageArgs args {*this, client, message};
 				beforeMulti(args, webSocketMessageHandlers.at(client.id));
+#ifdef CATCH_WEBSOCKET
 			} catch (const std::exception &err) {
 				ERROR(err.what());
 				send500(client);
 				server->close(client.id);
 			}
+#endif
+		}
 	}
 
 	void Server::closeWebSocket(Client &client) {

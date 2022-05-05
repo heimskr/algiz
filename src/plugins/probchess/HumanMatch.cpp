@@ -24,7 +24,7 @@ namespace ProbChess {
 
 	void HumanMatch::afterMove() {
 #ifdef DEBUG_SKIPS
-		std::cout << "\e[1mSkip-checking loop started.\e[0m\n";
+		std::cerr << "\e[1mSkip-checking loop started.\e[0m\n";
 #endif
 
 		if (noSkip) {
@@ -43,7 +43,7 @@ namespace ProbChess {
 		}
 
 #ifdef DEBUG_SKIPS
-		std::cout << "\e[1mSkip-checking loop ended.\e[0m\n";
+		std::cerr << "\e[1mSkip-checking loop ended.\e[0m\n";
 #endif
 	}
 }

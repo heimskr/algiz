@@ -37,8 +37,6 @@ namespace ProbChess {
 	}
 
 	void Match::end(Player *winner) {
-		auto shared_parent = getParent();
-
 		if (!winner) {
 			sendAll(":End");
 		} else {
@@ -55,26 +53,24 @@ namespace ProbChess {
 		}
 
 		over = true;
-		shared_parent->matchesByID.erase(matchID);
+		parent->matchesByID.erase(matchID);
 
 		if (guest.has_value())
 			if (HumanPlayer *human_guest = dynamic_cast<HumanPlayer *>(guest->get()))
-				shared_parent->matchesByClient.erase(human_guest->clientID);
+				parent->matchesByClient.erase(human_guest->clientID);
 
 		if (host.has_value())
 			if (HumanPlayer *human_host = dynamic_cast<HumanPlayer *>(host->get()))
-				shared_parent->matchesByClient.erase(human_host->clientID);
+				parent->matchesByClient.erase(human_host->clientID);
 
 		for (int spectator: spectators)
-			shared_parent->matchesByClient.erase(spectator);
+			parent->matchesByClient.erase(spectator);
 
 		if (!hidden)
-			shared_parent->broadcast(":RemoveMatch " + matchID);
+			parent->broadcast(":RemoveMatch " + matchID);
 	}
 
 	void Match::disconnect(int client_id) {
-		auto shared_parent = getParent();
-
 		spectators.remove_if([client_id](int spectator) {
 			return spectator == client_id;
 		});
@@ -90,10 +86,10 @@ namespace ProbChess {
 					guest.reset();
 
 		if (!isActive()) {
-			std::cout << "Ending match \e[31m" << matchID << "\e[39m: all players disconnected.\n";
+			INFO("Ending match \e[31m" << matchID << "\e[39m: all players disconnected.");
 			end(nullptr);
 		} else if (!hidden)
-			shared_parent->broadcast(":Match " + matchID + " open");
+			parent->broadcast(":Match " + matchID + " open");
 	}
 
 	Player & Match::getPlayer(int client_id) {
@@ -201,32 +197,32 @@ namespace ProbChess {
 
 	bool Match::canMove() const {
 	#ifdef DEBUG_SKIPS
-		std::cout << board << "\n";
+		std::cerr << board << "\n";
 		for (const int column: columns) {
-			std::cout << "Scanning column \e[1m" << column << "\e[22m for pieces.\n";
+			std::cerr << "Scanning column \e[1m" << column << "\e[22m for pieces.\n";
 			for (int row = 0; row < board.height; ++row) {
 				std::shared_ptr<Piece> piece = board.at(row, column);
 				if (piece) {
-					std::cout << "\e[2m-\e[22m Found a piece at " << row << column << ": " << *piece << "\n";
+					std::cerr << "\e[2m-\e[22m Found a piece at " << row << column << ": " << *piece << "\n";
 					if (piece->color == currentTurn) {
-						std::cout << "\e[2m--\e[22m Correct color.\n";
-						std::cout << "\e[2m---\e[22m Moves:";
+						std::cerr << "\e[2m--\e[22m Correct color.\n";
+						std::cerr << "\e[2m---\e[22m Moves:";
 						for (const Square &move: piece->canMoveTo())
-							std::cout << " " << move;
-						std::cout << "\n";
+							std::cerr << " " << move;
+						std::cerr << "\n";
 						if (piece->canMoveTo().empty())
-							std::cout << "\e[2m---\e[22m No moves.\n";
+							std::cerr << "\e[2m---\e[22m No moves.\n";
 						else {
-							std::cout << "\e[2;32m---\e[22m A move was found.\e[0m\n";
+							std::cerr << "\e[2;32m---\e[22m A move was found.\e[0m\n";
 							return true;
 						}
-					} else std::cout << "\e[2m--\e[22m Incorrect color.\n";
-				} else std::cout << "\e[2m-\e[22m No piece at " << row << column << ".\n";
+					} else std::cerr << "\e[2m--\e[22m Incorrect color.\n";
+				} else std::cerr << "\e[2m-\e[22m No piece at " << row << column << ".\n";
 				// if (piece && piece->color == currentTurn && !piece->canMoveTo().empty())
 				// 	return true;
 			}
 		}
-		std::cout << "\e[31mNo moves were found.\e[0m\n";
+		std::cerr << "\e[31mNo moves were found.\e[0m\n";
 	#else
 		for (const int column: columns) {
 			for (int row = 0; row < board.height; ++row) {
@@ -281,10 +277,8 @@ namespace ProbChess {
 	}
 
 	void Match::sendSpectators(std::string_view message) {
-		auto shared_parent = getParent();
-
 		for (int spectator: spectators)
-			shared_parent->send(spectator, message);
+			parent->send(spectator, message);
 	}
 
 	void Match::sendBoard() {
@@ -339,12 +333,5 @@ namespace ProbChess {
 
 	Player & Match::get(Color color) {
 		return color == hostColor? **host : **guest;
-	}
-
-	std::shared_ptr<Algiz::Plugins::ProbabilityChess> Match::getParent() const {
-		auto shared_parent = parent.lock();
-		if (!shared_parent)
-			throw std::runtime_error("Parent expired");
-		return shared_parent;
 	}
 }
