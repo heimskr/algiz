@@ -18,6 +18,7 @@
 #include "plugins/probchess/piece/all.h"
 #include "util/Util.h"
 
+#include "Log.h"
 
 namespace Algiz::Plugins {
 	void ProbabilityChess::postinit(PluginHost *host) {
@@ -35,6 +36,10 @@ namespace Algiz::Plugins {
 	CancelableResult ProbabilityChess::handleConnect(HTTP::Server::WebSocketConnectionArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
+
+		INFO("WebSocket connection (protocol count: " << args.protocols.size() << ")");
+		for (const auto &protocol: args.protocols)
+			INFO("- " << protocol);
 
 		if (args.protocols.contains("probchess")) {
 			args.acceptedProtocol = "probchess";
@@ -384,4 +389,8 @@ namespace Algiz::Plugins {
 		match->disconnect(client.id);
 		matchesByClient.erase(client.id);
 	}
+}
+
+extern "C" Algiz::Plugins::Plugin * make_plugin() {
+	return new Algiz::Plugins::ProbabilityChess;
 }
