@@ -44,6 +44,18 @@ namespace Algiz::Plugins {
 					if (parts[1] == "bootstrap-utilities.min.css")
 						return serve(http, client, RESOURCE(bootstrap_util_css, "bootstrap-utilities.min.css"), {},
 							"text/css");
+					if (parts[1] == "load") {
+						std::vector<std::pair<std::string, std::string>> plugins;
+						for (const auto &entry: std::filesystem::directory_iterator("plugin")) {
+							const auto &path = entry.path();
+							const std::string filename = path.filename();
+							if (!http.hasPlugin(path))
+								plugins.emplace_back(escapeHTML(filename), escapeURL(filename));
+						}
+						return serve(http, client, RESOURCE(load, "load.t"), {
+							{"css", RESOURCE(css, "style.css")},
+							{"plugins", std::move(plugins)}});
+					}
 				} else if (parts.size() == 3) {
 					if (parts[1] == "unload") {
 						const auto &to_unload = parts[2];

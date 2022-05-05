@@ -186,4 +186,27 @@ namespace Algiz {
 		}
 		return out;
 	}
+
+	std::string escapeURL(std::string_view view) {
+		std::string out;
+		out.reserve(view.size());
+		for (char ch: view)
+			if (ch == ' ')
+				out += '+';
+			else if (ch == '.' || ch == '_')
+				out += ch;
+			else if (ch < '0' || ('9' < ch && ch < 'A') || ('Z' < ch && ch < 'a') || 'z' < ch)
+				out += '%' + charHex(ch);
+			else
+				out += ch;
+		return out;
+	}
+
+	std::string charHex(uint8_t ch) {
+		std::string out;
+		out.reserve(2);
+		for (char nibble: {(ch >> 4) & 0xf, ch & 0xf})
+			out += nibble + (nibble < 10? '0' : 'a');
+		return out;
+	}
 }

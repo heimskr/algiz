@@ -77,6 +77,10 @@ namespace Algiz {
 
 	std::string escapeHTML(std::string_view);
 
+	std::string escapeURL(std::string_view);
+
+	std::string charHex(uint8_t);
+
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 	#define SHARED_SUFFIX ".dll"
 #elif defined(__APPLE__)
