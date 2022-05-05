@@ -46,7 +46,8 @@ namespace Algiz::Plugins {
 			HTTP::Server::CloseHandlerPtr closeHandler =
 				std::make_shared<HTTP::Server::CloseHandler>(bind(*this, &ProbabilityChess::handleClose));
 
-			std::vector<HTTP::Server::MessageHandlerPtr> webSocketMessageHandlers;
+			HTTP::Server::MessageHandlerPtr messageHandler =
+				std::make_shared<HTTP::Server::MessageHandler>(bind(*this, &ProbabilityChess::handleMessage));
 
 			void send(int client_id, std::string_view);
 			void broadcast(std::string_view);
@@ -61,7 +62,7 @@ namespace Algiz::Plugins {
 			CancelableResult handleMessage(HTTP::Server::WebSocketMessageArgs &, bool not_disabled);
 			void handleClose(HTTP::Server &, HTTP::Client &);
 
-			std::mutex clientsMutex;
+			std::recursive_mutex clientsMutex;
 			auto lockClients() { return std::unique_lock(clientsMutex); }
 	};
 

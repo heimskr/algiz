@@ -59,6 +59,8 @@ namespace Algiz {
 		{
 			auto client_lock = server.lockClients();
 			const int client_id = server.clients.at(descriptor);
+			if (server.closeHandler)
+				server.closeHandler(client_id);
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 			server.descriptors.erase(client_id);

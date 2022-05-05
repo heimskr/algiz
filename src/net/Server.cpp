@@ -24,9 +24,9 @@ namespace Algiz {
 	}
 
 	Server::~Server() {
+		while (!bufferEvents.empty())
+			remove(bufferEvents.begin()->second);
 		stop();
-		for (auto &[descriptor, buffer]: bufferEvents)
-			bufferevent_free(buffer);
 	}
 
 	Server::Worker::Worker(Server &server_, size_t buffer_size, size_t id_):
@@ -129,10 +129,11 @@ namespace Algiz {
 			server.bufferEventDescriptors.erase(buffer_event);
 			server.bufferEvents.erase(descriptor);
 		}
-		bufferevent_free(buffer_event);
 		{
 			auto client_lock = server.lockClients();
 			const int client_id = server.clients.at(descriptor);
+			if (server.closeHandler)
+				server.closeHandler(client_id);
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 			server.descriptors.erase(client_id);
@@ -146,6 +147,7 @@ namespace Algiz {
 			auto worker_lock = server.lockWorkerMap();
 			server.workerMap.erase(buffer_event);
 		}
+		bufferevent_free(buffer_event);
 	}
 
 	void Server::Worker::removeDescriptor(int descriptor) {

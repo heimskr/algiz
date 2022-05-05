@@ -101,6 +101,8 @@ namespace Algiz::HTTP {
 			void send403(Client &);
 			void send500(Client &);
 			void cleanWebSocketHandlers();
+			void cleanWebSocketMessageHandlers();
+			void cleanWebSocketCloseHandlers();
 			void registerWebSocketMessageHandler(const Client &, const WeakMessageHandlerPtr &);
 			void registerWebSocketCloseHandler(const Client &, const WeakCloseHandlerPtr &);
 	};

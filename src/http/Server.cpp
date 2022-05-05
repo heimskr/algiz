@@ -20,6 +20,10 @@ namespace Algiz::HTTP {
 			auto http_client = std::make_unique<Client>(*this, new_client);
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
+		server->closeHandler = [this](int client_id) {
+			INFO("closeHandler(" << client_id << ")");
+			closeWebSocket(dynamic_cast<Client &>(*server->getClients().at(client_id)));
+		};
 	}
 
 	Server::~Server() {
@@ -128,7 +132,7 @@ namespace Algiz::HTTP {
 			} catch (const std::exception &err) {
 				ERROR(err.what());
 				send500(client);
-				server->close(client.id);
+				closeWebSocket(client);
 			}
 #endif
 		}
@@ -168,6 +172,11 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::cleanWebSocketHandlers() {
+		cleanWebSocketMessageHandlers();
+		cleanWebSocketCloseHandlers();
+	}
+
+	void Server::cleanWebSocketMessageHandlers() {
 		std::vector<WeakMessageHandlerPtr> handlers_to_remove;
 		std::vector<int> clients_to_remove;
 
@@ -187,6 +196,28 @@ namespace Algiz::HTTP {
 
 		for (int client_id: clients_to_remove)
 			webSocketMessageHandlers.erase(client_id);
+	}
+
+	void Server::cleanWebSocketCloseHandlers() {
+		std::vector<WeakCloseHandlerPtr> handlers_to_remove;
+		std::vector<int> clients_to_remove;
+
+		clients_to_remove.reserve(webSocketCloseHandlers.size());
+
+		for (auto &[client_id, handlers]: webSocketCloseHandlers) {
+			handlers_to_remove.reserve(handlers.size());
+			for (const auto &handler: handlers)
+				if (handler.expired())
+					handlers_to_remove.push_back(handler);
+			for (const auto &handler: handlers_to_remove)
+				PluginHost::erase(handlers, handler);
+			handlers_to_remove.clear();
+			if (handlers.empty())
+				clients_to_remove.push_back(client_id);
+		}
+
+		for (int client_id: clients_to_remove)
+			webSocketCloseHandlers.erase(client_id);
 	}
 
 	void Server::registerWebSocketMessageHandler(const Client &client, const WeakMessageHandlerPtr &handler) {

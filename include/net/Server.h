@@ -149,6 +149,8 @@ namespace Algiz {
 
 			/** (int client, std::string_view message) */
 			std::function<void(int, std::string_view)> messageHandler;
+			/** clientsMutex will be locked while this is called. */
+			std::function<void(int)> closeHandler;
 			std::function<void(Worker &, int)> addClient;
 
 			Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size = 1024);

@@ -28,7 +28,6 @@ namespace Algiz::Plugins {
 
 	void ProbabilityChess::cleanup(PluginHost *host) {
 		auto &server = dynamic_cast<HTTP::Server &>(*host);
-		webSocketMessageHandlers.clear();
 		PluginHost::erase(server.webSocketConnectionHandlers, std::weak_ptr(connectionHandler));
 		server.cleanWebSocketHandlers();
 	}
@@ -39,10 +38,8 @@ namespace Algiz::Plugins {
 
 		if (args.protocols.contains("probchess")) {
 			args.acceptedProtocol = "probchess";
-			auto handler = std::make_shared<HTTP::Server::MessageHandler>(bind(*this,
-				&ProbabilityChess::handleMessage));
-			webSocketMessageHandlers.push_back(handler);
-			args.server.registerWebSocketMessageHandler(args.client, std::weak_ptr(handler));
+			args.server.registerWebSocketMessageHandler(args.client, std::weak_ptr(messageHandler));
+			args.server.registerWebSocketCloseHandler(args.client, std::weak_ptr(closeHandler));
 			connections.insert(args.client.id);
 			return CancelableResult::Approve;
 		}
