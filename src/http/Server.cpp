@@ -132,7 +132,7 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::send401(Client &client, std::string_view realm) {
-		Response response(400, "Unauthorized");
+		Response response(401, "Unauthorized");
 		response["WWW-Authenticate"] = "Basic realm=\"" + escapeQuotes(realm) + "\"";
 		server->send(client.id, response);
 	}

@@ -28,7 +28,7 @@ namespace Algiz::Plugins {
 			CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 
 			static CancelableResult serve(HTTP::Server &, HTTP::Client &, std::string_view, const nlohmann::json & = {},
-			                              const char *mime = "text/html");
+			                              int code = 200, const char *mime = "text/html");
 
 			static CancelableResult serveIndex(HTTP::Server &, HTTP::Client &client);
 	};

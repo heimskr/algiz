@@ -6,6 +6,8 @@
 #include <vector>
 
 namespace Algiz::HTTP {
+	enum class AuthenticationResult {Invalid, Missing, Malformed, BadUsername, BadPassword, Success};
+
 	class Request {
 		private:
 			enum class Mode {Method, Headers, Content};
@@ -33,6 +35,6 @@ namespace Algiz::HTTP {
 
 			HandleResult handleLine(std::string_view);
 			bool valid(size_t total_size);
-			bool checkAuthentication(std::string_view username, std::string_view password);
+			AuthenticationResult checkAuthentication(std::string_view username, std::string_view password) const;
 	};
 }

@@ -163,18 +163,22 @@ namespace Algiz::HTTP {
 		return std::get<1>(ranges.back()) <= total_size - suffixLength;
 	}
 
-	bool Request::checkAuthentication(std::string_view username, std::string_view password) {
-		if (!headers.contains("Authentication"))
-			return false;
-		std::string_view auth = headers.at("Authentication");
+	AuthenticationResult Request::checkAuthentication(std::string_view username, std::string_view password) const {
+		if (!headers.contains("Authorization"))
+			return AuthenticationResult::Missing;
+		std::string_view auth = headers.at("Authorization");
 		if (auth.substr(0, 6) != "Basic ")
-			return false;
+			return AuthenticationResult::Malformed;
 		auth.remove_prefix(6);
 		const std::string decoded_str = base64Decode(auth);
 		const std::string_view decoded = decoded_str;
 		const size_t colon = decoded.find(':');
-		return colon != std::string::npos
-		    && decoded.substr(0,  colon) == username
-		    && decoded.substr(colon + 1) == password;
+		if (colon == std::string::npos)
+			return AuthenticationResult::Malformed;
+		if (decoded.substr(0, colon) != username)
+			return AuthenticationResult::BadUsername;
+		if (decoded.substr(colon + 1) != password)
+			return AuthenticationResult::BadPassword;
+		return AuthenticationResult::Success;
 	}
 }
