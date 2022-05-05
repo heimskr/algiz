@@ -2,6 +2,7 @@
 <html>
 	<head>
 		<title>Ansuz</title>
+		<meta charset="utf-8" />
 		<link rel="stylesheet" href="/ansuz/bootstrap.min.css" />
 		<link rel="stylesheet" href="/ansuz/bootstrap-utilities.min.css" />
 		<style>
