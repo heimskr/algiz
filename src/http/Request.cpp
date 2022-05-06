@@ -46,7 +46,9 @@ namespace Algiz::HTTP {
 				const size_t next_space = line.find(' ');
 				if (next_space == std::string_view::npos)
 					throw ParseError("Bad method line: can't determine path");
-				path = line.substr(0, next_space);
+				auto full_path = line.substr(0, next_space);
+				path = getPath(full_path);
+				parameters = getParameters(full_path);
 				version = line.substr(next_space + 1);
 				if (version != "HTTP/1.1" && version != "HTTP/1.0")
 					throw ParseError("Invalid HTTP version: " + version);
@@ -170,7 +172,30 @@ namespace Algiz::HTTP {
 	std::map<std::string, std::string> Request::getParameters(std::string_view path) {
 		std::map<std::string, std::string> parameters;
 		const size_t question_mark = path.find('?');
+		if (question_mark == std::string_view::npos)
+			return parameters;
 
+		path.remove_prefix(question_mark + 1);
+		size_t ampersand = path.find('&');
+
+		auto add_parameter = [&] {
+			std::string_view pair = path.substr(0, ampersand);
+			if (pair.empty())
+				return;
+			const size_t equals = pair.find('=');
+			if (equals == std::string_view::npos)
+				parameters[std::string(pair)] = "";
+			else
+				parameters[std::string(pair.substr(0, equals))] = pair.substr(equals + 1);
+		};
+
+		while (ampersand != std::string_view::npos) {
+			add_parameter();
+			path.remove_prefix(ampersand + 1);
+			ampersand = path.find('&');
+		}
+
+		add_parameter();
 		return parameters;
 	}
 
