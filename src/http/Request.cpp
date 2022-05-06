@@ -163,6 +163,17 @@ namespace Algiz::HTTP {
 		return std::get<1>(ranges.back()) <= total_size - suffixLength;
 	}
 
+	std::string_view Request::getPath(std::string_view path) {
+		return path.substr(0, path.find('?'));
+	}
+
+	std::map<std::string, std::string> Request::getParameters(std::string_view path) {
+		std::map<std::string, std::string> parameters;
+		const size_t question_mark = path.find('?');
+
+		return parameters;
+	}
+
 	AuthenticationResult Request::checkAuthentication(std::string_view username, std::string_view password) const {
 		if (!headers.contains("Authorization"))
 			return AuthenticationResult::Missing;

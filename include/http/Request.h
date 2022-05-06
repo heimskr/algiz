@@ -18,6 +18,12 @@ namespace Algiz::HTTP {
 
 			void parseRange(std::string_view);
 
+			/** When given "/foo?bar=baz&quux=hello", returns "/foo" */
+			static std::string_view getPath(std::string_view);
+
+			/** Takes in a string like "/foo?bar=baz&quux=hello" */
+			static std::map<std::string, std::string> getParameters(std::string_view);
+
 		public:
 			enum class Method {Invalid, GET, HEAD, PUT, POST};
 			enum class HandleResult {Continue, DisableLineMode, Done};
@@ -28,6 +34,7 @@ namespace Algiz::HTTP {
 			std::string content;
 			std::string charset;
 			std::map<std::string, std::string> headers;
+			std::map<std::string, std::string> parameters;
 			std::vector<std::tuple<size_t, size_t>> ranges;
 			size_t suffixLength = 0;
 
