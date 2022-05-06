@@ -49,6 +49,7 @@ namespace Algiz::HTTP {
 
 			void send(std::string_view);
 			void send(const std::string &);
+			void close();
 			void handleInput(std::string_view) override;
 			void sendWebSocket(std::string_view, bool is_binary = false, uint8_t opcode_override = 255);
 			void closeWebSocket();

@@ -126,12 +126,12 @@ namespace Algiz::Plugins {
 					}
 				}
 			}
-			http.server->close(client.id);
+			client.close();
 			return CancelableResult::Approve;
 		} catch (std::exception &err) {
 			ERROR(err.what());
-			http.server->send(client.id, HTTP::Response(403, "Forbidden"));
-			http.server->close(client.id);
+			client.send(HTTP::Response(403, "Forbidden"));
+			client.close();
 			return CancelableResult::Kill;
 		}
 	}
