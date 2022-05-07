@@ -47,11 +47,42 @@ namespace Algiz::Plugins {
 
 		auto &[http, client, request, parts] = args;
 		auto full_path = (http.webRoot / ("./" + unescape(request.path, true))).lexically_normal();
+		if (std::filesystem::is_directory(full_path))
+			full_path /= "";
 
 		if (!isSubpath(http.webRoot, full_path)) {
 			ERROR("Not subpath of " << http.webRoot << ": " << full_path);
 			return CancelableResult::Pass;
 		}
+
+		auto dir = full_path.parent_path();
+		do {
+			auto lock = lockConfigs();
+			if (configs.contains(dir)) {
+				const auto &config = configs.at(dir);
+				if (config.contains("auth")) {
+					const auto &auth = config.at("auth");
+					try {
+						const std::string &username = auth.at("username");
+						const std::string &password = auth.at("password");
+						const auto auth_result = request.checkAuthentication(username, password);
+						if (auth_result == HTTP::AuthenticationResult::Missing) {
+							const std::string realm = auth.contains("realm")? auth.at("realm") : "";
+							http.send401(client, realm);
+							return CancelableResult::Approve;
+						}
+						if (auth_result != HTTP::AuthenticationResult::Success) {
+							http.send401(client);
+							return CancelableResult::Approve;
+						}
+						break;
+					} catch (const nlohmann::detail::out_of_range &) {
+						WARN("Invalid authentication configuration in " << dir);
+					}
+				}
+			}
+			dir = dir.parent_path();
+		} while (dir != http.webRoot && !dir.empty());
 
 		if (std::filesystem::is_regular_file(full_path)) {
 			// Use the path as-is.

@@ -155,6 +155,10 @@ namespace Algiz::HTTP {
 		server->send(client.id, response);
 	}
 
+	void Server::send401(Client &client) {
+		server->send(client.id, Response(401, "Unauthorized"));
+	}
+
 	void Server::send403(Client &client) {
 		server->send(client.id, Response(403, "Forbidden"));
 	}

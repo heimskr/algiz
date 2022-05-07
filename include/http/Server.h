@@ -98,6 +98,7 @@ namespace Algiz::HTTP {
 			void closeWebSocket(Client &);
 			void send400(Client &);
 			void send401(Client &, std::string_view realm);
+			void send401(Client &);
 			void send403(Client &);
 			void send500(Client &);
 			void cleanWebSocketHandlers();

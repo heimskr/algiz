@@ -52,6 +52,8 @@ plugins: plugin $(OBJECTS_PL)
 wahtwo/libwahtwo.a:
 	make -C wahtwo libwahtwo.a
 
+$(OUTPUT): wahtwo/libwahtwo.a
+
 $(OUTPUT): $(LIBS) $(OBJECTS)
 	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS) -Wl,--whole-archive -Lwahtwo -lwahtwo -Wl,-no-whole-archive
 
