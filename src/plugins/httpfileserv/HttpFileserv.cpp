@@ -56,6 +56,7 @@ namespace Algiz::Plugins {
 		}
 
 		auto dir = full_path.parent_path();
+		const auto root = dir.root_path();
 		do {
 			auto lock = lockConfigs();
 			if (configs.contains(dir)) {
@@ -81,8 +82,15 @@ namespace Algiz::Plugins {
 					}
 				}
 			}
+			if (dir == http.webRoot)
+				break;
 			dir = dir.parent_path();
-		} while (dir != http.webRoot && !dir.empty());
+		} while (dir != root);
+
+		if (full_path.filename() == ".algiz") {
+			http.send401(client);
+			return CancelableResult::Approve;
+		}
 
 		if (std::filesystem::is_regular_file(full_path)) {
 			// Use the path as-is.
@@ -184,7 +192,7 @@ namespace Algiz::Plugins {
 			ERROR(err.what());
 			client.send(HTTP::Response(403, "Forbidden"));
 			client.close();
-			return CancelableResult::Kill;
+			return CancelableResult::Approve;
 		}
 	}
 
