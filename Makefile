@@ -9,7 +9,7 @@ CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread $(shell pkg-config --libs $(DEPENDENCIES)) -ldl
 
-CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res --not-match-f='^.\/algiz.json$$' --fullpath --not-match-d='^(.\/include\/lib|.\/(src|include)\/plugins\/probchess)'
+CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res --not-match-f='(^.\/(algiz.json|Makefile)|targets.mk)$$' --fullpath --not-match-d='^(.\/include\/lib|.\/(src|include)\/plugins\/probchess)'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
 OBJECTS         := $(SOURCES:.cpp=.o)
 
