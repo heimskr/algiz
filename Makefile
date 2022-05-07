@@ -9,7 +9,7 @@ CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread $(shell pkg-config --libs $(DEPENDENCIES)) -ldl
 
-CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res --not-match-f='^.\/algiz.json$$' --fullpath --not-match-d='^(.\/include\/lib|.\/(src|include)\/plugins\/probchess)'
+CLOC_OPTIONS    := --exclude-dir=.vscode,json,www,inja,res,wahtwo --not-match-f='(^.\/(algiz.json|Makefile)|targets.mk)$$' --fullpath --not-match-d='^(.\/include\/lib|.\/(src|include)\/plugins\/probchess)'
 SOURCES         := $(shell find -L src -name '*.cpp' | sed -nE '/^src\/plugins\//!p')
 OBJECTS         := $(SOURCES:.cpp=.o)
 
@@ -49,8 +49,11 @@ plugin:
 
 plugins: plugin $(OBJECTS_PL)
 
-$(OUTPUT): $(OBJECTS)
-	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS)
+wahtwo/libwahtwo.a:
+	make -C wahtwo libwahtwo.a
+
+$(OUTPUT): $(LIBS) $(OBJECTS)
+	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS) -Wl,--whole-archive -Lwahtwo -lwahtwo -Wl,-no-whole-archive
 
 %.o: %.cpp
 	$(COMPILER) $(CFLAGS) -c $< -o $@

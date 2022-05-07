@@ -13,11 +13,32 @@
 
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).handlers.push_back(std::weak_ptr(handler));
+		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
+		http.handlers.push_back(std::weak_ptr(handler));
+
+		auto crawled = crawlConfigs(http.webRoot);
+		{
+			auto lock = lockConfigs();
+			configs = std::move(crawled);
+		}
+
+		watcher.emplace({http.webRoot.string()}, true);
+
+		watcher->onModify = [this](const std::filesystem::path &path) {
+			if (path.filename() == ".algiz")
+				addConfig(path);
+		};
+
+		watcherThread = std::thread([this] {
+			watcher->start();
+		});
+
+		watcherThread.detach();
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
+		watcher->stop();
 	}
 
 	CancelableResult HttpFileserv::handle(HTTP::Server::HandlerArgs &args, bool not_disabled) {
@@ -146,6 +167,42 @@ namespace Algiz::Plugins {
 			return defaults;
 		}
 		return {};
+	}
+
+	decltype(HttpFileserv::configs) HttpFileserv::crawlConfigs(const std::filesystem::path &base) {
+		decltype(configs) out;
+		crawlConfigs(base, out);
+		return out;
+	}
+
+	void HttpFileserv::crawlConfigs(const std::filesystem::path &base, decltype(configs) &map) {
+		if (!std::filesystem::is_directory(base))
+			throw std::runtime_error("Can't crawl " + base.string() + ": not a directory");
+
+		for (const auto &entry: std::filesystem::directory_iterator(base))
+			if (entry.is_directory())
+				crawlConfigs(entry.path(), map);
+			else if (entry.path().filename() == ".algiz")
+				try {
+					map.emplace(base, nlohmann::json::parse(readFile(entry.path())));
+				} catch (const nlohmann::detail::parse_error &) {
+					ERROR("Invalid syntax in " << entry.path());
+				}
+	}
+
+	void HttpFileserv::addConfig(const std::filesystem::path &path) {
+		nlohmann::json json;
+		try {
+			json = nlohmann::json::parse(readFile(path));
+		} catch (const nlohmann::detail::parse_error &) {
+			ERROR("Invalid syntax in " << path);
+			return;
+		}
+		const auto parent = path.parent_path();
+		auto lock = lockConfigs();
+		configs.erase(parent);
+		configs.emplace(parent, std::move(json));
+		INFO("Read config from " << path);
 	}
 }
 

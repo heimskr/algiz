@@ -4,3 +4,6 @@
 [submodule "inja"]
 	path = inja
 	url = https://github.com/pantor/inja.git
+[submodule "wahtwo"]
+	path = wahtwo
+	url = https://github.com/heimskr/wahtwo.git
