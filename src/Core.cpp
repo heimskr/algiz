@@ -35,6 +35,9 @@ namespace Algiz {
 				ERROR("[" << server->id << "] Disconnecting client " << client << ": " << error.what());
 				server->send(client, HTTP::Response(400, "Couldn't parse request."));
 				server->close(client);
+			} catch (const std::out_of_range &) {
+				ERROR("[" << server->id << "] Disconnecting client " << client << ": client not ready");
+				server->close(client);
 			}
 		};
 
