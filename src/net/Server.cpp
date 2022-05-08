@@ -269,12 +269,13 @@ namespace Algiz {
 			socklen_t addr6_len = sizeof(addr6);
 			if (getpeername(new_fd, reinterpret_cast<sockaddr *>(&addr6), &addr6_len) == 0) {
 				char ip_buffer[INET6_ADDRSTRLEN];
-				if (inet_ntop(addr6.sin6_family, &addr6, ip_buffer, addr6_len) != nullptr)
+				if (inet_ntop(addr6.sin6_family, &addr6.sin6_addr, ip_buffer, sizeof(ip_buffer)) != nullptr)
 					ip = ip_buffer;
 				else
 					WARN("inet_ntop failed: " << strerror(errno));
 			} else
 				WARN("getpeername failed: " << strerror(errno));
+			auto lock = server.lockClients();
 			server.addClient(*this, new_client, ip);
 		}
 	}
