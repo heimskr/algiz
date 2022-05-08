@@ -6,14 +6,15 @@
 namespace Algiz {
 	struct GenericClient {
 		int id = -1;
+		std::string ip;
 		bool lineMode = true;
 		size_t maxLineSize = -1;
 
 		GenericClient() = delete;
 		GenericClient(const GenericClient &) = delete;
 		GenericClient(GenericClient &&) = delete;
-		GenericClient(int id_, bool line_mode, size_t max_line_size = -1):
-			id(id_), lineMode(line_mode), maxLineSize(max_line_size) {}
+		GenericClient(int id_, std::string_view ip_, bool line_mode, size_t max_line_size = -1):
+			id(id_), ip(ip_), lineMode(line_mode), maxLineSize(max_line_size) {}
 
 		virtual ~GenericClient() = default;
 

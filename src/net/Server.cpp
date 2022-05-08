@@ -263,8 +263,20 @@ namespace Algiz {
 		bufferevent_setcb(buffer_event, conn_readcb, conn_writecb, conn_eventcb, this);
 		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
 
-		if (server.addClient)
-			server.addClient(*this, new_client);
+		if (server.addClient) {
+			std::string ip;
+			sockaddr_in6 addr6 {};
+			socklen_t addr6_len = sizeof(addr6);
+			if (getpeername(new_fd, reinterpret_cast<sockaddr *>(&addr6), &addr6_len) == 0) {
+				char ip_buffer[INET6_ADDRSTRLEN];
+				if (inet_ntop(addr6.sin6_family, &addr6, ip_buffer, addr6_len) != nullptr)
+					ip = ip_buffer;
+				else
+					WARN("inet_ntop failed: " << strerror(errno));
+			} else
+				WARN("getpeername failed: " << strerror(errno));
+			server.addClient(*this, new_client, ip);
+		}
 	}
 
 	void Server::Worker::handleWriteEmpty(bufferevent *buffer_event) {

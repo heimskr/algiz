@@ -16,8 +16,8 @@
 namespace Algiz::HTTP {
 	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const nlohmann::json &options_):
 	server(server_), options(options_), webRoot(getWebRoot(options_.contains("root")? options_.at("root") : "")) {
-		server->addClient = [this](auto &, int new_client) {
-			auto http_client = std::make_unique<Client>(*this, new_client);
+		server->addClient = [this](auto &, int new_client, std::string_view ip) {
+			auto http_client = std::make_unique<Client>(*this, new_client, ip);
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
 		server->closeHandler = [this](int client_id) {

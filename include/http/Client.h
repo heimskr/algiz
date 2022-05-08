@@ -38,7 +38,8 @@ namespace Algiz::HTTP {
 			size_t maxWebSocketPacketLength = 1 << 24;
 
 			Client() = delete;
-			Client(HTTP::Server &server_, int id_): GenericClient(id_, true, 8192), server(server_) {}
+			Client(HTTP::Server &server_, int id_, std::string_view ip_):
+				GenericClient(id_, ip_, true, 8192), server(server_) {}
 			Client(const Client &) = delete;
 			Client(Client &&) = delete;
 
