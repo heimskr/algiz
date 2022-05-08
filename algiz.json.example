@@ -1,16 +1,14 @@
 {
 	"http": {
-		"ip": "::1",
+		"ip": "::0",
 		"port": 8080,
 		"root": "./www",
-		"plugins": ["logger", "calculator", ["httpfileserv", {
-			"default": ["index.t", "index.html"]
-		}], ["default404", {
-			"file": "www/404.t"
+		"plugins": ["logger", "calculator", ["redirect", {
+			"base": "https://example.com"
 		}]]
 	},
 	"https": {
-		"ip": "::1",
+		"ip": "::0",
 		"port": 4433,
 		"root": "./www",
 		"cert": "private.crt",
