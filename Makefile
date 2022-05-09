@@ -15,11 +15,9 @@ OBJECTS         := $(SOURCES:.cpp=.o)
 
 SHARED_EXT      := so
 SHARED_FLAG	    := -shared
-LIBPATHVAR      := LD_LIBRARY_PATH
 ifeq ($(shell uname -s), Darwin)
-	SHARED_EXT  := dylib
-	SHARED_FLAG := -dynamiclib
-	LIBPATHVAR  := DYLD_LIBRARY_PATH
+SHARED_EXT      := dylib
+SHARED_FLAG     := -dynamiclib
 endif
 
 SOURCES_PL      := $(shell find -L src/plugins -name '*.cpp')
