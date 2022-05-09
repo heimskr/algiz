@@ -15,9 +15,16 @@ OBJECTS         := $(SOURCES:.cpp=.o)
 
 SHARED_EXT      := so
 SHARED_FLAG	    := -shared
+WAHTWO          := -Wl,--whole-archive -Lwahtwo -lwahtwo -Wl,-no-whole-archive
 ifeq ($(shell uname -s), Darwin)
 SHARED_EXT      := dylib
 SHARED_FLAG     := -dynamiclib
+WAHTWO          := -framework CoreServices
+
+$(OUTPUT): wahtwo/src/fsevents.o
+
+wahtwo/src/fsevents.o:
+	make -C wahtwo src/fsevents.o
 endif
 
 SOURCES_PL      := $(shell find -L src/plugins -name '*.cpp')
@@ -50,10 +57,8 @@ plugins: plugin $(OBJECTS_PL)
 wahtwo/libwahtwo.a:
 	make -C wahtwo libwahtwo.a
 
-$(OUTPUT): wahtwo/libwahtwo.a
-
 $(OUTPUT): $(LIBS) $(OBJECTS)
-	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS) -Wl,--whole-archive -Lwahtwo -lwahtwo -Wl,-no-whole-archive
+	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS) $(WAHTWO)
 
 %.o: %.cpp
 	$(COMPILER) $(CFLAGS) -c $< -o $@
