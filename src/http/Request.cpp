@@ -74,7 +74,7 @@ namespace Algiz::HTTP {
 					headers.emplace(header_name_string, header_content);
 				if (header_name == "Content-Length")
 					try {
-						lengthRemaining = contentLength = parseUlong(header_content.begin());
+						lengthRemaining = contentLength = parseUlong(header_content);
 					} catch (const std::invalid_argument &err) {
 						throw ParseError(err.what());
 					}
