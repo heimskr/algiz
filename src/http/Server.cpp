@@ -66,7 +66,7 @@ namespace Algiz::HTTP {
 		server->stop();
 	}
 
-	void Server::handleGet(Client &client, const Request &request) {
+	void Server::handleGET(Client &client, const Request &request) {
 		if (!validatePath(request.path)) {
 			server->send(client.id, Response(403, "Invalid path."));
 			server->close(client.id);
@@ -126,7 +126,7 @@ namespace Algiz::HTTP {
 			try {
 #endif
 				HandlerArgs args {*this, client, Request(request), getParts(request.path)};
-				auto [should_pass, result] = beforeMulti(args, handlers);
+				auto [should_pass, result] = beforeMulti(args, getHandlers);
 				if (result == Plugins::HandlerResult::Pass) {
 					server->send(client.id, Response(501, "Unhandled request"));
 					server->close(client.id);
@@ -138,6 +138,20 @@ namespace Algiz::HTTP {
 				server->close(client.id);
 			}
 #endif
+		}
+	}
+
+	void Server::handlePOST(Client &client, const Request &request) {
+		if (!validatePath(request.path)) {
+			server->send(client.id, Response(403, "Invalid path."));
+			server->close(client.id);
+		} else {
+			HandlerArgs args {*this, client, Request(request), getParts(request.path)};
+			auto [should_pass, result] = beforeMulti(args, postHandlers);
+			if (result == Plugins::HandlerResult::Pass) {
+				server->send(client.id, Response(501, "Unhandled request"));
+				server->close(client.id);
+			}
 		}
 	}
 

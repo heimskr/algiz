@@ -188,7 +188,10 @@ namespace Algiz::HTTP {
 	void Client::handleRequest() {
 		switch (request.method) {
 			case Request::Method::GET:
-				server.handleGet(*this, request);
+				server.handleGET(*this, request);
+				break;
+			case Request::Method::POST:
+				server.handlePOST(*this, request);
 				break;
 			default:
 				throw ParseError("Invalid method: " + std::to_string(int(request.method)));

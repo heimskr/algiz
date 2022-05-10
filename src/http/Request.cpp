@@ -95,12 +95,14 @@ namespace Algiz::HTTP {
 				if (lengthRemaining < line.size()) {
 					content += line.substr(lengthRemaining);
 					lengthRemaining = 0;
-					return HandleResult::Done;
-				}
-
-				if (lengthRemaining == line.size()) {
+				} else if (lengthRemaining == line.size()) {
 					content += line;
 					lengthRemaining = 0;
+				}
+
+				if (lengthRemaining == 0) {
+					if (method == Method::POST)
+						absorbPOST();
 					return HandleResult::Done;
 				}
 
@@ -149,6 +151,11 @@ namespace Algiz::HTTP {
 		}
 	}
 
+	void Request::absorbPOST() {
+		postParameters = getParameters(content, false);
+		content.clear();
+	}
+
 	bool Request::valid(size_t total_size) {
 		// Can't request a suffix larger than the total size.
 		if (total_size < suffixLength)
@@ -178,13 +185,17 @@ namespace Algiz::HTTP {
 		return path.substr(0, path.find('?'));
 	}
 
-	std::map<std::string, std::string> Request::getParameters(std::string_view path) {
+	std::map<std::string, std::string> Request::getParameters(std::string_view path, bool chop_question_mark) {
 		std::map<std::string, std::string> parameters;
-		const size_t question_mark = path.find('?');
-		if (question_mark == std::string_view::npos)
-			return parameters;
 
-		path.remove_prefix(question_mark + 1);
+		if (chop_question_mark) {
+			const size_t question_mark = path.find('?');
+			if (question_mark == std::string_view::npos)
+				return parameters;
+
+			path.remove_prefix(question_mark + 1);
+		}
+
 		size_t ampersand = path.find('&');
 
 		auto add_parameter = [&] {

@@ -21,11 +21,14 @@ namespace Algiz::HTTP {
 
 			void parseRange(std::string_view);
 
+			/** Parses the content into `postParameters` and clears the content. */
+			void absorbPOST();
+
 			/** When given "/foo?bar=baz&quux=hello", returns "/foo" */
 			static std::string_view getPath(std::string_view);
 
 			/** Takes in a string like "/foo?bar=baz&quux=hello" */
-			static std::map<std::string, std::string> getParameters(std::string_view);
+			static std::map<std::string, std::string> getParameters(std::string_view, bool chop_question_mark = true);
 
 		public:
 			enum class Method {Invalid, GET, HEAD, PUT, POST};
@@ -38,6 +41,7 @@ namespace Algiz::HTTP {
 			std::string charset;
 			std::map<std::string, std::string> headers;
 			std::map<std::string, std::string> parameters;
+			std::map<std::string, std::string> postParameters;
 			std::vector<std::tuple<size_t, size_t>> ranges;
 			size_t suffixLength = 0;
 

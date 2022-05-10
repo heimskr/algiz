@@ -14,11 +14,11 @@
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
-		http.handlers.push_back(std::weak_ptr(handler));
+		http.getHandlers.push_back(std::weak_ptr(handler));
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(handler));
 	}
 
 	CancelableResult HttpFileserv::handle(HTTP::Server::HandlerArgs &args, bool not_disabled) {

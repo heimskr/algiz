@@ -83,7 +83,8 @@ namespace Algiz::HTTP {
 			std::shared_ptr<Algiz::Server> server;
 			nlohmann::json options;
 			std::filesystem::path webRoot;
-			std::list<PrePtr<HandlerArgs &>> handlers;
+			std::list<PrePtr<HandlerArgs &>> getHandlers;
+			std::list<PrePtr<HandlerArgs &>> postHandlers;
 			std::list<WeakConnectionHandlerPtr> webSocketConnectionHandlers;
 			std::map<std::filesystem::path, nlohmann::json> configs;
 
@@ -99,7 +100,8 @@ namespace Algiz::HTTP {
 
 			void run() override;
 			void stop() override;
-			void handleGet(Client &, const Request &);
+			void handleGET(Client &, const Request &);
+			void handlePOST(Client &, const Request &);
 			void handleWebSocketMessage(Client &, std::string_view);
 			/** Doesn't send a close packet to the client; that should be done by the caller. */
 			void closeWebSocket(Client &);
@@ -123,12 +125,14 @@ namespace Algiz::HTTP {
 
 			template <typename T = nlohmann::json, typename N>
 			std::optional<T> getOption(std::string_view web_path, const N &name) {
+				if (!web_path.empty() && web_path.front() == '/')
+					web_path.remove_prefix(1);
 				return getOption(webRoot / web_path, name);
 			}
 
 			template <typename T = nlohmann::json, typename N>
 			std::optional<T> getOption(const std::string &web_path, const N &name) {
-				return getOption(webRoot / web_path, name);
+				return getOption(std::string_view(web_path), name);
 			}
 
 			template <typename T = nlohmann::json, typename N>

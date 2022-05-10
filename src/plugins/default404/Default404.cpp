@@ -10,11 +10,11 @@
 
 namespace Algiz::Plugins {
 	void Default404::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).handlers.push_back(handler);
+		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.push_back(handler);
 	}
 
 	void Default404::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).handlers, std::weak_ptr(handler));
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(handler));
 	}
 
 	CancelableResult Default404::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {

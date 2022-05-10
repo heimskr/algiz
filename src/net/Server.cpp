@@ -309,31 +309,31 @@ namespace Algiz {
 
 		try {
 			auto lock = lockReadBuffers();
+			std::string &str = readBuffers[descriptor];
+			str.reserve(bufferSize);
+
+			auto &clients = server.clients;
+			auto clients_lock = server.lockClients();
+			const int client_id = clients.at(descriptor);
+
+			GenericClient *client_pointer;
+			try {
+				client_pointer = server.allClients.at(client_id).get();
+			} catch (const std::out_of_range &) {
+				// Seems the client isn't ready for reading yet.
+				ERROR("Client " << client_id << " doesn't have an instance yet");
+				return;
+			}
+			auto &client = *client_pointer;
+
 			while (0 < readable) {
-				std::string &str = readBuffers[descriptor];
-				str.reserve(bufferSize);
-
-				auto &clients = server.clients;
-				auto clients_lock = server.lockClients();
-				const int client_id = clients.at(descriptor);
-
-				GenericClient *client_pointer;
-				try {
-					client_pointer = server.allClients.at(client_id).get();
-				} catch (const std::out_of_range &) {
-					// Seems the client isn't ready for reading yet.
-					ERROR("Client " << client_id << " doesn't have an instance yet");
-					return;
-				}
-				auto &client = *client_pointer;
-
 				const int byte_count = evbuffer_remove(input, buffer.get(), std::min(bufferSize, readable));
 
 				if (byte_count < 0)
 					throw NetError("Reading", errno);
 
 				if (!client.lineMode) {
-					server.handleMessage(clients.at(descriptor), {buffer.get(), size_t(byte_count)});
+					server.handleMessage(client_id, {buffer.get(), size_t(byte_count)});
 					str.clear();
 				} else if (client.maxLineSize < str.size() + size_t(byte_count)) {
 					client.onMaxLineSizeExceeded();
@@ -348,7 +348,7 @@ namespace Algiz {
 					std::string_view view = str;
 					do {
 						if (index != -1) {
-							server.handleMessage(clients.at(descriptor), view.substr(0, index));
+							server.handleMessage(client_id, view.substr(0, index));
 							if (clients.contains(descriptor)) {
 								view.remove_prefix(index + delimiter_size);
 								to_erase += index + delimiter_size;
@@ -358,6 +358,13 @@ namespace Algiz {
 					} while (!done);
 					if (to_erase != 0)
 						str.erase(0, to_erase);
+				}
+
+				if (!str.empty()) {
+					if (client.lineMode)
+						throw std::runtime_error("Text is left over in the buffer, "
+							"but the client is still in line mode");
+					server.handleMessage(client_id, str);
 				}
 
 				readable = evbuffer_get_length(input);
