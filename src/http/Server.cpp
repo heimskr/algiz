@@ -20,12 +20,33 @@ namespace Algiz::HTTP {
 			auto http_client = std::make_unique<Client>(*this, new_client, ip);
 			server->getClients().try_emplace(new_client, std::move(http_client));
 		};
+
 		server->closeHandler = [this](int client_id) {
 			closeWebSocket(dynamic_cast<Client &>(*server->getClients().at(client_id)));
 		};
+
+		auto crawled = crawlConfigs(webRoot);
+		{
+			auto lock = lockConfigs();
+			configs = std::move(crawled);
+		}
+
+		watcher.emplace({webRoot.string()}, true);
+
+		watcher->onModify = [this](const std::filesystem::path &path) {
+			if (path.filename() == ".algiz")
+				addConfig(path);
+		};
+
+		watcherThread = std::thread([this] {
+			watcher->start();
+		});
+
+		watcherThread.detach();
 	}
 
 	Server::~Server() {
+		watcher->stop();
 		server->messageHandler = {};
 	}
 
@@ -229,5 +250,41 @@ namespace Algiz::HTTP {
 
 	void Server::registerWebSocketCloseHandler(const Client &client, const WeakCloseHandlerPtr &handler) {
 		webSocketCloseHandlers[client.id].push_back(handler);
+	}
+
+	decltype(Server::configs) Server::crawlConfigs(const std::filesystem::path &base) {
+		decltype(configs) out;
+		crawlConfigs(base, out);
+		return out;
+	}
+
+	void Server::crawlConfigs(const std::filesystem::path &base, decltype(configs) &map) {
+		if (!std::filesystem::is_directory(base))
+			throw std::runtime_error("Can't crawl " + base.string() + ": not a directory");
+
+		for (const auto &entry: std::filesystem::directory_iterator(base))
+			if (entry.is_directory())
+				crawlConfigs(entry.path(), map);
+			else if (entry.path().filename() == ".algiz")
+				try {
+					map.emplace(base, nlohmann::json::parse(readFile(entry.path())));
+				} catch (const nlohmann::detail::parse_error &) {
+					ERROR("Invalid syntax in " << entry.path());
+				}
+	}
+
+	void Server::addConfig(const std::filesystem::path &path) {
+		nlohmann::json json;
+		try {
+			json = nlohmann::json::parse(readFile(path));
+		} catch (const nlohmann::detail::parse_error &) {
+			ERROR("Invalid syntax in " << path);
+			return;
+		}
+		const auto parent = path.parent_path();
+		auto lock = lockConfigs();
+		configs.erase(parent);
+		configs.emplace(parent, std::move(json));
+		INFO("Read config from " << path);
 	}
 }

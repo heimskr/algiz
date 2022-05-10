@@ -31,7 +31,7 @@ namespace Algiz::HTTP {
 			void handleRequest();
 
 		public:
-			Request request;
+			Request request {server};
 			std::map<std::string, std::any> session;
 			bool isWebSocket = false;
 			StringVector webSocketPath;

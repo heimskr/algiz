@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 
 #include "ApplicationServer.h"
@@ -10,8 +11,10 @@
 #include "net/Server.h"
 #include "nlohmann/json.hpp"
 #include "plugins/PluginHost.h"
+#include "util/FS.h"
 #include "util/StringVector.h"
 #include "util/WeakCompare.h"
+#include "wahtwo/Watcher.h"
 
 namespace Algiz::HTTP {
 	class Client;
@@ -68,6 +71,9 @@ namespace Algiz::HTTP {
 		private:
 			std::map<int, std::list<WeakMessageHandlerPtr>> webSocketMessageHandlers;
 			std::map<int, std::list<WeakCloseHandlerPtr>> webSocketCloseHandlers;
+			std::optional<Wahtwo::Watcher> watcher;
+			std::thread watcherThread;
+			std::mutex configsMutex;
 
 			[[nodiscard]] static std::filesystem::path getWebRoot(const std::string &);
 			[[nodiscard]] static bool validatePath(const std::string_view &);
@@ -79,6 +85,7 @@ namespace Algiz::HTTP {
 			std::filesystem::path webRoot;
 			std::list<PrePtr<HandlerArgs &>> handlers;
 			std::list<WeakConnectionHandlerPtr> webSocketConnectionHandlers;
+			std::map<std::filesystem::path, nlohmann::json> configs;
 
 			Server() = delete;
 			Server(const Server &) = delete;
@@ -106,5 +113,35 @@ namespace Algiz::HTTP {
 			void cleanWebSocketCloseHandlers();
 			void registerWebSocketMessageHandler(const Client &, const WeakMessageHandlerPtr &);
 			void registerWebSocketCloseHandler(const Client &, const WeakCloseHandlerPtr &);
+
+			auto lockConfigs() { return std::unique_lock(configsMutex); }
+
+			template <typename T, typename N>
+			T & getOption(const N &name) {
+				return options.at(name).template get_ref<T &>();
+			}
+
+			template <typename T, typename N>
+			std::optional<std::reference_wrapper<T>> getOption(std::string_view web_path, const N &name) {
+				std::filesystem::path path = webRoot / web_path;
+				if (!isSubpath(webRoot, path))
+					throw std::invalid_argument("Not a subpath of the webroot: " + path.string());
+				{
+					auto lock = lockConfigs();
+					if (configs.contains(path)) {
+						auto &config = configs.at(path);
+						if (config.contains(name))
+							return configs.at(name).template get_ref<T &>();
+					}
+				}
+				if (options.contains(name))
+					return options.at(name).template get_ref<T &>();
+				return std::nullopt;
+			}
+
+		private:
+			void addConfig(const std::filesystem::path &);
+			static decltype(configs) crawlConfigs(const std::filesystem::path &base);
+			static void crawlConfigs(const std::filesystem::path &base, decltype(configs) &);
 	};
 }
