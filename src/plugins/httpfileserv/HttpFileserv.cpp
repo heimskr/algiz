@@ -38,28 +38,24 @@ namespace Algiz::Plugins {
 		auto dir = full_path.parent_path();
 		const auto root = dir.root_path();
 		do {
-			auto lock = http.lockConfigs();
-			if (http.configs.contains(dir)) {
-				const auto &config = http.configs.at(dir);
-				if (config.contains("auth")) {
-					const auto &auth = config.at("auth");
-					try {
-						const std::string &username = auth.at("username");
-						const std::string &password = auth.at("password");
-						const auto auth_result = request.checkAuthentication(username, password);
-						if (auth_result == HTTP::AuthenticationResult::Missing) {
-							const std::string realm = auth.contains("realm")? auth.at("realm") : "";
-							http.send401(client, realm);
-							return CancelableResult::Approve;
-						}
-						if (auth_result != HTTP::AuthenticationResult::Success) {
-							http.send401(client);
-							return CancelableResult::Approve;
-						}
-						break;
-					} catch (const nlohmann::detail::out_of_range &) {
-						WARN("Invalid authentication configuration in " << dir);
+			auto auth = http.getOption(dir, "auth");
+			if (auth) {
+				try {
+					const std::string &username = auth->at("username");
+					const std::string &password = auth->at("password");
+					const auto auth_result = request.checkAuthentication(username, password);
+					if (auth_result == HTTP::AuthenticationResult::Missing) {
+						const std::string realm = auth->contains("realm")? auth->at("realm") : "";
+						http.send401(client, realm);
+						return CancelableResult::Approve;
 					}
+					if (auth_result != HTTP::AuthenticationResult::Success) {
+						http.send401(client);
+						return CancelableResult::Approve;
+					}
+					break;
+				} catch (const nlohmann::detail::out_of_range &) {
+					WARN("Invalid authentication configuration in " << dir);
 				}
 			}
 			if (dir == http.webRoot)

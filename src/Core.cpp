@@ -30,16 +30,26 @@ namespace Algiz {
 				http->postinitPlugins();
 			}
 
-			http->server->messageHandler = [server = http->server](int client, std::string_view message) {
+			http->server->messageHandler = [server = http->server](int client_id, std::string_view message) {
+				GenericClient *client = nullptr;
+				{
+					auto lock = server->lockClients();
+					auto &clients = server->getClients();
+					if (clients.contains(client_id)) {
+						client = clients.at(client_id).get();
+					} else {
+						ERROR("[" << server->id << "] Disconnecting client " << client_id << ": client not ready");
+						server->close(client_id);
+						return;
+					}
+				}
+
 				try {
-					server->getClients().at(client)->handleInput(message);
+					client->handleInput(message);
 				} catch (const ParseError &error) {
-					ERROR("[" << server->id << "] Disconnecting client " << client << ": " << error.what());
-					server->send(client, HTTP::Response(400, "Couldn't parse request."));
-					server->close(client);
-				} catch (const std::out_of_range &) {
-					ERROR("[" << server->id << "] Disconnecting client " << client << ": client not ready");
-					server->close(client);
+					ERROR("[" << server->id << "] Disconnecting client " << client_id << ": " << error.what());
+					server->send(client_id, HTTP::Response(400, "Couldn't parse request."));
+					server->close(client_id);
 				}
 			};
 		} catch (const std::exception &err) {

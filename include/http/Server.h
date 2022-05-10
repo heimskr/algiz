@@ -121,21 +121,31 @@ namespace Algiz::HTTP {
 				return options.at(name).template get_ref<T &>();
 			}
 
-			template <typename T, typename N>
-			std::optional<std::reference_wrapper<T>> getOption(std::string_view web_path, const N &name) {
-				std::filesystem::path path = webRoot / web_path;
+			template <typename T = nlohmann::json, typename N>
+			std::optional<T> getOption(std::string_view web_path, const N &name) {
+				return getOption(webRoot / web_path, name);
+			}
+
+			template <typename T = nlohmann::json, typename N>
+			std::optional<T> getOption(const std::filesystem::path &path, const N &name) {
 				if (!isSubpath(webRoot, path))
 					throw std::invalid_argument("Not a subpath of the webroot: " + path.string());
 				{
 					auto lock = lockConfigs();
 					if (configs.contains(path)) {
 						auto &config = configs.at(path);
-						if (config.contains(name))
-							return configs.at(name).template get_ref<T &>();
+						if (config.contains(name)) {
+							if constexpr (std::is_same_v<T, nlohmann::json>)
+								return config.at(name);
+							return config.at(name).template get<T>();
+						}
 					}
 				}
-				if (options.contains(name))
-					return options.at(name).template get_ref<T &>();
+				if (options.contains(name)) {
+					if constexpr (std::is_same_v<T, nlohmann::json>)
+						return options.at(name);
+					return options.at(name).template get<T>();
+				}
 				return std::nullopt;
 			}
 
