@@ -157,8 +157,9 @@ namespace Algiz::HTTP {
 		// Once the ranges are sorted, no range can begin before the previous one ends.
 		for (size_t i = 1, max = ranges.size(); i < max; ++i) {
 			const size_t start = std::get<0>(ranges[i]);
-			const size_t end = std::get<1>(ranges[i]);
-			if (end <= start || start < std::get<1>(ranges[i - 1]) || total_size <= start || total_size < end)
+			const size_t end   = std::get<1>(ranges[i]);
+			const size_t prev_end = std::get<1>(ranges[i - 1]);
+			if (end <= start || start < prev_end || total_size <= start || total_size < end)
 				return false;
 		}
 

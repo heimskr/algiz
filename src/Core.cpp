@@ -12,34 +12,41 @@
 namespace Algiz {
 	static HTTP::Server * makeHTTP(std::unique_ptr<Server> &&server, const nlohmann::json &suboptions) {
 		auto *http = new HTTP::Server(std::move(server), suboptions);
-		INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port") << ".");
+		try {
+			INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port")
+				<< ".");
 
-		if (suboptions.contains("plugins")) {
-			for (const auto &[key, value]: suboptions.at("plugins").items()) {
-				if (value.is_string()) {
-					http->loadPlugin("plugin/" + value.get<std::string>() + SHARED_SUFFIX);
-				} else {
-					auto [path, plugin, object] =
-						http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
-					plugin->setConfig(value.at(1));
+			if (suboptions.contains("plugins")) {
+				for (const auto &[key, value]: suboptions.at("plugins").items()) {
+					if (value.is_string()) {
+						http->loadPlugin("plugin/" + value.get<std::string>() + SHARED_SUFFIX);
+					} else {
+						auto [path, plugin, object] =
+							http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
+						plugin->setConfig(value.at(1));
+					}
 				}
+				http->preinitPlugins();
+				http->postinitPlugins();
 			}
-			http->preinitPlugins();
-			http->postinitPlugins();
-		}
 
-		http->server->messageHandler = [server = http->server](int client, std::string_view message) {
-			try {
-				server->getClients().at(client)->handleInput(message);
-			} catch (const ParseError &error) {
-				ERROR("[" << server->id << "] Disconnecting client " << client << ": " << error.what());
-				server->send(client, HTTP::Response(400, "Couldn't parse request."));
-				server->close(client);
-			} catch (const std::out_of_range &) {
-				ERROR("[" << server->id << "] Disconnecting client " << client << ": client not ready");
-				server->close(client);
-			}
-		};
+			http->server->messageHandler = [server = http->server](int client, std::string_view message) {
+				try {
+					server->getClients().at(client)->handleInput(message);
+				} catch (const ParseError &error) {
+					ERROR("[" << server->id << "] Disconnecting client " << client << ": " << error.what());
+					server->send(client, HTTP::Response(400, "Couldn't parse request."));
+					server->close(client);
+				} catch (const std::out_of_range &) {
+					ERROR("[" << server->id << "] Disconnecting client " << client << ": client not ready");
+					server->close(client);
+				}
+			};
+		} catch (const std::exception &err) {
+			ERROR("[" << server->id << "] Couldn't configure HTTP server: " << err.what());
+			delete http;
+			throw err;
+		}
 
 		return http;
 	}
