@@ -127,6 +127,11 @@ namespace Algiz::HTTP {
 			}
 
 			template <typename T = nlohmann::json, typename N>
+			std::optional<T> getOption(const std::string &web_path, const N &name) {
+				return getOption(webRoot / web_path, name);
+			}
+
+			template <typename T = nlohmann::json, typename N>
 			std::optional<T> getOption(const std::filesystem::path &path, const N &name) {
 				if (!isSubpath(webRoot, path))
 					throw std::invalid_argument("Not a subpath of the webroot: " + path.string());

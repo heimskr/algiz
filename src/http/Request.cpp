@@ -3,10 +3,12 @@
 #include "error/ParseError.h"
 #include "error/UnsupportedMethod.h"
 #include "http/Request.h"
+#include "http/Server.h"
 #include "util/Base64.h"
 #include "util/Util.h"
 
 #include "Log.h"
+#include "Options.h"
 
 namespace Algiz::HTTP {
 	Request::HandleResult Request::handleLine(std::string_view line) {
@@ -75,6 +77,12 @@ namespace Algiz::HTTP {
 				if (header_name == "Content-Length")
 					try {
 						lengthRemaining = contentLength = parseUlong(header_content);
+						if (method == Method::POST) {
+							const auto post_max_opt = server.getOption<size_t>(path, "postMax");
+							const size_t post_max = post_max_opt? *post_max_opt : POST_MAX;
+							if (post_max < lengthRemaining)
+								throw ParseError("POST length too long: " + std::to_string(lengthRemaining));
+						}
 					} catch (const std::invalid_argument &err) {
 						throw ParseError(err.what());
 					}

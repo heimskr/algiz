@@ -10,7 +10,6 @@
 
 #include "ApplicationServer.h"
 #include "Core.h"
-#include "Options.h"
 #include "http/Server.h"
 #include "net/Server.h"
 #include "util/FS.h"
