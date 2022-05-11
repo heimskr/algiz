@@ -1,5 +1,2 @@
 Ansuz:
 - Load plugins by path
-
-Algiz:
-- In Algiz::Server::handleMessage, clients are needlessly retrieved from client IDs again.

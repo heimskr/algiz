@@ -98,11 +98,11 @@ namespace Algiz {
 		return buffer_event;
 	}
 
-	void Server::handleMessage(int client, const std::string_view &message) {
+	void Server::handleMessage(GenericClient &client, std::string_view message) {
 		if (messageHandler)
 			messageHandler(client, message);
 		else
-			std::cerr << "Server: got message from client " << client << ": \"" << message << "\"\n";
+			std::cerr << "Server: got message from client " << client.id << ": \"" << message << "\"\n";
 	}
 
 	ssize_t Server::send(int client, std::string_view message) {
@@ -333,7 +333,7 @@ namespace Algiz {
 					throw NetError("Reading", errno);
 
 				if (!client.lineMode) {
-					server.handleMessage(client_id, {buffer.get(), size_t(byte_count)});
+					server.handleMessage(client, {buffer.get(), size_t(byte_count)});
 					str.clear();
 				} else if (client.maxLineSize < str.size() + size_t(byte_count)) {
 					client.onMaxLineSizeExceeded();
@@ -348,7 +348,7 @@ namespace Algiz {
 					std::string_view view = str;
 					do {
 						if (index != -1) {
-							server.handleMessage(client_id, view.substr(0, index));
+							server.handleMessage(client, view.substr(0, index));
 							if (clients.contains(descriptor)) {
 								view.remove_prefix(index + delimiter_size);
 								to_erase += index + delimiter_size;
@@ -364,7 +364,7 @@ namespace Algiz {
 					if (client.lineMode)
 						throw std::runtime_error("Text is left over in the buffer, "
 							"but the client is still in line mode");
-					server.handleMessage(client_id, str);
+					server.handleMessage(client, str);
 				}
 
 				readable = evbuffer_get_length(input);
