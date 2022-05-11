@@ -73,5 +73,6 @@ namespace Algiz::Plugins {
 			const nlohmann::json & getConfig() const;
 
 			Plugin & setConfig(const nlohmann::json &);
+			Plugin & setConfig(nlohmann::json &&);
 	};
 }

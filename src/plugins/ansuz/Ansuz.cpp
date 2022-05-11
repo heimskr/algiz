@@ -23,32 +23,26 @@
 
 namespace Algiz::Plugins {
 	void Ansuz::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.push_back(handler);
+		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
+		http.getHandlers.push_back(getHandler);
+		http.postHandlers.push_back(postHandler);
 	}
 
 	void Ansuz::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(handler));
+		auto &http = dynamic_cast<HTTP::Server &>(*host);
+		PluginHost::erase(http.getHandlers, std::weak_ptr(getHandler));
+		PluginHost::erase(http.postHandlers, std::weak_ptr(postHandler));
 	}
 
-	CancelableResult Ansuz::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
+	CancelableResult Ansuz::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
-		const auto &[http, client, request, parts] = args;
+		auto &[http, client, request, parts] = args;
 
 		if (!parts.empty() && parts.front() == "ansuz") {
-			if (!config.contains("password") || !config.at("password").is_string())
-				return serve(http, client, MESSAGE, {CSS,
-					{"message", "Ansuz needs a password in its configuration."}});
-
-			const auto auth = request.checkAuthentication("ansuz", config.at("password").get<std::string>());
-			if (auth == HTTP::AuthenticationResult::Missing) {
-				http.send401(client, "Ansuz");
-				return CancelableResult::Approve;
-			}
-			if (auth != HTTP::AuthenticationResult::Success)
-				return serve(http, client, MESSAGE, {CSS, {"message", "Bad authentication."}},
-					401);
+			if (!checkAuth(http, client, request))
+				return CancelableResult::Kill;
 
 			try {
 				if (parts.size() == 1)
@@ -74,27 +68,14 @@ namespace Algiz::Plugins {
 				} else if (parts.size() == 3) {
 					if (parts[1] == "unload") {
 						const auto &to_unload = parts[2];
-						const std::string full_name = "plugin/" + to_unload;
-						auto *tuple = http.getPlugin(full_name);
+						const auto canonical = std::filesystem::canonical("plugin/" + to_unload);
+						auto *tuple = http.getPlugin(canonical);
 						if (tuple == nullptr)
 							return serve(http, client, MESSAGE, {CSS,
 								{"message", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
 						http.unloadPlugin(*tuple);
 						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {CSS,
 							{"plugin", escapeHTML(to_unload)}});
-					}
-					if (parts[1] == "load") {
-						std::filesystem::path load_path = parts[2];
-						if (http.hasPlugin(load_path))
-							return serve(http, client, MESSAGE, {CSS,
-								{"message", "Plugin " + escapeHTML(parts[2]) + " already loaded."}});
-						try {
-							auto result = http.loadPlugin(load_path);
-						} catch (const std::exception &err) {
-							return serve(http, client, MESSAGE, {CSS, {"message", escapeHTML(err.what())}});
-						}
-						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin " + escapeHTML(parts[2]) +
-							" loaded."}});
 					}
 				}
 
@@ -107,6 +88,61 @@ namespace Algiz::Plugins {
 		}
 
 		return CancelableResult::Pass;
+	}
+
+	CancelableResult Ansuz::handlePOST(HTTP::Server::HandlerArgs &args, bool not_disabled) {
+		if (!not_disabled)
+			return CancelableResult::Pass;
+
+		auto &[http, client, request, parts] = args;
+
+		if (2 <= parts.size() && parts.front() == "ansuz") {
+			if (!checkAuth(http, client, request))
+				return CancelableResult::Kill;
+
+			if (parts[1] == "load") {
+				const auto &post = request.postParameters;
+				if (!post.contains("pluginName") || !post.contains("pluginConfig"))
+					return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
+				try {
+					const auto &name = post.at("pluginName");
+					std::filesystem::path path(name);
+					if (http.hasPlugin(path))
+						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin already loaded."}}, 404);
+					const auto json = nlohmann::json::parse(post.at("pluginConfig"));
+					auto result = http.loadPlugin(path);
+					auto &plugin = std::get<1>(result);
+					plugin->setConfig(std::move(json));
+					plugin->postinit(&http);
+					return serve(http, client, MESSAGE, {CSS, {"message", "Plugin loaded. <pre>" + escapeHTML(json.dump()) + "</pre>"}});
+				} catch (const std::exception &err) {
+					ERROR(err.what());
+					return serve(http, client, MESSAGE, {CSS, {"message", escapeHTML(err.what())}}, 500);
+				}
+			}
+		}
+
+		return CancelableResult::Pass;
+	}
+
+	bool Ansuz::checkAuth(HTTP::Server &server, HTTP::Client &client, const HTTP::Request &request) {
+		if (!config.contains("password") || !config.at("password").is_string()) {
+			serve(server, client, MESSAGE, {CSS, {"message", "Ansuz needs a password in its configuration."}});
+			return false;
+		}
+
+		const auto auth = request.checkAuthentication("ansuz", config.at("password").get<std::string>());
+		if (auth == HTTP::AuthenticationResult::Missing) {
+			server.send401(client, "Ansuz");
+			return false;
+		}
+
+		if (auth != HTTP::AuthenticationResult::Success) {
+			serve(server, client, MESSAGE, {CSS, {"message", "Bad authentication."}}, 401);
+			return false;
+		}
+
+		return true;
 	}
 
 	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content,

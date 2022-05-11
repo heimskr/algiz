@@ -21,11 +21,14 @@ namespace Algiz::Plugins {
 	}
 
 	PluginHost::PluginTuple PluginHost::loadPlugin(const std::string &path) {
-		if (!std::filesystem::exists(path))
+		const auto canonical = std::filesystem::canonical(path);
+
+		if (!std::filesystem::exists(canonical))
 			throw std::filesystem::filesystem_error("No plugin found at path",
 				std::error_code(ENOENT, std::generic_category()));
 
-		void *lib = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+
+		void *lib = dlopen(canonical.c_str(), RTLD_NOW | RTLD_LOCAL);
 		if (lib == nullptr)
 			throw std::runtime_error("dlopen returned nullptr. " + std::string(dlerror()));
 
@@ -33,7 +36,7 @@ namespace Algiz::Plugins {
 		if (make_plugin == nullptr)
 			throw std::runtime_error("Plugin creation function is null");
 
-		return plugins.emplace_back(path, std::shared_ptr<Plugin>(make_plugin()), lib);
+		return plugins.emplace_back(canonical, std::shared_ptr<Plugin>(make_plugin()), lib);
 	}
 
 	void PluginHost::loadPlugins(const std::string &path) {
@@ -73,8 +76,9 @@ namespace Algiz::Plugins {
 	}
 
 	bool PluginHost::hasPlugin(const std::filesystem::path &path) const {
+		const auto canonical = std::filesystem::canonical(path);
 		return plugins.end() != std::find_if(plugins.begin(), plugins.end(), [&](const PluginTuple &tuple) {
-			return path == std::get<0>(tuple);
+			return canonical == std::get<0>(tuple);
 		});
 	}
 

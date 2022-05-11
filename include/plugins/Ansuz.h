@@ -21,11 +21,18 @@ namespace Algiz::Plugins {
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
 
-			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> handler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Ansuz::handle));
+			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> getHandler =
+				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Ansuz::handleGET));
+
+			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> postHandler =
+				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Ansuz::handlePOST));
 
 		private:
-			CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+			CancelableResult handleGET(HTTP::Server::HandlerArgs &, bool not_disabled);
+			CancelableResult handlePOST(HTTP::Server::HandlerArgs &, bool not_disabled);
+
+			/** Returns whether authentication succeeded. */
+			bool checkAuth(HTTP::Server &, HTTP::Client &, const HTTP::Request &);
 
 			static CancelableResult serve(HTTP::Server &, HTTP::Client &, std::string_view, const nlohmann::json & = {},
 			                              int code = 200, const char *mime = "text/html");

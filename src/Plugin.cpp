@@ -26,4 +26,9 @@ namespace Algiz::Plugins {
 		config = config_;
 		return *this;
 	}
+
+	Plugin & Plugin::setConfig(nlohmann::json &&config_) {
+		config = std::move(config_);
+		return *this;
+	}
 }
