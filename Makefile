@@ -61,10 +61,10 @@ $(OUTPUT): $(LIBS) $(OBJECTS)
 	$(COMPILER) -rdynamic -o $@ $^ $(LDFLAGS) $(WAHTWO)
 
 %.o: %.cpp
-	$(COMPILER) $(CFLAGS) -c $< -o $@
+	$(COMPILER) $(strip $(CFLAGS) -c) $< -o $@
 
 src/plugins/%.o: src/plugins/%.cpp
-	$(COMPILER) $(CFLAGS) -fPIC -c $< -o $@
+	$(COMPILER) $(strip $(CFLAGS) -fPIC -c) $< -o $@
 
 clean:
 	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out $(shell find plugin -name '*.$(SHARED_EXT)'))
