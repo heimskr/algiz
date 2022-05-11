@@ -148,7 +148,7 @@ namespace Algiz {
 			[[nodiscard]] auto lockDescriptors() { return std::unique_lock(descriptorsMutex); }
 
 			/** (int client, std::string_view message) */
-			std::function<void(int, std::string_view)> messageHandler;
+			std::function<void(GenericClient &, std::string_view)> messageHandler;
 			/** clientsMutex will be locked while this is called. */
 			std::function<void(int)> closeHandler;
 			/** clientsMutex will be locked while this is called.
@@ -163,7 +163,7 @@ namespace Algiz {
 			virtual ~Server();
 
 			[[nodiscard]] inline int getPort() const { return port; }
-			void handleMessage(int client, const std::string_view &message);
+			void handleMessage(GenericClient &, std::string_view);
 			void mainLoop();
 			ssize_t send(int client, std::string_view);
 			ssize_t send(int client, const std::string &);
