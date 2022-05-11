@@ -11,9 +11,11 @@
 	</head>
 	<body>
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
-		<a href="/" id="home">ᚺᛖᛁᛗ</a>
+		<div id="links">
+			<a href="/" id="home">ᚺᛖᛁᛗ</a>
+			<a href="/ansuz/load" id="load">ᛚᛟᚨᛞ</a>
+		</div>
 		<main class="container">
-			<a href="/ansuz/load" id="load">ᛚᛟᚨᛞ</a><br />
 			<table class="table text-white">
 				<thead>
 					<th scope="col">Plugin</th>
@@ -22,7 +24,9 @@
 				<tbody>
 				{% for plugin in plugins %}
 					<tr>
-						<td class="col-10" title="{{plugin.2}}">{{plugin.1}}</td>
+						<td class="col-10" title="{{plugin.2}}">
+							<a class="edit-link" href="/ansuz/edit/{{plugin.0}}">{{plugin.1}}</a>
+						</td>
 						<td class="col-2">{{plugin.3}}</td>
 						<td class="col-2"><a class="btn btn-primary" role="button" href="/ansuz/unload/{{plugin.0}}">Unload</a></td>
 					</tr>

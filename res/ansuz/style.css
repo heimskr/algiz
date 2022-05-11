@@ -37,18 +37,29 @@ header:before {
 	text-shadow: #300 0px 0px 6.66px;
 }
 
-#home {
+#links {
 	position: absolute;
 	top: 10px;
 	left: 5px;
 	font: 1.5em FreeMono;
-	text-decoration: none;
-	color: white;
 	opacity: 0.5;
 }
 
-#load {
-	color: #700;
+#links > a {
 	text-decoration: none;
-	font: 2em FreeMono;
+	color: white;
+}
+
+#links > a:not(:first-child)::before {
+	content: "·";
+	padding-right: 1ex;
+}
+
+.edit-link {
+	color: inherit;
+	text-decoration: none;
+}
+
+td:first-child {
+	vertical-align: middle;
 }

@@ -11,7 +11,10 @@
 	</head>
 	<body>
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
-		<a href="/" id="home">ᚺᛖᛁᛗ</a>
+		<div id="links">
+			<a href="/" id="home">ᚺᛖᛁᛗ</a>
+			<a href="/ansuz/load" id="load">ᛚᛟᚨᛞ</a>
+		</div>
 		<main class="container">
 			{{message}}
 		</main>

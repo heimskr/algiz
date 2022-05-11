@@ -76,6 +76,17 @@ namespace Algiz::Plugins {
 						http.unloadPlugin(*tuple);
 						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {CSS,
 							{"plugin", escapeHTML(to_unload)}});
+					} else if (parts[1] == "edit") {
+						const auto &to_edit = parts[2];
+						const auto canonical = std::filesystem::canonical("plugin/" + to_edit);
+						auto *tuple = http.getPlugin(canonical);
+						if (tuple == nullptr)
+							return serve(http, client, MESSAGE, {CSS,
+								{"message", "Plugin " + escapeHTML(to_edit) + " not loaded."}});
+						return serve(http, client, RESOURCE(edit_config, "edit_config.t"), {CSS,
+							{"config", std::get<1>(*tuple)->getConfig().dump()},
+							{"pluginName", escapeHTML(escapeQuotes(canonical.string()))}
+						});
 					}
 				}
 
@@ -100,11 +111,11 @@ namespace Algiz::Plugins {
 			if (!checkAuth(http, client, request))
 				return CancelableResult::Kill;
 
-			if (parts[1] == "load") {
-				const auto &post = request.postParameters;
-				if (!post.contains("pluginName") || !post.contains("pluginConfig"))
-					return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
-				try {
+			try {
+				if (parts[1] == "load") {
+					const auto &post = request.postParameters;
+					if (!post.contains("pluginName") || !post.contains("pluginConfig"))
+						return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
 					const auto &name = post.at("pluginName");
 					std::filesystem::path path(name);
 					if (http.hasPlugin(path))
@@ -114,11 +125,26 @@ namespace Algiz::Plugins {
 					auto &plugin = std::get<1>(result);
 					plugin->setConfig(std::move(json));
 					plugin->postinit(&http);
-					return serve(http, client, MESSAGE, {CSS, {"message", "Plugin loaded. <pre>" + escapeHTML(json.dump()) + "</pre>"}});
-				} catch (const std::exception &err) {
-					ERROR(err.what());
-					return serve(http, client, MESSAGE, {CSS, {"message", escapeHTML(err.what())}}, 500);
+					return serve(http, client, MESSAGE, {CSS,
+						{"message", "Plugin loaded. <pre>" + escapeHTML(json.dump()) + "</pre>"}});
+				} else if (parts[1] == "edit") {
+					const auto &post = request.postParameters;
+					if (!post.contains("pluginName") || !post.contains("pluginConfig"))
+						return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
+					const auto json = nlohmann::json::parse(post.at("pluginConfig"));
+					const auto &name = post.at("pluginName");
+					auto path = std::filesystem::canonical(name);
+					if (!http.hasPlugin(path))
+						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin not loaded."}}, 404);
+					auto *tuple = http.getPlugin(path);
+					if (!tuple)
+						return serve(http, client, MESSAGE, {CSS, {"message", "Couldn't get plugin."}}, 500);
+					std::get<1>(*tuple)->setConfig(json);
+					return serve(http, client, MESSAGE, {CSS, {"message", "Configuration updated."}});
 				}
+			} catch (const std::exception &err) {
+				ERROR(err.what());
+				return serve(http, client, MESSAGE, {CSS, {"message", escapeHTML(err.what())}}, 500);
 			}
 		}
 
