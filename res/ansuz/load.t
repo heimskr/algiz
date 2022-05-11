@@ -17,6 +17,9 @@
 		<main class="container">
 			{% if length(plugins) == 0 %}
 			No plugins available.
+			<form onsubmit="loadPlugin(this.customPath.value); return false">
+				<input type="text" name="customPath" placeholder="Plugin path" />
+			</form><br />
 			{% else %}
 			<table class="table text-white">
 				<thead>
