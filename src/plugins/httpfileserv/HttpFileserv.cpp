@@ -40,6 +40,12 @@ namespace Algiz::Plugins {
 		if (authFailed(args, full_path))
 			return CancelableResult::Kill;
 
+		auto nodot = http.getOption<bool>(full_path, "nodot");
+		if (nodot && *nodot && full_path.filename().string()[0] == '.') {
+			http.send401(client);
+			return CancelableResult::Kill;
+		}
+
 		if (!findPath(full_path))
 			return CancelableResult::Pass;
 
@@ -80,6 +86,11 @@ namespace Algiz::Plugins {
 		if (authFailed(args, full_path))
 			return CancelableResult::Kill;
 
+		if (http.getOption<bool>(full_path, "nodot") && full_path.filename().string()[0] == '.') {
+			http.send401(client);
+			return CancelableResult::Kill;
+		}
+
 		if (!findPath(full_path))
 			return CancelableResult::Pass;
 
@@ -107,33 +118,27 @@ namespace Algiz::Plugins {
 
 	bool HttpFileserv::authFailed(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		auto &[http, client, request, parts] = args;
-		auto dir = full_path.parent_path();
-		const auto root = dir.root_path();
-		do {
-			auto auth = http.getOption(dir, "auth");
-			if (auth) {
-				try {
-					const std::string &username = auth->at("username");
-					const std::string &password = auth->at("password");
-					const auto auth_result = request.checkAuthentication(username, password);
-					if (auth_result == HTTP::AuthenticationResult::Missing) {
-						const std::string realm = auth->contains("realm")? auth->at("realm") : "";
-						http.send401(client, realm);
-						return true;
-					}
-					if (auth_result != HTTP::AuthenticationResult::Success) {
-						http.send401(client);
-						return true;
-					}
-					break;
-				} catch (const nlohmann::detail::out_of_range &) {
-					WARN("Invalid authentication configuration in " << dir);
+
+		auto auth = http.getOption(full_path, "auth");
+
+		if (auth) {
+			try {
+				const std::string &username = auth->at("username");
+				const std::string &password = auth->at("password");
+				const auto auth_result = request.checkAuthentication(username, password);
+				if (auth_result == HTTP::AuthenticationResult::Missing) {
+					const std::string realm = auth->contains("realm")? auth->at("realm") : "";
+					http.send401(client, realm);
+					return true;
 				}
+				if (auth_result != HTTP::AuthenticationResult::Success) {
+					http.send401(client);
+					return true;
+				}
+			} catch (const nlohmann::detail::out_of_range &) {
+				WARN("Invalid authentication configuration for " << full_path);
 			}
-			if (dir == http.webRoot)
-				break;
-			dir = dir.parent_path();
-		} while (dir != root);
+		}
 
 		if (full_path.filename() == ".algiz") {
 			http.send401(client);
