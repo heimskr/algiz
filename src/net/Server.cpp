@@ -101,8 +101,6 @@ namespace Algiz {
 	void Server::handleMessage(GenericClient &client, std::string_view message) {
 		if (messageHandler)
 			messageHandler(client, message);
-		else
-			std::cerr << "Server: got message from client " << client.id << ": \"" << message << "\"\n";
 	}
 
 	ssize_t Server::send(int client, std::string_view message) {
