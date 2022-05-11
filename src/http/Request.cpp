@@ -204,9 +204,9 @@ namespace Algiz::HTTP {
 				return;
 			const size_t equals = pair.find('=');
 			if (equals == std::string_view::npos)
-				parameters[std::string(pair)] = "";
+				parameters[unescape(pair)] = "";
 			else
-				parameters[std::string(pair.substr(0, equals))] = pair.substr(equals + 1);
+				parameters[unescape(pair.substr(0, equals))] = unescape(pair.substr(equals + 1));
 		};
 
 		while (ampersand != std::string_view::npos) {

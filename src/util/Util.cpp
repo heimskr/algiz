@@ -94,7 +94,7 @@ namespace Algiz {
 		return str;
 	}
 
-	std::string unescape(const std::string_view &path, bool plus_to_space) {
+	std::string unescape(std::string_view path, bool plus_to_space) {
 		if (path.find('%') == std::string::npos && !(plus_to_space && path.find('+') != std::string::npos))
 			return std::string(path);
 
