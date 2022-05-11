@@ -16,10 +16,11 @@ header {
 header > a {
 	color: inherit;
 	text-decoration: inherit;
+	text-shadow: #700 4px 4px 0px;
 }
 
 header > a:hover {
-	color: #700;
+	color: transparent;
 }
 
 header:before {
