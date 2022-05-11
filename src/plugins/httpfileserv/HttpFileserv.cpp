@@ -37,12 +37,15 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 		}
 
-		if (authFailed(args, full_path))
+		if (authFailed(args, full_path)) {
+			client.close();
 			return CancelableResult::Kill;
+		}
 
 		auto nodot = http.getOption<bool>(full_path, "nodot");
 		if (nodot && *nodot && full_path.filename().string()[0] == '.') {
 			http.send401(client);
+			client.close();
 			return CancelableResult::Kill;
 		}
 
@@ -83,11 +86,14 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 		}
 
-		if (authFailed(args, full_path))
+		if (authFailed(args, full_path)) {
+			client.close();
 			return CancelableResult::Kill;
+		}
 
 		if (http.getOption<bool>(full_path, "nodot") && full_path.filename().string()[0] == '.') {
 			http.send401(client);
+			client.close();
 			return CancelableResult::Kill;
 		}
 
