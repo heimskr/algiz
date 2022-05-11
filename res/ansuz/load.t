@@ -21,7 +21,11 @@
 			<table class="table text-white">
 				<thead>
 					<th scope="col-12">Plugin</th>
-					<th scope="col-2"></th>
+					<th scope="col-2">
+						<form onsubmit="loadPlugin(this.customPath.value); return false">
+							<input type="text" name="customPath" placeholder="Plugin path" />
+						</form>
+					</th>
 				</thead>
 				<tbody>
 				{% for plugin in plugins %}
@@ -35,10 +39,6 @@
 				</tbody>
 			</table>
 			{% endif %}
-			<form onsubmit="loadPlugin(this.customPath.value); return false">
-				<input type="text" name="customPath" placeholder="Plugin path" />
-			</form>
-			<br />
 			<div id="editor" style="min-height: 300px;"></div>
 		</main>
 		<script>
