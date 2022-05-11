@@ -157,7 +157,7 @@ namespace Algiz {
 			server.addClient(*this, new_client, ip);
 		}
 
-		bufferevent_setcb(buffer_event, conn_readcb, nullptr, conn_eventcb, this);
+		bufferevent_setcb(buffer_event, conn_readcb, conn_writecb, conn_eventcb, this);
 		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
 	}
 
