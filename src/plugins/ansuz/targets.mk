@@ -6,13 +6,11 @@ ansuz_res: include/plugins/ansuz/resources.h
 ansuz_clean:
 	rm -f include/plugins/ansuz/resources.h
 
-include/plugins/ansuz/resources.h: res/ansuz/index.t res/ansuz/style.css res/ansuz/bootstrap.min.css \
-res/ansuz/bootstrap-utilities.min.css res/ansuz/message.t res/ansuz/unloaded.t res/ansuz/load.t res/ansuz/edit_config.t
+include/plugins/ansuz/resources.h: res/ansuz/index.t res/ansuz/style.css res/ansuz/message.t res/ansuz/unloaded.t \
+res/ansuz/load.t res/ansuz/edit_config.t
 	echo "#include <cstdlib>" > $@
 	bin2c ansuz_index < res/ansuz/index.t | tail -n +2 >> $@
 	bin2c ansuz_css < res/ansuz/style.css | tail -n +2 >> $@
-	bin2c ansuz_bootstrap_css < res/ansuz/bootstrap.min.css | tail -n +2 >> $@
-	bin2c ansuz_bootstrap_util_css < res/ansuz/bootstrap-utilities.min.css | tail -n +2 >> $@
 	bin2c ansuz_message < res/ansuz/message.t | tail -n +2 >> $@
 	bin2c ansuz_unloaded < res/ansuz/unloaded.t | tail -n +2 >> $@
 	bin2c ansuz_load < res/ansuz/load.t | tail -n +2 >> $@

@@ -10,7 +10,7 @@
 #include "inja.hpp"
 #include "Log.h"
 
-#define EXTERNAL_RESOURCES
+// #define EXTERNAL_RESOURCES
 
 #ifdef EXTERNAL_RESOURCES
 #define RESOURCE(a, b) readFile("res/ansuz/" b)
@@ -49,11 +49,6 @@ namespace Algiz::Plugins {
 					return serveIndex(http, client);
 
 				if (parts.size() == 2) {
-					if (parts[1] == "bootstrap.min.css")
-						return serve(http, client, RESOURCE(bootstrap_css, "bootstrap.min.css"), {}, 200, "text/css");
-					if (parts[1] == "bootstrap-utilities.min.css")
-						return serve(http, client, RESOURCE(bootstrap_util_css, "bootstrap-utilities.min.css"), {}, 200,
-							"text/css");
 					if (parts[1] == "load") {
 						std::vector<std::pair<std::string, std::string>> plugins;
 						for (const auto &entry: std::filesystem::directory_iterator("plugin")) {
