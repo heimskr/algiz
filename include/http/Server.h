@@ -139,17 +139,23 @@ namespace Algiz::HTTP {
 			std::optional<T> getOption(const std::filesystem::path &path, const N &name) {
 				if (!isSubpath(webRoot, path))
 					throw std::invalid_argument("Not a subpath of the webroot: " + path.string());
-				{
+
+				auto dir = path.parent_path();
+				const auto root = dir.root_path();
+				do {
 					auto lock = lockConfigs();
-					if (configs.contains(path)) {
-						auto &config = configs.at(path);
+					if (configs.contains(dir)) {
+						auto &config = configs.at(dir);
 						if (config.contains(name)) {
 							if constexpr (std::is_same_v<T, nlohmann::json>)
 								return config.at(name);
 							return config.at(name).template get<T>();
 						}
 					}
-				}
+					if (dir == webRoot)
+						break;
+					dir = dir.parent_path();
+				} while (dir != root);
 				if (options.contains(name)) {
 					if constexpr (std::is_same_v<T, nlohmann::json>)
 						return options.at(name);
