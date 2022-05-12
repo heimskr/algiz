@@ -9,6 +9,8 @@ namespace Algiz {
 		std::string ip;
 		bool lineMode = true;
 		size_t maxLineSize = -1;
+		/** If nonzero, don't read more than this many bytes at a time. The amount read will be subtracted from this. */
+		size_t maxRead = 0;
 
 		GenericClient() = delete;
 		GenericClient(const GenericClient &) = delete;

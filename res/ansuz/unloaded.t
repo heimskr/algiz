@@ -10,7 +10,9 @@
 	</head>
 	<body>
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
-		<a href="/" id="home">ᚺᛖᛁᛗ</a>
+		<div id="links">
+			<a href="/" id="home">ᚺᛖᛁᛗ</a>
+		</div>
 		<main class="container">
 			Plugin {{plugin}} unloaded.
 		</main>

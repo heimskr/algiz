@@ -8,12 +8,12 @@
 namespace Algiz::HTTP {
 	enum class AuthenticationResult {Invalid, Missing, Malformed, BadUsername, BadPassword, Success};
 
-	class Server;
+	class Client;
 
 	class Request {
 		private:
 			enum class Mode {Method, Headers, Content};
-			HTTP::Server &server;
+			HTTP::Client &client;
 			Mode mode = Mode::Method;
 
 			size_t contentLength = 0;
@@ -46,7 +46,7 @@ namespace Algiz::HTTP {
 			size_t suffixLength = 0;
 
 			Request() = delete;
-			Request(HTTP::Server &server_): server(server_) {}
+			Request(HTTP::Client &client_): client(client_) {}
 
 			HandleResult handleLine(std::string_view);
 			bool valid(size_t total_size);

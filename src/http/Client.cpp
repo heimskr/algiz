@@ -18,7 +18,8 @@ namespace Algiz::HTTP {
 	}
 
 	void Client::close() {
-		server.server->close(id);
+		if (!keepAlive)
+			server.server->close(id);
 	}
 
 #define CHECKSIZE(n) do { if (message_size < (n)) { if (!has_leftover) leftoverMessage = message; return; } } \

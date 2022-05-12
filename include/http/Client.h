@@ -18,8 +18,10 @@ namespace Algiz::HTTP {
 	enum class WebSocketMessageType {Invalid, Binary, Text};
 
 	class Client: public GenericClient {
-		private:
+		public:
 			HTTP::Server &server;
+
+		private:
 			bool awaitingWebSocketHeader = true;
 			bool lastFin = false;
 			uint32_t webSocketMask = 0;
@@ -31,11 +33,12 @@ namespace Algiz::HTTP {
 			void handleRequest();
 
 		public:
-			Request request {server};
+			Request request {*this};
 			std::map<std::string, std::any> session;
 			bool isWebSocket = false;
 			StringVector webSocketPath;
 			size_t maxWebSocketPacketLength = 1 << 24;
+			bool keepAlive = true;
 
 			Client() = delete;
 			Client(HTTP::Server &server_, int id_, std::string_view ip_):

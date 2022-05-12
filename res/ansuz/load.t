@@ -14,6 +14,7 @@
 		<header><a href="/ansuz">ᚨᚾᛊᚢᛉ</a></header>
 		<div id="links">
 			<a href="/" id="home">ᚺᛖᛁᛗ</a>
+			<a href="/ansuz/load" id="load">ᛚᛟᚨᛞ</a>
 		</div>
 		<main class="container">
 			{% if length(plugins) == 0 %}

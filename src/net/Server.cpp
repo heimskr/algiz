@@ -325,7 +325,16 @@ namespace Algiz {
 			auto &client = *client_pointer;
 
 			while (0 < readable) {
-				const int byte_count = evbuffer_remove(input, buffer.get(), std::min(bufferSize, readable));
+				size_t to_read = std::min(bufferSize, readable);
+				const bool use_max_read = 0 < client.maxRead;
+
+				if (use_max_read)
+					to_read = std::min(to_read, client.maxRead);
+
+				const int byte_count = evbuffer_remove(input, buffer.get(), to_read);
+
+				if (use_max_read)
+					client.maxRead -= byte_count;
 
 				if (byte_count < 0)
 					throw NetError("Reading", errno);

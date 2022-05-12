@@ -2,6 +2,7 @@
 
 #include "error/ParseError.h"
 #include "error/UnsupportedMethod.h"
+#include "http/Client.h"
 #include "http/Request.h"
 #include "http/Server.h"
 #include "util/Base64.h"
@@ -21,7 +22,11 @@ namespace Algiz::HTTP {
 
 		if (line.empty() && mode == Mode::Headers) {
 			mode = Mode::Content;
-			return headers.contains("Content-Length")? HandleResult::DisableLineMode : HandleResult::Done;
+			if (headers.contains("Content-Length")) {
+				client.maxRead = contentLength;
+				return HandleResult::DisableLineMode;
+			}
+			return HandleResult::Done;
 		}
 
 		switch (mode) {
@@ -74,11 +79,11 @@ namespace Algiz::HTTP {
 					}
 				} else
 					headers.emplace(header_name_string, header_content);
-				if (header_name == "Content-Length")
+				if (header_name == "Content-Length") {
 					try {
 						lengthRemaining = contentLength = parseUlong(header_content);
 						if (method == Method::POST) {
-							const auto post_max_opt = server.getOption<size_t>(path, "postMax");
+							const auto post_max_opt = client.server.getOption<size_t>(path, "postMax");
 							const size_t post_max = post_max_opt? *post_max_opt : POST_MAX;
 							if (post_max < lengthRemaining)
 								throw ParseError("POST length too long: " + std::to_string(lengthRemaining));
@@ -86,8 +91,11 @@ namespace Algiz::HTTP {
 					} catch (const std::invalid_argument &err) {
 						throw ParseError(err.what());
 					}
-				else if (header_name == "Range")
+				} else if (header_name == "Range") {
 					parseRange(header_content);
+				} else if (header_name == "Connection") {
+					client.keepAlive = header_content != "close";
+				}
 				break;
 			}
 
@@ -103,6 +111,7 @@ namespace Algiz::HTTP {
 				if (lengthRemaining == 0) {
 					if (method == Method::POST)
 						absorbPOST();
+					mode = Mode::Method;
 					return HandleResult::Done;
 				}
 
