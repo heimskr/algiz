@@ -71,54 +71,57 @@ namespace Algiz::HTTP {
 			server->send(client.id, Response(403, "Invalid path."));
 			server->close(client.id);
 		} else {
-			if (request.headers.contains("Connection") && request.headers.at("Connection") == "Upgrade") {
-				if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
-					bool failed = !request.headers.contains("Sec-WebSocket-Key")
-					           || !request.headers.contains("Sec-WebSocket-Version")
-					           ||  request.headers.at("Sec-WebSocket-Key").size() != 24;
+			if (request.headers.contains("Connection")) {
+				const auto &header = request.headers.at("Connection");
+				if (header == "Upgrade" || header == "keep-alive, Upgrade") {
+					if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
+						bool failed = !request.headers.contains("Sec-WebSocket-Key")
+								|| !request.headers.contains("Sec-WebSocket-Version")
+								||  request.headers.at("Sec-WebSocket-Key").size() != 24;
 
-					if (failed) {
-						send400(client);
+						if (failed) {
+							send400(client);
+							return;
+						}
+
+						StringVector protocols;
+						if (request.headers.contains("Sec-WebSocket-Protocol"))
+							protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
+
+						WebSocketConnectionArgs args {
+							*this, client, Request(request), getParts(request.path), std::move(protocols)
+						};
+						client.isWebSocket = true;
+						client.webSocketPath = args.parts;
+						client.lineMode = false;
+
+#ifdef CATCH_WEBSOCKET
+						try {
+#endif
+							auto [should_pass, result] = beforeMulti(args, webSocketConnectionHandlers);
+							if (result == Plugins::HandlerResult::Pass) {
+								server->send(client.id, Response(501, "Unhandled request"));
+								server->close(client.id);
+							} else {
+								Response response(101, "");
+								response["Upgrade"] = "websocket";
+								response["Connection"] = "Upgrade";
+								response["Sec-WebSocket-Accept"] = base64Encode(sha1(request.headers.at("Sec-WebSocket-Key")
+									+ "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
+								if (!args.acceptedProtocol.empty())
+									response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
+								server->send(client.id, response);
+							}
+#ifdef CATCH_WEBSOCKET
+						} catch (const std::exception &err) {
+							ERROR(err.what());
+							send500(client);
+							server->close(client.id);
+						}
+#endif
+
 						return;
 					}
-
-					StringVector protocols;
-					if (request.headers.contains("Sec-WebSocket-Protocol"))
-						protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
-
-					WebSocketConnectionArgs args {
-						*this, client, Request(request), getParts(request.path), std::move(protocols)
-					};
-					client.isWebSocket = true;
-					client.webSocketPath = args.parts;
-					client.lineMode = false;
-
-#ifdef CATCH_WEBSOCKET
-					try {
-#endif
-						auto [should_pass, result] = beforeMulti(args, webSocketConnectionHandlers);
-						if (result == Plugins::HandlerResult::Pass) {
-							server->send(client.id, Response(501, "Unhandled request"));
-							server->close(client.id);
-						} else {
-							Response response(101, "");
-							response["Upgrade"] = "websocket";
-							response["Connection"] = "Upgrade";
-							response["Sec-WebSocket-Accept"] = base64Encode(sha1(request.headers.at("Sec-WebSocket-Key")
-								+ "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-							if (!args.acceptedProtocol.empty())
-								response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
-							server->send(client.id, response);
-						}
-#ifdef CATCH_WEBSOCKET
-					} catch (const std::exception &err) {
-						ERROR(err.what());
-						send500(client);
-						server->close(client.id);
-					}
-#endif
-
-					return;
 				}
 			}
 
