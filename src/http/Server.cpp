@@ -149,13 +149,14 @@ namespace Algiz::HTTP {
 		if (!validatePath(request.path)) {
 			server->send(client.id, Response(403, "Invalid path."));
 			server->close(client.id);
-		} else {
-			HandlerArgs args {*this, client, Request(request), getParts(request.path)};
-			auto [should_pass, result] = beforeMulti(args, postHandlers);
-			if (result == Plugins::HandlerResult::Pass) {
-				server->send(client.id, Response(501, "Unhandled request"));
-				server->close(client.id);
-			}
+			return;
+		}
+
+		HandlerArgs args(*this, client, Request(request), getParts(request.path));
+		auto [should_pass, result] = beforeMulti(args, postHandlers);
+		if (result == Plugins::HandlerResult::Pass) {
+			server->send(client.id, Response(501, "Unhandled request"));
+			server->close(client.id);
 		}
 	}
 
