@@ -21,7 +21,11 @@ int main(int argc, char **argv) {
 	try {
 		evthread_use_pthreads();
 
-		if (1 < argc && std::string(argv[1]) == "dbg")
+		if (2 < argc && strcmp(argv[1], "--home") == 0)
+			if (chdir(argv[2]) != 0)
+				throw std::runtime_error("Couldn't chdir to " + std::string(argv[2]));
+
+		if (1 < argc && strcmp(argv[1], "dbg") == 0)
 			std::set_terminate(+[] {
 				void *trace_elems[64];
 				int trace_elem_count = backtrace(trace_elems, sizeof(trace_elems) / sizeof(trace_elems[0]));

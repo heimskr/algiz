@@ -33,14 +33,15 @@ namespace Algiz {
 	server(server_), bufferSize(buffer_size), buffer(std::make_unique<char[]>(buffer_size)), base(event_base_new()),
 	id(id_) {
 		if (base == nullptr)
-			throw std::runtime_error("Couldn't allocate a new event_base");	
+			throw std::runtime_error("Couldn't allocate a new event_base");
 
 		acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
 		if (acceptEvent == nullptr)
 			throw std::runtime_error("Couldn't allocate acceptEvent");
 		if (event_add(acceptEvent, nullptr) < 0) {
 			char error[64] = "?";
-			strerror_r(errno, error, sizeof(error));
+			if (!strerror_r(errno, error, sizeof(error)))
+				throw std::runtime_error("Couldn't add acceptEvent (" + std::to_string(errno) + ')');
 			throw std::runtime_error("Couldn't add acceptEvent: " + std::string(error));
 		}
 	}
@@ -182,7 +183,7 @@ namespace Algiz {
 		makeName();
 
 		acceptThread = std::thread([this] {
-			mainLoop();	
+			mainLoop();
 		});
 
 		for (size_t i = 0; i < threadCount; ++i) {
@@ -204,7 +205,8 @@ namespace Algiz {
 		base = event_base_new();
 		if (base == nullptr) {
 			char error[64] = "?";
-			strerror_r(errno, error, sizeof(error));
+			if (!strerror_r(errno, error, sizeof(error)))
+				throw std::runtime_error("Couldn't initialize libevent (" + std::to_string(errno) + ')');
 			throw std::runtime_error("Couldn't initialize libevent: " + std::string(error));
 		}
 
@@ -214,7 +216,8 @@ namespace Algiz {
 		if (listener == nullptr) {
 			event_base_free(base);
 			char error[64] = "?";
-			strerror_r(errno, error, sizeof(error));
+			if (!strerror_r(errno, error, sizeof(error)))
+				throw std::runtime_error("Couldn't initialize libevent listener (" + std::to_string(errno) + ')');
 			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(error));
 		}
 

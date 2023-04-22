@@ -1,11 +1,11 @@
 CHECK           ?= none
 COMPILER        ?= clang++
-OPTIMIZATION    ?= -O0 -g
+OPTIMIZATION    ?= -O2 -g
 STANDARD        ?= c++20
 WARNINGS        ?= -Wall -Wextra
 DEPENDENCIES    := openssl libevent libevent_pthreads libevent_openssl
 INCLUDES        := -Iinclude -Iinclude/lib $(shell pkg-config --cflags $(DEPENDENCIES))
-CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES)
+CFLAGS          := -std=$(STANDARD) $(OPTIMIZATION) $(WARNINGS) $(INCLUDES) -D_FORTIFY_SOURCE=2
 OUTPUT          ?= algiz
 LDFLAGS         ?= -pthread $(shell pkg-config --libs $(DEPENDENCIES)) -ldl
 
