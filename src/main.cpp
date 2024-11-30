@@ -47,6 +47,7 @@ int main(int argc, char **argv) {
 		nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
 
 		if (auto iter = options.find("geoip"); iter != options.end()) {
+			INFO("Reading MMDB data from " << *iter << '.');
 			Algiz::GeoIP::get(*iter);
 		}
 

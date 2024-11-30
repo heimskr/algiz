@@ -19,3 +19,4 @@ callgrind.*
 *.csr
 *.crt
 /geolite2++
+*.mmdb
