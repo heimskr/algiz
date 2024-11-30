@@ -1,4 +1,4 @@
-#include "inja.hpp"
+#include <inja/inja.hpp>
 
 #include "util/Templates.h"
 #include "util/Usage.h"

@@ -1,4 +1,4 @@
-#include <inja.hpp>
+#include <inja/inja.hpp>
 
 #include "Log.h"
 #include "http/Client.h"

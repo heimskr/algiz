@@ -1,0 +1,1 @@
+option('enable_geoip', type: 'boolean', value: false, description: 'Whether to use geolite2++')

@@ -2,12 +2,12 @@
 #include "http/Response.h"
 #include "http/Server.h"
 #include "plugins/Ansuz.h"
-#include "plugins/ansuz/resources.h"
+#include "ansuz_resources.h"
 #include "util/FS.h"
 #include "util/MIME.h"
 #include "util/Util.h"
 
-#include "inja.hpp"
+#include <inja/inja.hpp>
 #include "Log.h"
 
 // #define EXTERNAL_RESOURCES

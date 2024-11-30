@@ -1,9 +1,9 @@
-[submodule "json"]
-	path = json
-	url = https://github.com/nlohmann/json.git
-[submodule "inja"]
-	path = inja
-	url = https://github.com/pantor/inja.git
-[submodule "wahtwo"]
-	path = wahtwo
+[submodule "subprojects/wahtwo"]
+	path = subprojects/wahtwo
 	url = https://github.com/heimskr/wahtwo.git
+[submodule "subprojects/inja"]
+	path = subprojects/inja
+	url = https://github.com/pantor/inja.git
+[submodule "subprojects/json"]
+	path = subprojects/json
+	url = https://github.com/nlohmann/json.git
