@@ -237,9 +237,9 @@ namespace Algiz {
 			event_base_free(base);
 			char error[64] = "?";
 			if (!strerror_r(errno, error, sizeof(error))) {
-				throw std::runtime_error("Couldn't initialize libevent listener (" + std::to_string(errno) + ')');
+				throw std::runtime_error(std::format("Couldn't initialize libevent listener ({})", errno));
 			}
-			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(error));
+			throw std::runtime_error(std::format("Couldn't initialize libevent listener ({}): {}", errno, error));
 		}
 
 		event_base_dispatch(base);
