@@ -5,7 +5,7 @@ ansuz_resources = custom_target('ansuz_gen',
 
 ansuz_sources = ['Ansuz.cpp']
 
-ansuz_plugin = shared_library('ansuz_plugin', ansuz_sources,
+ansuz_plugin = shared_module('ansuz_plugin', ansuz_sources,
 	dependencies: algiz_deps,
 	link_args: link_args,
 	install: true,

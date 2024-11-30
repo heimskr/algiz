@@ -1,0 +1,8 @@
+subdir('ansuz')
+subdir('calculator')
+subdir('default404')
+subdir('httpfileserv')
+subdir('logger')
+subdir('probchess')
+subdir('redirect')
+subdir('wsecho')

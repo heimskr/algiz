@@ -30,7 +30,7 @@ if get_option('enable_geoip')
 	algiz_deps += cxx.find_library('geolite2++', dirs: meson.current_source_dir() + '/../geolite2++/build/src-lib')
 endif
 
-subdir('plugins/ansuz')
+subdir('plugins')
 
 algiz_sources += ansuz_resources
 

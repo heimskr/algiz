@@ -93,4 +93,10 @@ depend:
 	makedepend $(DEPFLAGS) -- $(COMPILER) $(CFLAGS) -- $(SOURCES) $(SOURCES_PL) 2>/dev/null
 	@ rm $(DEPFILE).bak
 
+linkplugins:
+	mkdir -p plugin
+	cd plugin && for i in $$(find ../builddir/src -name '*.so'); do \
+		ln -s "$$i" $$(perl -pe 's/.+\/lib(.+)_plugin.so$$/$$1.so/' <<<"$$i"); \
+	done
+
 sinclude $(DEPFILE)
