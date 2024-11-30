@@ -14,8 +14,17 @@
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
+
 		http.getHandlers.push_back(std::weak_ptr(getHandler));
 		http.postHandlers.push_back(std::weak_ptr(postHandler));
+
+		if (auto iter = config.find("hosts"); iter != config.end()) {
+			hostnames = iter->get<std::set<std::string>>();
+		}
+
+		if (auto iter = config.find("root"); iter != config.end()) {
+			root = std::filesystem::canonical(iter->get<std::string>());
+		}
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
@@ -23,17 +32,50 @@ namespace Algiz::Plugins {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).postHandlers, std::weak_ptr(postHandler));
 	}
 
+	const std::filesystem::path & HttpFileserv::getRoot(const HTTP::Server &server) const {
+		if (root) {
+			return *root;
+		}
+
+		return server.webRoot;
+	}
+
+	bool HttpFileserv::hostMatches(const HTTP::Request &request) const {
+		if (hostnames) {
+			if (auto iter = request.headers.find("Host"); iter != request.headers.end()) {
+				return hostnames->contains(iter->second);
+			}
+			return false;
+		}
+
+		return !request.headers.contains("Host");
+	}
+
+	static std::filesystem::path expand(const std::filesystem::path &web_root, std::string_view request_path) {
+		return (std::filesystem::canonical(web_root) / ("./" + unescape(request_path, true))).lexically_normal();
+	}
+
 	CancelableResult HttpFileserv::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		auto &[http, client, request, parts] = args;
-		auto full_path = (http.webRoot / ("./" + unescape(request.path, true))).lexically_normal();
-		if (std::filesystem::is_directory(full_path))
-			full_path /= "";
 
-		if (!isSubpath(http.webRoot, full_path)) {
-			ERROR("Not subpath of " << http.webRoot << ": " << full_path);
+		if (!hostMatches(request)) {
+			return CancelableResult::Pass;
+		}
+
+		const std::filesystem::path &web_root = getRoot(http);
+
+		auto full_path = expand(web_root, request.path);
+
+		if (std::filesystem::is_directory(full_path)) {
+			full_path /= "";
+		}
+
+		if (!isSubpath(web_root, full_path)) {
+			ERROR("Not subpath of " << web_root << ": " << full_path);
 			return CancelableResult::Pass;
 		}
 
@@ -77,12 +119,21 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 
 		auto &[http, client, request, parts] = args;
-		auto full_path = (http.webRoot / ("./" + unescape(request.path, true))).lexically_normal();
-		if (std::filesystem::is_directory(full_path))
-			full_path /= "";
 
-		if (!isSubpath(http.webRoot, full_path)) {
-			ERROR("Not subpath of " << http.webRoot << ": " << full_path);
+		if (!hostMatches(request)) {
+			return CancelableResult::Pass;
+		}
+
+		const std::filesystem::path &web_root = getRoot(http);
+
+		auto full_path = expand(web_root, request.path);
+
+		if (std::filesystem::is_directory(full_path)) {
+			full_path /= "";
+		}
+
+		if (!isSubpath(web_root, full_path)) {
+			ERROR("Not subpath of " << web_root << ": " << full_path);
 			return CancelableResult::Pass;
 		}
 
@@ -157,22 +208,19 @@ namespace Algiz::Plugins {
 	bool HttpFileserv::findPath(std::filesystem::path &full_path) const {
 		if (std::filesystem::is_regular_file(full_path)) {
 			// Use the path as-is.
-		} else {
-			bool found = false;
-			for (const auto &default_filename: getDefaults()) {
-				auto new_path = full_path / default_filename;
-				if (std::filesystem::is_regular_file(new_path)) {
-					full_path = std::move(new_path);
-					found = true;
-					break;
-				}
-			}
-
-			if (!found)
-				return false;
+			return true;
 		}
 
-		return true;
+		for (const auto &default_filename: getDefaults()) {
+			std::filesystem::path new_path = full_path / default_filename;
+
+			if (std::filesystem::is_regular_file(new_path)) {
+				full_path = std::move(new_path);
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	void HttpFileserv::serveRange(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {

@@ -15,35 +15,37 @@
 
 namespace Algiz::HTTP {
 	Server::Server(const std::shared_ptr<Algiz::Server> &server_, const nlohmann::json &options_):
-	server(server_), options(options_), webRoot(getWebRoot(options_.contains("root")? options_.at("root") : "")) {
-		server->addClient = [this](auto &, int new_client, std::string_view ip) {
-			auto http_client = std::make_unique<Client>(*this, new_client, ip);
-			server->getClients().try_emplace(new_client, std::move(http_client));
-		};
+		server(server_),
+		options(options_),
+		webRoot(getWebRoot(options.contains("root")? options.at("root") : "")) {
+			server->addClient = [this](auto &, int new_client, std::string_view ip) {
+				auto http_client = std::make_unique<Client>(*this, new_client, ip);
+				server->getClients().try_emplace(new_client, std::move(http_client));
+			};
 
-		server->closeHandler = [this](int client_id) {
-			closeWebSocket(dynamic_cast<Client &>(*server->getClients().at(client_id)));
-		};
+			server->closeHandler = [this](int client_id) {
+				closeWebSocket(dynamic_cast<Client &>(*server->getClients().at(client_id)));
+			};
 
-		auto crawled = crawlConfigs(webRoot);
-		{
-			auto lock = lockConfigs();
-			configs = std::move(crawled);
+			auto crawled = crawlConfigs(webRoot);
+			{
+				auto lock = lockConfigs();
+				configs = std::move(crawled);
+			}
+
+			watcher.emplace({webRoot.string()}, true);
+
+			watcher->onModify = [this](const std::filesystem::path &path) {
+				if (path.filename() == ".algiz")
+					addConfig(path);
+			};
+
+			watcherThread = std::thread([this] {
+				watcher->start();
+			});
+
+			watcherThread.detach();
 		}
-
-		watcher.emplace({webRoot.string()}, true);
-
-		watcher->onModify = [this](const std::filesystem::path &path) {
-			if (path.filename() == ".algiz")
-				addConfig(path);
-		};
-
-		watcherThread = std::thread([this] {
-			watcher->start();
-		});
-
-		watcherThread.detach();
-	}
 
 	Server::~Server() {
 		watcher->stop();

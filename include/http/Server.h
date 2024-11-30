@@ -1,11 +1,5 @@
 #pragma once
 
-#include <filesystem>
-#include <functional>
-#include <map>
-#include <optional>
-#include <string>
-
 #include "ApplicationServer.h"
 #include "http/Request.h"
 #include "net/Server.h"
@@ -15,6 +9,12 @@
 #include "util/StringVector.h"
 #include "util/WeakCompare.h"
 #include "wahtwo/Watcher.h"
+
+#include <filesystem>
+#include <functional>
+#include <map>
+#include <optional>
+#include <string>
 
 namespace Algiz::HTTP {
 	class Client;
@@ -137,8 +137,9 @@ namespace Algiz::HTTP {
 
 			template <typename T = nlohmann::json, typename N>
 			std::optional<T> getOption(const std::filesystem::path &path, const N &name) {
-				if (!isSubpath(webRoot, path))
-					throw std::invalid_argument("Not a subpath of the webroot: " + path.string());
+				if (!isSubpath(webRoot, path)) {
+					throw std::invalid_argument("Not a subpath of the webroot (" + webRoot.string() + "): " + path.string());
+				}
 
 				auto dir = path.parent_path();
 				const auto root = dir.root_path();
