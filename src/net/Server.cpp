@@ -18,10 +18,15 @@
 
 namespace Algiz {
 	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size):
-	af(af_), ip(ip_), port(port_), chunkSize(chunk_size), threadCount(thread_count) {
-		if (thread_count < 1)
-			throw std::invalid_argument("Cannot instantiate a Server with a thread count of zero");
-	}
+		af(af_),
+		ip(ip_),
+		port(port_),
+		chunkSize(chunk_size),
+		threadCount(thread_count) {
+			if (thread_count < 1) {
+				throw std::invalid_argument("Cannot instantiate a Server with a thread count of zero");
+			}
+		}
 
 	Server::~Server() {
 		while (!bufferEvents.empty())
@@ -30,21 +35,29 @@ namespace Algiz {
 	}
 
 	Server::Worker::Worker(Server &server_, size_t buffer_size, size_t id_):
-	server(server_), bufferSize(buffer_size), buffer(std::make_unique<char[]>(buffer_size)), base(event_base_new()),
-	id(id_) {
-		if (base == nullptr)
-			throw std::runtime_error("Couldn't allocate a new event_base");
+		server(server_),
+		bufferSize(buffer_size),
+		buffer(std::make_unique<char[]>(buffer_size)),
+		base(event_base_new()),
+		id(id_) {
+			if (base == nullptr) {
+				throw std::runtime_error("Couldn't allocate a new event_base");
+			}
 
-		acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
-		if (acceptEvent == nullptr)
-			throw std::runtime_error("Couldn't allocate acceptEvent");
-		if (event_add(acceptEvent, nullptr) < 0) {
-			char error[64] = "?";
-			if (!strerror_r(errno, error, sizeof(error)))
-				throw std::runtime_error("Couldn't add acceptEvent (" + std::to_string(errno) + ')');
-			throw std::runtime_error("Couldn't add acceptEvent: " + std::string(error));
+			acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
+
+			if (acceptEvent == nullptr) {
+				throw std::runtime_error("Couldn't allocate acceptEvent");
+			}
+
+			if (event_add(acceptEvent, nullptr) < 0) {
+				char error[64] = "?";
+				if (!strerror_r(errno, error, sizeof(error))) {
+					throw std::runtime_error("Couldn't add acceptEvent (" + std::to_string(errno) + ')');
+				}
+				throw std::runtime_error("Couldn't add acceptEvent: " + std::string(error));
+			}
 		}
-	}
 
 	Server::Worker::~Worker() {
 		event_free(acceptEvent);
@@ -61,8 +74,7 @@ namespace Algiz {
 
 	void Server::makeName() {
 		name4 = {.sin_family  = AF_INET,  .sin_port  = htons(port), .sin_addr = {}, .sin_zero = {0}};
-		name6 = {.sin6_family = AF_INET6, .sin6_port = htons(port), .sin6_flowinfo = {}, .sin6_addr = {},
-			.sin6_scope_id = 0};
+		name6 = {.sin6_family = AF_INET6, .sin6_port = htons(port), .sin6_flowinfo = {}, .sin6_addr = {}, .sin6_scope_id = 0};
 
 		int status;
 
@@ -74,11 +86,13 @@ namespace Algiz {
 			name = reinterpret_cast<sockaddr *>(&name6);
 			nameSize = sizeof(name6);
 			status = inet_pton(AF_INET6, ip.c_str(), &name6.sin6_addr);
-		} else
+		} else {
 			throw std::invalid_argument("Unsupported or invalid address family: " + std::to_string(af));
+		}
 
-		if (status != 1)
+		if (status != 1) {
 			throw std::invalid_argument("Couldn't parse IP address \"" + ip + "\"");
+		}
 	}
 
 	int Server::getDescriptor(int client) {
@@ -100,8 +114,9 @@ namespace Algiz {
 	}
 
 	void Server::handleMessage(GenericClient &client, std::string_view message) {
-		if (messageHandler)
+		if (messageHandler) {
 			messageHandler(client, message);
+		}
 	}
 
 	ssize_t Server::send(int client, std::string_view message) {
@@ -131,8 +146,9 @@ namespace Algiz {
 		{
 			auto client_lock = server.lockClients();
 			const int client_id = server.clients.at(descriptor);
-			if (server.closeHandler)
+			if (server.closeHandler) {
 				server.closeHandler(client_id);
+			}
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 			server.descriptors.erase(client_id);
@@ -175,8 +191,9 @@ namespace Algiz {
 	}
 
 	void Server::run() {
-		if (!threads.empty())
+		if (!threads.empty()) {
 			throw std::runtime_error("Cannot run server: already running");
+		}
 
 		connected = true;
 
@@ -193,8 +210,9 @@ namespace Algiz {
 			}));
 		}
 
-		for (auto &thread: threads)
+		for (auto &thread: threads) {
 			thread.join();
+		}
 
 		acceptThread.join();
 		threads.clear();
@@ -205,8 +223,9 @@ namespace Algiz {
 		base = event_base_new();
 		if (base == nullptr) {
 			char error[64] = "?";
-			if (!strerror_r(errno, error, sizeof(error)))
+			if (!strerror_r(errno, error, sizeof(error))) {
 				throw std::runtime_error("Couldn't initialize libevent (" + std::to_string(errno) + ')');
+			}
 			throw std::runtime_error("Couldn't initialize libevent: " + std::string(error));
 		}
 
@@ -216,8 +235,9 @@ namespace Algiz {
 		if (listener == nullptr) {
 			event_base_free(base);
 			char error[64] = "?";
-			if (!strerror_r(errno, error, sizeof(error)))
+			if (!strerror_r(errno, error, sizeof(error))) {
 				throw std::runtime_error("Couldn't initialize libevent listener (" + std::to_string(errno) + ')');
+			}
 			throw std::runtime_error("Couldn't initialize libevent listener: " + std::string(error));
 		}
 
@@ -234,8 +254,9 @@ namespace Algiz {
 			if (!server.freePool.empty()) {
 				new_client = *server.freePool.begin();
 				server.freePool.erase(new_client);
-			} else
+			} else {
 				new_client = ++server.lastClient;
+			}
 			server.descriptors.emplace(new_client, new_fd);
 			server.clients[new_fd] = new_client;
 		}
@@ -250,8 +271,9 @@ namespace Algiz {
 
 		{
 			auto lock = server.lockDescriptors();
-			if (server.bufferEvents.contains(new_fd))
+			if (server.bufferEvents.contains(new_fd)) {
 				throw std::runtime_error("File descriptor " + std::to_string(new_fd) + " already has a bufferevent struct");
+			}
 			server.bufferEvents.emplace(new_fd, buffer_event);
 			server.bufferEventDescriptors.emplace(buffer_event, new_fd);
 		}
@@ -270,14 +292,19 @@ namespace Algiz {
 			socklen_t addr6_len = sizeof(addr6);
 			if (getpeername(new_fd, reinterpret_cast<sockaddr *>(&addr6), &addr6_len) == 0) {
 				char ip_buffer[INET6_ADDRSTRLEN];
-				if (inet_ntop(addr6.sin6_family, &addr6.sin6_addr, ip_buffer, sizeof(ip_buffer)) != nullptr)
+				if (inet_ntop(addr6.sin6_family, &addr6.sin6_addr, ip_buffer, sizeof(ip_buffer)) != nullptr) {
 					ip = ip_buffer;
-				else
+				} else {
 					WARN("inet_ntop failed: " << strerror(errno));
-			} else
+				}
+			} else {
 				WARN("getpeername failed: " << strerror(errno));
-			if (std::string_view(ip).substr(0, 7) == "::ffff:" && ip.find('.') != std::string::npos)
+			}
+
+			if (std::string_view(ip).substr(0, 7) == "::ffff:" && ip.find('.') != std::string::npos) {
 				ip.erase(0, 7);
+			}
+
 			auto lock = server.lockClients();
 			server.addClient(*this, new_client, ip);
 		}
@@ -287,12 +314,14 @@ namespace Algiz {
 		bool contains = false;
 		{
 			auto lock = lockCloseQueue();
-			if ((contains = closeQueue.contains(buffer_event)))
+			if ((contains = closeQueue.contains(buffer_event))) {
 				closeQueue.erase(buffer_event);
+			}
 		}
 
-		if (contains)
+		if (contains) {
 			remove(buffer_event);
+		}
 	}
 
 	void Server::Worker::handleEOF(bufferevent *buffer_event) {
@@ -331,16 +360,19 @@ namespace Algiz {
 				size_t to_read = std::min(bufferSize, readable);
 				const bool use_max_read = 0 < client.maxRead;
 
-				if (use_max_read)
+				if (use_max_read) {
 					to_read = std::min(to_read, client.maxRead);
+				}
 
 				const int byte_count = evbuffer_remove(input, buffer.get(), to_read);
 
-				if (use_max_read)
+				if (use_max_read) {
 					client.maxRead -= byte_count;
+				}
 
-				if (byte_count < 0)
+				if (byte_count < 0) {
 					throw NetError("Reading", errno);
+				}
 
 				if (!client.lineMode) {
 					server.handleMessage(client, {buffer.get(), size_t(byte_count)});
@@ -350,12 +382,11 @@ namespace Algiz {
 					removeDescriptor(descriptor);
 				} else {
 					str.insert(str.size(), buffer.get(), size_t(byte_count));
-					ssize_t index = -1;
-					size_t delimiter_size = 0;
 					bool done = false;
-					std::tie(index, delimiter_size) = isMessageComplete(str);
+					auto [index, delimiter_size] = isMessageComplete(str);
 					size_t to_erase = 0;
 					std::string_view view = str;
+
 					do {
 						if (index != -1) {
 							server.handleMessage(client, view.substr(0, index));
@@ -363,17 +394,24 @@ namespace Algiz {
 								view.remove_prefix(index + delimiter_size);
 								to_erase += index + delimiter_size;
 								std::tie(index, delimiter_size) = isMessageComplete(view);
-							} else done = true;
-						} else done = true;
+							} else {
+								done = true;
+							}
+						} else {
+							done = true;
+						}
 					} while (!done);
-					if (to_erase != 0)
+
+					if (to_erase != 0) {
 						str.erase(0, to_erase);
+					}
 				}
 
 				if (!str.empty()) {
-					if (client.lineMode)
-						throw std::runtime_error("Text is left over in the buffer, "
-							"but the client is still in line mode");
+					if (client.lineMode) {
+						throw std::runtime_error("Text is left over in the buffer, but " + client.describe() +
+							" is still in line mode");
+					}
 					server.handleMessage(client, str);
 				}
 
@@ -399,8 +437,9 @@ namespace Algiz {
 		std::shared_ptr<Worker> worker;
 		{
 			auto lock = lockWorkerMap();
-			if (!workerMap.contains(buffer_event))
+			if (!workerMap.contains(buffer_event)) {
 				return false;
+			}
 			worker = workerMap.at(buffer_event);
 		}
 		worker->remove(buffer_event);
@@ -467,10 +506,11 @@ namespace Algiz {
 	}
 
 	void conn_eventcb(bufferevent *buffer_event, short events, void *data) {
-		if ((events & BEV_EVENT_EOF) != 0)
+		if ((events & BEV_EVENT_EOF) != 0) {
 			reinterpret_cast<Server::Worker *>(data)->handleEOF(buffer_event);
-		else if ((events & (BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT)) != 0)
+		} else if ((events & (BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT)) != 0) {
 			reinterpret_cast<Server::Worker *>(data)->server.remove(buffer_event);
+		}
 	}
 
 	void signal_cb(evutil_socket_t, short, void *data) {
