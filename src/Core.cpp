@@ -11,10 +11,15 @@
 
 namespace Algiz {
 	static HTTP::Server * makeHTTP(std::unique_ptr<Server> &&server, const nlohmann::json &suboptions) {
+		if (!server) {
+			throw std::runtime_error("Server argument to makeHTTP must not be null");
+		}
+
 		auto *http = new HTTP::Server(std::move(server), suboptions);
+
 		try {
 			INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port")
-				<< ".");
+				<< '.');
 
 			if (suboptions.contains("plugins")) {
 				for (const auto &[key, value]: suboptions.at("plugins").items()) {
@@ -34,13 +39,13 @@ namespace Algiz {
 				try {
 					client.handleInput(message);
 				} catch (const ParseError &error) {
-					ERROR("[" << server->id << "] Disconnecting " << client.describe() << ": " << error.what());
+					ERROR('[' << server->id << "] Disconnecting " << client.describe() << ": " << error.what());
 					server->send(client.id, HTTP::Response(400, "Couldn't parse request."));
 					server->close(client.id);
 				}
 			};
 		} catch (const std::exception &err) {
-			ERROR("[" << server->id << "] Couldn't configure HTTP server: " << err.what());
+			ERROR('[' << http->server->id << "] Couldn't configure HTTP server: " << err.what());
 			delete http;
 			throw err;
 		}
