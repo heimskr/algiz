@@ -4,9 +4,6 @@ ansuz_resources = custom_target('ansuz_gen',
 	command: ['./gen.sh', '@INPUT@', '@OUTPUT@'])
 
 ansuz_sources = ['Ansuz.cpp']
-foreach s : algiz_sources
-	ansuz_sources += '../../' + s
-endforeach
 
 ansuz_plugin = shared_library('ansuz_plugin', ansuz_sources,
 	dependencies: algiz_deps,

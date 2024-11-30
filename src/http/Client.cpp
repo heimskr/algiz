@@ -22,8 +22,7 @@ namespace Algiz::HTTP {
 			server.server->close(id);
 	}
 
-#define CHECKSIZE(n) do { if (message_size < (n)) { if (!has_leftover) leftoverMessage = message; return; } } \
-	while (false)
+#define CHECKSIZE(n) do { if (message_size < (n)) { if (!has_leftover) leftoverMessage = message; return; } } while (false)
 
 	void Client::handleInput(std::string_view message_in) {
 		if (isWebSocket) {

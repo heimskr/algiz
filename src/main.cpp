@@ -13,6 +13,7 @@
 #include "http/Server.h"
 #include "net/Server.h"
 #include "util/FS.h"
+#include "util/GeoIP.h"
 #include "util/Util.h"
 
 std::vector<std::unique_ptr<Algiz::ApplicationServer>> global_servers;
@@ -44,6 +45,10 @@ int main(int argc, char **argv) {
 			throw std::runtime_error("Couldn't register SIGINT handler");
 
 		nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
+
+		if (auto iter = options.find("geoip"); iter != options.end()) {
+			Algiz::GeoIP::get(*iter);
+		}
 
 		global_servers = map(Algiz::run(options), [](auto *server) {
 			return std::unique_ptr<Algiz::ApplicationServer>(server);

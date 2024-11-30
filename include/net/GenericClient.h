@@ -25,5 +25,6 @@ namespace Algiz {
 
 		virtual void handleInput(std::string_view) = 0;
 		virtual void onMaxLineSizeExceeded() {}
+		virtual std::string describe();
 	};
 }

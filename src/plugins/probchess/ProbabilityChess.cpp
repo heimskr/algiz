@@ -177,7 +177,7 @@ namespace Algiz::Plugins {
 		client.sendWebSocket(":Error Unknown message type");
 		return CancelableResult::Approve;
 	}
-	
+
 	void ProbabilityChess::handleClose(HTTP::Server &, HTTP::Client &client) {
 		const int id = client.id;
 		auto lock = lockClients();
@@ -356,7 +356,7 @@ namespace Algiz::Plugins {
 		}
 
 		auto match = matchesByClient.at(client.id);
-		INFO("Disconnecting client " << client.id << " from match \e[33m" << match->matchID << "\e[39m.");
+		INFO("Disconnecting " << client.describe() << " from match \e[33m" << match->matchID << "\e[39m.");
 		match->disconnect(client.id);
 		matchesByClient.erase(client.id);
 	}

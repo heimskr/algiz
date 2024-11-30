@@ -26,9 +26,8 @@ link_with = [wahtwo.get_variable('wahtwo_lib')]
 link_args = []
 
 if get_option('enable_geoip')
-	geolite2 = '../geolite2++/build/src-lib'
-	inc_dirs += include_directories(geolite2)
-	algiz_deps += cxx.find_library('geolite2++', dirs: meson.current_source_dir() + '/' + geolite2)
+	inc_dirs += include_directories('../geolite2++/src-lib')
+	algiz_deps += cxx.find_library('geolite2++', dirs: meson.current_source_dir() + '/../geolite2++/build/src-lib')
 endif
 
 subdir('plugins/ansuz')
