@@ -7,7 +7,7 @@
 
 namespace Algiz::Plugins {
 	void Redirect::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.push_back(std::weak_ptr(handler));
+		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.emplace_back(handler);
 		if (config.contains("base") && config.at("base").is_string()) {
 			base = config.at("base");
 			if (!base.empty()) {
@@ -21,7 +21,7 @@ namespace Algiz::Plugins {
 	}
 
 	void Redirect::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(handler));
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, handler);
 	}
 
 	CancelableResult Redirect::handle(HTTP::Server::HandlerArgs &args, bool not_disabled) {

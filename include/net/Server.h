@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -134,6 +135,8 @@ namespace Algiz {
 
 			/** Maps bufferevents to descriptors. Lock descriptorsMutex before using. */
 			std::map<bufferevent *, int> bufferEventDescriptors;
+
+			std::list<std::weak_ptr<std::function<bool(const std::string &ip, int fd)>>> ipFilters;
 
 			std::recursive_mutex workerMapMutex;
 			std::recursive_mutex clientsMutex;

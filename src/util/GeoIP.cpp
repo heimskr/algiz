@@ -29,9 +29,14 @@ namespace Algiz {
 		db(std::in_place_t{}, database_path) {}
 
 	std::string GeoIP::getCountry(const std::string &ip) {
+		std::unique_lock lock(mutex);
 		auto iter = results.find(ip);
 
 		if (iter == results.end()) {
+			if (results.size() > 4096) {
+				results.clear();
+			}
+
 			iter = results.emplace(ip, db->lookup_raw(ip)).first;
 		}
 

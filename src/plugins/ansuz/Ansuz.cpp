@@ -24,14 +24,14 @@
 namespace Algiz::Plugins {
 	void Ansuz::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
-		http.getHandlers.push_back(getHandler);
-		http.postHandlers.push_back(postHandler);
+		http.getHandlers.emplace_back(getHandler);
+		http.postHandlers.emplace_back(postHandler);
 	}
 
 	void Ansuz::cleanup(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*host);
-		PluginHost::erase(http.getHandlers, std::weak_ptr(getHandler));
-		PluginHost::erase(http.postHandlers, std::weak_ptr(postHandler));
+		PluginHost::erase(http.getHandlers, getHandler);
+		PluginHost::erase(http.postHandlers, postHandler);
 	}
 
 	CancelableResult Ansuz::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {

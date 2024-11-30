@@ -15,8 +15,8 @@ namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
 
-		http.getHandlers.push_back(std::weak_ptr(getHandler));
-		http.postHandlers.push_back(std::weak_ptr(postHandler));
+		http.getHandlers.emplace_back(getHandler);
+		http.postHandlers.emplace_back(postHandler);
 
 		if (auto iter = config.find("hosts"); iter != config.end()) {
 			hostnames = iter->get<std::set<std::string>>();
@@ -28,8 +28,8 @@ namespace Algiz::Plugins {
 	}
 
 	void HttpFileserv::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(getHandler));
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).postHandlers, std::weak_ptr(postHandler));
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, getHandler);
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).postHandlers, postHandler);
 	}
 
 	const std::filesystem::path & HttpFileserv::getRoot(const HTTP::Server &server) const {

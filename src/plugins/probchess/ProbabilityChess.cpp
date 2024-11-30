@@ -28,7 +28,7 @@ namespace Algiz::Plugins {
 
 	void ProbabilityChess::cleanup(PluginHost *host) {
 		auto &server = dynamic_cast<HTTP::Server &>(*host);
-		PluginHost::erase(server.webSocketConnectionHandlers, std::weak_ptr(connectionHandler));
+		PluginHost::erase(server.webSocketConnectionHandlers, connectionHandler);
 		server.cleanWebSocketHandlers();
 	}
 

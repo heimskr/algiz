@@ -16,7 +16,7 @@ namespace Algiz::Plugins {
 	void WSEcho::cleanup(PluginHost *host) {
 		auto &server = dynamic_cast<HTTP::Server &>(*host);
 		webSocketMessageHandlers.clear();
-		PluginHost::erase(server.webSocketConnectionHandlers, std::weak_ptr(connectionHandler));
+		PluginHost::erase(server.webSocketConnectionHandlers, connectionHandler);
 		server.cleanWebSocketHandlers();
 	}
 

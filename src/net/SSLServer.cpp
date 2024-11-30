@@ -15,6 +15,7 @@
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/SSLServer.h"
+#include "util/GeoIP.h"
 
 #include "Log.h"
 
@@ -67,8 +68,9 @@ namespace Algiz {
 		{
 			auto client_lock = server.lockClients();
 			const int client_id = server.clients.at(descriptor);
-			if (server.closeHandler)
+			if (server.closeHandler) {
 				server.closeHandler(client_id);
+			}
 			server.allClients.erase(client_id);
 			server.freePool.insert(client_id);
 			server.descriptors.erase(client_id);
@@ -93,6 +95,35 @@ namespace Algiz {
 	void SSLServer::Worker::accept(int new_fd) {
 		auto &ssl_server = dynamic_cast<SSLServer &>(server);
 
+		std::string ip;
+		sockaddr_in6 addr6 {};
+		socklen_t addr6_len = sizeof(addr6);
+		if (getpeername(new_fd, reinterpret_cast<sockaddr *>(&addr6), &addr6_len) == 0) {
+			char ip_buffer[INET6_ADDRSTRLEN];
+			if (inet_ntop(addr6.sin6_family, &addr6.sin6_addr, ip_buffer, sizeof(ip_buffer)) != nullptr) {
+				ip = ip_buffer;
+			} else {
+				WARN("inet_ntop failed: " << strerror(errno));
+			}
+		} else {
+			WARN("getpeername failed:  " << strerror(errno));
+		}
+
+		if (std::string_view(ip).substr(0, 7) == "::ffff:" && ip.find('.') != std::string::npos) {
+			ip.erase(0, 7);
+		}
+
+		if (!server.ipFilters.empty()) {
+			for (const auto &weak_filter: server.ipFilters) {
+				if (auto filter = weak_filter.lock()) {
+					if (!(*filter)(ip, new_fd)) {
+						::close(new_fd);
+						return;
+					}
+				}
+			}
+		}
+
 		SSL *ssl = nullptr;
 
 		{
@@ -100,8 +131,9 @@ namespace Algiz {
 			ssl = SSL_new(ssl_server.sslContext);
 		}
 
-		if (ssl == nullptr)
+		if (ssl == nullptr) {
 			throw std::runtime_error("ssl is null");
+		}
 
 		int new_client = -1;
 
@@ -110,8 +142,9 @@ namespace Algiz {
 			if (!server.freePool.empty()) {
 				new_client = *server.freePool.begin();
 				server.freePool.erase(new_client);
-			} else
+			} else {
 				new_client = ++server.lastClient;
+			}
 			server.descriptors.emplace(new_client, new_fd);
 			server.clients.erase(new_fd);
 			server.clients.emplace(new_fd, new_client);
@@ -148,19 +181,6 @@ namespace Algiz {
 		}
 
 		if (server.addClient) {
-			std::string ip;
-			sockaddr_in6 addr6 {};
-			socklen_t addr6_len = sizeof(addr6);
-			if (getpeername(new_fd, reinterpret_cast<sockaddr *>(&addr6), &addr6_len) == 0) {
-				char ip_buffer[INET6_ADDRSTRLEN];
-				if (inet_ntop(addr6.sin6_family, &addr6.sin6_addr, ip_buffer, sizeof(ip_buffer)) != nullptr)
-					ip = ip_buffer;
-				else
-					WARN("inet_ntop failed: " << strerror(errno));
-			} else
-				WARN("getpeername failed:  " << strerror(errno));
-			if (std::string_view(ip).substr(0, 7) == "::ffff:" && ip.find('.') != std::string::npos)
-				ip.erase(0, 7);
 			auto lock = server.lockClients();
 			server.addClient(*this, new_client, ip);
 		}

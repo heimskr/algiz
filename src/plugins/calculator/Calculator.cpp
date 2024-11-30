@@ -13,7 +13,7 @@ namespace Algiz::Plugins {
 	}
 
 	void Calculator::cleanup(PluginHost *host) {
-		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, std::weak_ptr(handler));
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, handler);
 	}
 
 	CancelableResult Calculator::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
@@ -21,7 +21,7 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 
 		const auto &[http, client, request, parts] = args;
-		
+
 		if (parts.size() == 3) {
 			std::string_view oper = parts.front();
 			int64_t left = 0;

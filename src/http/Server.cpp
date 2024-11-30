@@ -80,8 +80,8 @@ namespace Algiz::HTTP {
 			if (header == "Upgrade" || header == "keep-alive, Upgrade") {
 				if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
 					bool failed = !request.headers.contains("Sec-WebSocket-Key")
-							|| !request.headers.contains("Sec-WebSocket-Version")
-							||  request.headers.at("Sec-WebSocket-Key").size() != 24;
+					           || !request.headers.contains("Sec-WebSocket-Version")
+					           ||  request.headers.at("Sec-WebSocket-Key").size() != 24;
 
 					if (failed) {
 						send400(client);
@@ -89,8 +89,10 @@ namespace Algiz::HTTP {
 					}
 
 					StringVector protocols;
-					if (request.headers.contains("Sec-WebSocket-Protocol"))
+
+					if (request.headers.contains("Sec-WebSocket-Protocol")) {
 						protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
+					}
 
 					WebSocketConnectionArgs args {
 						*this, client, Request(request), getParts(request.path), std::move(protocols)
@@ -112,8 +114,11 @@ namespace Algiz::HTTP {
 							response["Connection"] = "Upgrade";
 							response["Sec-WebSocket-Accept"] = base64Encode(sha1(request.headers.at("Sec-WebSocket-Key")
 								+ "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
-							if (!args.acceptedProtocol.empty())
+
+							if (!args.acceptedProtocol.empty()) {
 								response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
+							}
+
 							server->send(client.id, response);
 						}
 #ifdef CATCH_WEBSOCKET
@@ -180,10 +185,14 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::closeWebSocket(Client &client) {
-		if (webSocketCloseHandlers.contains(client.id))
-			for (auto &fnptr: webSocketCloseHandlers.at(client.id))
-				if (auto fn = fnptr.lock())
+		if (webSocketCloseHandlers.contains(client.id)) {
+			for (auto &fnptr: webSocketCloseHandlers.at(client.id)) {
+				if (auto fn = fnptr.lock()) {
 					(*fn)(*this, client);
+				}
+			}
+		}
+
 		server->close(client.id);
 	}
 
@@ -211,8 +220,11 @@ namespace Algiz::HTTP {
 
 	std::vector<std::string> Server::getParts(std::string_view path) {
 		std::vector<std::string> out;
-		for (const auto &view: split(path.substr(1), "/", true))
+
+		for (const auto &view: split(path.substr(1), "/", true)) {
 			out.push_back(unescape(view));
+		}
+
 		return out;
 	}
 
@@ -222,47 +234,19 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::cleanWebSocketMessageHandlers() {
-		std::vector<WeakMessageHandlerPtr> handlers_to_remove;
-		std::vector<int> clients_to_remove;
-
-		clients_to_remove.reserve(webSocketMessageHandlers.size());
-
-		for (auto &[client_id, handlers]: webSocketMessageHandlers) {
-			handlers_to_remove.reserve(handlers.size());
-			for (const auto &handler: handlers)
-				if (handler.expired())
-					handlers_to_remove.push_back(handler);
-			for (const auto &handler: handlers_to_remove)
-				PluginHost::erase(handlers, handler);
-			handlers_to_remove.clear();
-			if (handlers.empty())
-				clients_to_remove.push_back(client_id);
-		}
-
-		for (int client_id: clients_to_remove)
-			webSocketMessageHandlers.erase(client_id);
+		std::erase_if(webSocketMessageHandlers, [&](auto &pair) {
+			auto &[client_id, handlers] = pair;
+			while (PluginHost::erase(handlers, nullptr));
+			return handlers.empty();
+		});
 	}
 
 	void Server::cleanWebSocketCloseHandlers() {
-		std::vector<WeakCloseHandlerPtr> handlers_to_remove;
-		std::vector<int> clients_to_remove;
-
-		clients_to_remove.reserve(webSocketCloseHandlers.size());
-
-		for (auto &[client_id, handlers]: webSocketCloseHandlers) {
-			handlers_to_remove.reserve(handlers.size());
-			for (const auto &handler: handlers)
-				if (handler.expired())
-					handlers_to_remove.push_back(handler);
-			for (const auto &handler: handlers_to_remove)
-				PluginHost::erase(handlers, handler);
-			handlers_to_remove.clear();
-			if (handlers.empty())
-				clients_to_remove.push_back(client_id);
-		}
-
-		for (int client_id: clients_to_remove)
-			webSocketCloseHandlers.erase(client_id);
+		std::erase_if(webSocketCloseHandlers, [&](auto &pair) {
+			auto &[client_id, handlers] = pair;
+			while (PluginHost::erase(handlers, nullptr));
+			return handlers.empty();
+		});
 	}
 
 	void Server::registerWebSocketMessageHandler(const Client &client, const WeakMessageHandlerPtr &handler) {
@@ -280,18 +264,21 @@ namespace Algiz::HTTP {
 	}
 
 	void Server::crawlConfigs(const std::filesystem::path &base, decltype(configs) &map) {
-		if (!std::filesystem::is_directory(base))
+		if (!std::filesystem::is_directory(base)) {
 			throw std::runtime_error("Can't crawl " + base.string() + ": not a directory");
+		}
 
-		for (const auto &entry: std::filesystem::directory_iterator(base))
-			if (entry.is_directory())
+		for (const auto &entry: std::filesystem::directory_iterator(base)) {
+			if (entry.is_directory()) {
 				crawlConfigs(entry.path(), map);
-			else if (entry.path().filename() == ".algiz")
+			} else if (entry.path().filename() == ".algiz") {
 				try {
 					map.emplace(base, nlohmann::json::parse(readFile(entry.path())));
 				} catch (const nlohmann::detail::parse_error &) {
 					ERROR("Invalid syntax in " << entry.path());
 				}
+			}
+		}
 	}
 
 	void Server::addConfig(const std::filesystem::path &path) {

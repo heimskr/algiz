@@ -7,6 +7,7 @@
 #endif
 
 #include <map>
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -27,10 +28,13 @@ namespace Algiz {
 			inline bool isValid() const { return false; }
 #endif
 
+			inline operator bool() const { return isValid(); }
+
 		private:
 			bool valid;
 
 #ifdef ENABLE_GEOIP
+			std::mutex mutex;
 			std::optional<GeoLite2PP::DB> db;
 			std::map<std::string, MMDB_lookup_result_s> results;
 #endif

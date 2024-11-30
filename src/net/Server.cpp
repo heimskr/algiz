@@ -1,4 +1,3 @@
-
 #include "Log.h"
 
 #include "http/Client.h"
