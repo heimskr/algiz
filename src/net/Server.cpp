@@ -1,20 +1,21 @@
-#include <iostream>
+
+#include "Log.h"
+
+#include "http/Client.h"
+#include "net/NetError.h"
+#include "net/Server.h"
 
 #include <arpa/inet.h>
 #include <cerrno>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
+#include <format>
+#include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include "http/Client.h"
-#include "net/NetError.h"
-#include "net/Server.h"
-
-#include "Log.h"
 
 namespace Algiz {
 	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size):
@@ -224,9 +225,9 @@ namespace Algiz {
 		if (base == nullptr) {
 			char error[64] = "?";
 			if (!strerror_r(errno, error, sizeof(error))) {
-				throw std::runtime_error("Couldn't initialize libevent (" + std::to_string(errno) + ')');
+				throw std::runtime_error(std::format("Couldn't initialize libevent ({})", errno));
 			}
-			throw std::runtime_error("Couldn't initialize libevent: " + std::string(error));
+			throw std::runtime_error(std::format("Couldn't initialize libevent ({}): {}", errno, error));
 		}
 
 		evconnlistener *listener = evconnlistener_new_bind(base, listener_cb, this,
