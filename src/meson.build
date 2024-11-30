@@ -39,6 +39,7 @@ algiz_sources += ansuz_resources
 
 executable('algiz', algiz_sources,
 	dependencies: algiz_deps,
+	export_dynamic: true,
 	link_with: link_with,
 	link_args: link_args,
 	install: true,
