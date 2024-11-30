@@ -77,10 +77,14 @@ namespace Algiz {
 			const uint16_t port = suboptions.at("port");
 			const std::string &cert = suboptions.at("cert");
 			const std::string &key = suboptions.at("key");
+			std::string chain;
+			if (auto iter = suboptions.find("chain"); iter != suboptions.end()) {
+				chain = *iter;
+			}
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
 			const size_t threads = suboptions.contains("threads")?
 				suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
-			auto server = std::make_unique<SSLServer>(af, ip, port, cert, key, threads, 1024);
+			auto server = std::make_unique<SSLServer>(af, ip, port, cert, key, chain, threads, 1024);
 			server->id = "https";
 			out.emplace_back(makeHTTP(std::move(server), suboptions));
 		}

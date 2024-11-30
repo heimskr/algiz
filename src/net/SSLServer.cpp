@@ -20,7 +20,7 @@
 
 namespace Algiz {
 	SSLServer::SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert,
-							const std::string &key, size_t thread_count, size_t chunk_size):
+	                     const std::string &key, const std::string &chain, size_t thread_count, size_t chunk_size):
 	Server(af_, ip_, port_, thread_count, chunk_size), sslContext(SSL_CTX_new(TLS_server_method())) {
 		if (sslContext == nullptr) {
 			perror("Unable to create SSL context");
@@ -38,6 +38,14 @@ namespace Algiz {
 			ERR_print_errors_fp(stderr);
 			SSL_CTX_free(sslContext);
 			throw std::runtime_error("SSLServer OpenSSL private key initialization failed");
+		}
+
+		if (!chain.empty()) {
+			if (SSL_CTX_use_certificate_chain_file(sslContext, chain.c_str()) <= 0) {
+				ERR_print_errors_fp(stderr);
+				SSL_CTX_free(sslContext);
+				throw std::runtime_error("SSLServer OpenSSL certificate chain initialization failed");
+			}
 		}
 	}
 

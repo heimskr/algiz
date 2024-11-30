@@ -16,7 +16,7 @@ namespace Algiz {
 	class SSLServer: public Server {
 		public:
 			SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert, const std::string &key,
-					size_t thread_count, size_t chunk_size = 1);
+			          const std::string &chain, size_t thread_count, size_t chunk_size = 1);
 			SSLServer(const SSLServer &) = delete;
 			SSLServer(SSLServer &&) = delete;
 
