@@ -27,7 +27,10 @@ link_args = []
 
 if get_option('enable_geoip')
 	inc_dirs += include_directories('../geolite2++/src-lib')
-	algiz_deps += cxx.find_library('geolite2++', dirs: meson.current_source_dir() + '/../geolite2++/build/src-lib')
+	algiz_deps += [
+		cxx.find_library('geolite2++', dirs: meson.current_source_dir() + '/../geolite2++/build/src-lib'),
+		dependency('libmaxminddb'),
+	]
 endif
 
 subdir('plugins')
