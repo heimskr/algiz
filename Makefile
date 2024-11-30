@@ -93,6 +93,8 @@ depend:
 	makedepend $(DEPFLAGS) -- $(COMPILER) $(CFLAGS) -- $(SOURCES) $(SOURCES_PL) 2>/dev/null
 	@ rm $(DEPFILE).bak
 
+SHELL := /bin/bash
+
 linkplugins:
 	mkdir -p plugin
 	cd plugin && for i in $$(find ../builddir/src -name '*.so'); do \
