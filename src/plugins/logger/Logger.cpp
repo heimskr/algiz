@@ -19,11 +19,20 @@ namespace Algiz::Plugins {
 	CancelableResult Logger::handle(const HTTP::Server::HandlerArgs &args, bool) {
 		const auto &[http, client, request, parts] = args;
 
-		if (request.path.size() <= 2048)
+		if (request.path.size() <= 2048) {
 			INFO('[' << http.server->id << " <- " << client.describe() << "] Received request for \"" <<
 			     escapeANSI(request.path) << "\"");
-		else
+		} else {
 			INFO('[' << http.server->id << " <- " << client.describe() << "] Received request for a really large path...");
+		}
+
+		if (auto iter = request.headers.find("Host"); iter != request.headers.end()) {
+			INFO("Host: \"" << iter->second << '"');
+		} else if (auto iter = request.headers.find("host"); iter != request.headers.end()) {
+			INFO("host: \"" << iter->second << '"');
+		} else {
+			WARN("No Host header");
+		}
 
 		return CancelableResult::Pass;
 	}

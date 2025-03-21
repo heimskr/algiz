@@ -41,15 +41,19 @@ namespace Algiz::HTTP {
 	}
 
 	Response & Response::setHeader(const std::string &header, const std::string &value) {
-		headers[header] = value;
+		headers[toLower(header)] = value;
 		return *this;
 	}
 
 	Response & Response::setClose(bool close) {
-		if (close)
+		if (close) {
 			return setHeader("Connection", "close");
-		if (headers.contains("Connection") && headers.at("Connection") == "close")
-			headers.erase("Connection");
+		}
+
+		if (auto iter = headers.find("connection"); iter != headers.end() && iter->second == "close") {
+			headers.erase(iter);
+		}
+
 		return *this;
 	}
 
@@ -59,21 +63,23 @@ namespace Algiz::HTTP {
 	}
 
 	Response & Response::setAcceptRanges(bool value) {
-		if (value)
-			headers["Accept-Ranges"] = "bytes";
-		else
-			headers.erase("Accept-Ranges");
+		if (value) {
+			headers["accept-ranges"] = "bytes";
+		} else {
+			headers.erase("accept-ranges");
+		}
 		return *this;
 	}
 
 	Response & Response::setLastModified(time_t when) {
-		headers["Last-Modified"] = formatTime("%a, %-d %b %Y %T %Z", when);
+		headers["last-modified"] = formatTime("%a, %-d %b %Y %T %Z", when);
 		return *this;
 	}
 
 	std::string_view Response::contentView() const {
-		if (std::holds_alternative<std::string>(content))
+		if (std::holds_alternative<std::string>(content)) {
 			return std::string_view(std::get<std::string>(content));
+		}
 		return std::get<std::string_view>(content);
 	}
 
@@ -102,10 +108,10 @@ namespace Algiz::HTTP {
 			std::get<std::string>(content).size() : std::get<std::string_view>(content).size();
 		out.reserve(content_size + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
-		if (!noContentType && !headers.contains("Content-Type"))
+		if (!noContentType && !headers.contains("content-type"))
 		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset = " + charset) + "\r\n";
-		if (!headers.contains("Content-Length"))
-			out += "Content-Length: " + std::to_string(content_size) + "\r\n";
+		if (!headers.contains("content-length"))
+			out += "content-length: " + std::to_string(content_size) + "\r\n";
 		for (const auto &[header, value]: headers)
 			out += header + ": " + value + "\r\n";
 		out += "\r\n";

@@ -80,14 +80,16 @@ namespace Algiz {
 		return out;
 	}
 
-	std::string toLower(std::string str) {
+	std::string toLower(std::string_view view) {
+		std::string str(view);
 		for (size_t i = 0, length = str.length(); i < length; ++i)
 			if ('A' <= str[i] && str[i] <= 'Z')
 				str[i] += 'a' - 'A';
 		return str;
 	}
 
-	std::string toUpper(std::string str) {
+	std::string toUpper(std::string_view view) {
+		std::string str(view);
 		for (size_t i = 0, length = str.length(); i < length; ++i)
 			if ('a' <= str[i] && str[i] <= 'z')
 				str[i] -= 'a' - 'A';

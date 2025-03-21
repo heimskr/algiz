@@ -39,8 +39,7 @@ namespace Algiz {
 				try {
 					client.handleInput(message);
 				} catch (const ParseError &error) {
-					ERROR('[' << server->id << "] Disconnecting " << client.describe() << ": " << error.what());
-					server->send(client.id, HTTP::Response(400, "Couldn't parse request."));
+					server->send(client.id, HTTP::Response(400, "Hey dummy, learn to send a proper HTTP request and then we can talk."));
 					server->close(client.id);
 				}
 			};

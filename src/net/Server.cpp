@@ -44,6 +44,10 @@ namespace Algiz {
 				throw std::runtime_error("Couldn't allocate a new event_base");
 			}
 
+			pipeIgnorer = std::unique_ptr<event, decltype(&event_free)>(evsignal_new(base, SIGPIPE, +[](int, short, void*) {
+				WARN("SIGPIPE caught in Worker");
+			}, nullptr), event_free);
+
 			acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
 
 			if (acceptEvent == nullptr) {
@@ -61,6 +65,7 @@ namespace Algiz {
 
 	Server::Worker::~Worker() {
 		event_free(acceptEvent);
+		pipeIgnorer.reset();
 		event_base_free(base);
 	}
 
@@ -229,6 +234,14 @@ namespace Algiz {
 			throw std::runtime_error(std::format("Couldn't initialize libevent ({}): {}", errno, error));
 		}
 
+		auto pipe_ignorer = std::unique_ptr<event, decltype(&event_free)>(evsignal_new(base, SIGPIPE, +[](int, short, void*) {
+			WARN("SIGPIPE caught in Server::mainLoop");
+		}, nullptr), event_free);
+
+		if (event_add(pipe_ignorer.get(), nullptr) != 0) {
+			throw std::runtime_error("Couldn't ignore SIGPIPE on event_base");
+		}
+
 		evconnlistener *listener = evconnlistener_new_bind(base, listener_cb, this,
 			LEV_OPT_REUSEABLE | LEV_OPT_CLOSE_ON_FREE | LEV_OPT_CLOSE_ON_EXEC | LEV_OPT_THREADSAFE, -1, name, nameSize);
 
@@ -243,6 +256,7 @@ namespace Algiz {
 
 		event_base_dispatch(base);
 		evconnlistener_free(listener);
+		pipe_ignorer.reset();
 		event_base_free(base);
 	}
 

@@ -47,6 +47,8 @@ namespace Algiz {
 
 					std::vector<int> acceptQueue;
 
+					std::unique_ptr<event, decltype(&event_free)> pipeIgnorer{nullptr, event_free};
+
 					explicit Worker(Server &server_, size_t buffer_size, size_t id_);
 
 					virtual ~Worker();

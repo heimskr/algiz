@@ -42,13 +42,13 @@ namespace Algiz::Plugins {
 
 	bool HttpFileserv::hostMatches(const HTTP::Request &request) const {
 		if (hostnames) {
-			if (auto iter = request.headers.find("Host"); iter != request.headers.end()) {
+			if (auto iter = request.headers.find("host"); iter != request.headers.end()) {
 				return hostnames->contains(iter->second);
 			}
 			return false;
 		}
 
-		return !request.headers.contains("Host");
+		return !request.headers.contains("host");
 	}
 
 	static std::filesystem::path expand(const std::filesystem::path &web_root, std::string_view request_path) {
@@ -241,7 +241,7 @@ namespace Algiz::Plugins {
 					length += end - start + 1;
 
 				response.setAcceptRanges();
-				response["Content-Length"] = std::to_string(length);
+				response["content-length"] = std::to_string(length);
 				response.setLastModified(lastWritten(full_path));
 
 				http.server->send(client.id, response.noContent());
@@ -286,7 +286,7 @@ namespace Algiz::Plugins {
 			const size_t filesize = std::filesystem::file_size(full_path);
 			HTTP::Response response(200, "");
 			response.setLastModified(lastWritten(full_path)).setAcceptRanges().setMIME(mime);
-			response["Content-Length"] = std::to_string(filesize);
+			response["content-length"] = std::to_string(filesize);
 			http.server->send(client.id, response.noContent());
 			size_t remaining = filesize;
 			stream.seekg(0, std::ios::beg);

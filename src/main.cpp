@@ -38,8 +38,14 @@ int main(int argc, char **argv) {
 				exit(1);
 			});
 
-		if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
-			throw std::runtime_error("Couldn't register SIGPIPE handler");
+		{
+			struct sigaction sa;
+			sa.sa_handler = SIG_IGN;
+			sa.sa_flags = 0;
+			if (sigemptyset(&sa.sa_mask) == -1 || sigaction(SIGPIPE, &sa, 0) == -1) {
+				throw std::runtime_error("Couldn't register SIGPIPE handler");
+			}
+		}
 
 		if (signal(SIGINT, +[](int) { for (auto &server: global_servers) server->stop(); }) == SIG_ERR)
 			throw std::runtime_error("Couldn't register SIGINT handler");

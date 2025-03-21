@@ -22,7 +22,7 @@ namespace Algiz::HTTP {
 
 		if (line.empty() && mode == Mode::Headers) {
 			mode = Mode::Content;
-			if (headers.contains("Content-Length")) {
+			if (headers.contains("content-length")) {
 				client.maxRead = contentLength;
 				return HandleResult::DisableLineMode;
 			}
@@ -69,7 +69,8 @@ namespace Algiz::HTTP {
 					throw ParseError("Invalid HTTP header: no separator");
 				std::string_view header_name = line.substr(0, separator);
 				std::string_view header_content = line.substr(separator + 2);
-				std::string header_name_string(header_name);
+				std::string header_name_string = toLower(header_name);
+
 				if (headers.contains(header_name_string)) {
 					if (headers[header_name_string].empty()) {
 						headers[header_name_string] = header_content;
@@ -77,8 +78,10 @@ namespace Algiz::HTTP {
 						headers[header_name_string] += " ";
 						headers[header_name_string] += header_content;
 					}
-				} else
+				} else {
 					headers.emplace(header_name_string, header_content);
+				}
+
 				if (header_name == "Content-Length") {
 					try {
 						lengthRemaining = contentLength = parseUlong(header_content);
@@ -229,9 +232,9 @@ namespace Algiz::HTTP {
 	}
 
 	AuthenticationResult Request::checkAuthentication(std::string_view username, std::string_view password) const {
-		if (!headers.contains("Authorization"))
+		if (!headers.contains("authorization"))
 			return AuthenticationResult::Missing;
-		std::string_view auth = headers.at("Authorization");
+		std::string_view auth = headers.at("authorization");
 		if (auth.substr(0, 6) != "Basic ")
 			return AuthenticationResult::Malformed;
 		auth.remove_prefix(6);

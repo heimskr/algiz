@@ -75,13 +75,13 @@ namespace Algiz::HTTP {
 			return;
 		}
 
-		if (request.headers.contains("Connection")) {
-			const auto &header = request.headers.at("Connection");
+		if (auto iter = request.headers.find("connection"); iter != request.headers.end()) {
+			const auto &header = iter->second;
 			if (header == "Upgrade" || header == "keep-alive, Upgrade") {
-				if (request.headers.contains("Upgrade") && request.headers.at("Upgrade") == "websocket") {
-					bool failed = !request.headers.contains("Sec-WebSocket-Key")
-					           || !request.headers.contains("Sec-WebSocket-Version")
-					           ||  request.headers.at("Sec-WebSocket-Key").size() != 24;
+				if (request.headers.contains("upgrade") && request.headers.at("upgrade") == "websocket") {
+					bool failed = !request.headers.contains("sec-websocket-key")
+					           || !request.headers.contains("sec-websocket-version")
+					           ||  request.headers.at("sec-websocket-key").size() != 24;
 
 					if (failed) {
 						send400(client);
@@ -90,8 +90,8 @@ namespace Algiz::HTTP {
 
 					StringVector protocols;
 
-					if (request.headers.contains("Sec-WebSocket-Protocol")) {
-						protocols = split(request.headers.at("Sec-WebSocket-Protocol"), " ");
+					if (request.headers.contains("sec-websocket-protocol")) {
+						protocols = split(request.headers.at("sec-websocket-protocol"), " ");
 					}
 
 					WebSocketConnectionArgs args {
@@ -110,13 +110,13 @@ namespace Algiz::HTTP {
 							server->close(client.id);
 						} else {
 							Response response(101, "");
-							response["Upgrade"] = "websocket";
-							response["Connection"] = "Upgrade";
-							response["Sec-WebSocket-Accept"] = base64Encode(sha1(request.headers.at("Sec-WebSocket-Key")
+							response["upgrade"] = "websocket";
+							response["connection"] = "Upgrade";
+							response["sec-websocket-accept"] = base64Encode(sha1(request.headers.at("sec-websocket-key")
 								+ "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"));
 
 							if (!args.acceptedProtocol.empty()) {
-								response["Sec-WebSocket-Protocol"] = args.acceptedProtocol;
+								response["sec-websocket-protocol"] = args.acceptedProtocol;
 							}
 
 							server->send(client.id, response);
@@ -202,7 +202,7 @@ namespace Algiz::HTTP {
 
 	void Server::send401(Client &client, std::string_view realm) {
 		Response response(401, "Unauthorized");
-		response["WWW-Authenticate"] = "Basic realm=\"" + escapeQuotes(realm) + "\"";
+		response["www-authenticate"] = "Basic realm=\"" + escapeQuotes(realm) + "\"";
 		server->send(client.id, response);
 	}
 

@@ -18,8 +18,8 @@ namespace Algiz {
 	unsigned long parseUlong(const std::string &, int base = 10);
 	unsigned long parseUlong(const char *, int base = 10);
 	unsigned long parseUlong(std::string_view, int base = 10);
-	std::string toLower(std::string);
-	std::string toUpper(std::string);
+	std::string toLower(std::string_view);
+	std::string toUpper(std::string_view);
 	std::string unescape(std::string_view, bool plus_to_space = true);
 	bool isNumeric(char);
 	bool isNumeric(std::string_view);
