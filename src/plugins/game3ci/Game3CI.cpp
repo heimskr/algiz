@@ -41,34 +41,6 @@ static bool compareHMAC(std::string_view one, std::string_view two) {
 	return out;
 }
 
-static std::string_view game3Secret() {
-	static auto secret = [] -> std::string {
-		if (const char *out = std::getenv("GAME3_SECRET")) {
-			return out;
-		}
-
-		if (const char *path = std::getenv("GAME3_SECRET_PATH")) {
-			return Algiz::readFile(path);
-		}
-
-		if (const char *home = std::getenv("HOME")) {
-			auto path = std::filesystem::path(home) / "game3" / ".secret";
-			if (std::filesystem::exists(path)) {
-				return Algiz::readFile(path);
-			}
-		}
-
-		auto path = std::filesystem::current_path() / ".game3_secret";
-		if (std::filesystem::exists(path)) {
-			return Algiz::readFile(path);
-		}
-
-		throw std::runtime_error("Couldn't find game3 secret");
-	}();
-
-	return secret;
-}
-
 namespace Algiz::Plugins {
 	void Game3CI::postinit(PluginHost *host) {
 		dynamic_cast<HTTP::Server &>(*(parent = host)).postHandlers.emplace_back(handler);
@@ -96,7 +68,7 @@ namespace Algiz::Plugins {
 		}
 
 		std::string signature(request.getHeader("x-hub-signature-256").substr(7));
-		std::string expected = hex(hmacSHA256(game3Secret(), request.content));
+		std::string expected = hex(hmacSHA256(std::string(config.at("secret")), request.content));
 		signature.resize(expected.size());
 
 		if (!compareHMAC(signature, expected)) {
@@ -108,12 +80,10 @@ namespace Algiz::Plugins {
 		nlohmann::json json;
 		try {
 			json = nlohmann::json::parse(request.content);
-		} catch (const std::exception &error) {
-			ERROR("Game3CI JSON parsing failed: " << error.what());
-			return CancelableResult::Pass;
 		} catch (...) {
-			ERROR("Game3CI JSON parsing failed");
-			return CancelableResult::Pass;
+			client.send(HTTP::Response(400, "Bad JSON", "text/plain"));
+			client.close();
+			return CancelableResult::Kill;
 		}
 
 		[&] {
