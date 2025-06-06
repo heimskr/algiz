@@ -46,8 +46,7 @@ namespace Algiz {
 #else
 
 	GeoIP::GeoIP(const std::string &):
-		valid(true),
-		GeoIP() {}
+		valid(true) {}
 
 	std::string GeoIP::getCountry(const std::string &) {
 		return "Unknown";
