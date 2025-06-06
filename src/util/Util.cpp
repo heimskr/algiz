@@ -160,29 +160,31 @@ namespace Algiz {
 	std::string escapeANSI(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());
-		for (char ch: view)
-			if (ch == '\x1b')
+		for (char ch: view) {
+			if (ch == '\x1b') {
 				out += "\x1b[2m\\x1b\x1b[22m";
-			else if (ch == '\t')
+			} else if (ch == '\t') {
 				out += "\\t";
-			else if (ch == '\r')
+			} else if (ch == '\r') {
 				out += "\\r";
-			else if (ch == '\n')
+			} else if (ch == '\n') {
 				out += "\\n";
-			else if (ch == '\v')
+			} else if (ch == '\v') {
 				out += "\\v";
-			else if (ch == '\b')
+			} else if (ch == '\b') {
 				out += "\\b";
-			else if (ch == '\a')
+			} else if (ch == '\a') {
 				out += "\\a";
-			else if (ch == '\f')
+			} else if (ch == '\f') {
 				out += "\\f";
-			else if (ch == '\0')
+			} else if (ch == '\0') {
 				out += "\\0";
-			else if (ch == '\\')
+			} else if (ch == '\\') {
 				out += "\\\\";
-			else
+			} else {
 				out += ch;
+			}
+		}
 		return out;
 	}
 
@@ -190,14 +192,15 @@ namespace Algiz {
 		std::string out;
 		out.reserve(view.size());
 		for (char ch: view) {
-			if (ch == '<')
+			if (ch == '<') {
 				out += "&lt;";
-			else if (ch == '>')
+			} else if (ch == '>') {
 				out += "&gt;";
-			else if (ch == '"')
+			} else if (ch == '"') {
 				out += "&quot;";
-			else
+			} else {
 				out += ch;
+			}
 		}
 		return out;
 	}
@@ -205,34 +208,59 @@ namespace Algiz {
 	std::string escapeURL(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());
-		for (char ch: view)
-			if (ch == ' ')
+		for (char ch: view) {
+			if (ch == ' ') {
 				out += '+';
-			else if (ch == '.' || ch == '_')
+			} else if (ch == '.' || ch == '_') {
 				out += ch;
-			else if (ch < '0' || ('9' < ch && ch < 'A') || ('Z' < ch && ch < 'a') || 'z' < ch)
+			} else if (ch < '0' || ('9' < ch && ch < 'A') || ('Z' < ch && ch < 'a') || 'z' < ch) {
 				out += '%' + charHex(ch);
-			else
+			} else {
 				out += ch;
+			}
+		}
 		return out;
 	}
 
 	std::string charHex(uint8_t ch) {
 		std::string out;
 		out.reserve(2);
-		for (char nibble: {(ch >> 4) & 0xf, ch & 0xf})
+		for (char nibble: {(ch >> 4) & 0xf, ch & 0xf}) {
 			out += nibble + (nibble < 10? '0' : 'a' - 10);
+		}
 		return out;
 	}
 
 	std::string escapeQuotes(std::string_view view) {
 		std::string out;
 		out.reserve(view.size());
-		for (char ch: view)
-			if (ch == '"')
+		for (char ch: view) {
+			if (ch == '"') {
 				out += "\\\"";
-			else
+			} else {
 				out += ch;
+			}
+		}
+		return out;
+	}
+
+	template <>
+	std::string hex<std::string>(const std::string &string) {
+		std::string out;
+		out.reserve(string.size() * 2);
+
+		auto get_char = [](uint8_t nybble) {
+			if (nybble < 10) {
+				return '0' + nybble;
+			}
+			return 'a' + (nybble - 10);
+		};
+
+		for (uint8_t byte: string) {
+			out += get_char(byte >> 4);
+			out += get_char(byte & 0xf);
+		}
+
 		return out;
 	}
 }

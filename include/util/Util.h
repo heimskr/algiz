@@ -58,12 +58,13 @@ namespace Algiz {
 	}
 
 	template <typename T>
-	std::string hex(T n) {
+	std::string hex(const T &n) {
 		std::stringstream ss;
 		ss << std::hex << n;
-		const std::string out = ss.str();
-		if (out.size() == 1)
+		std::string out = std::move(ss).str();
+		if (out.size() == 1) {
 			return "0" + out;
+		}
 		return out;
 	}
 

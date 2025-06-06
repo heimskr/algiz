@@ -20,3 +20,4 @@ callgrind.*
 *.crt
 /geolite2++
 *.mmdb
+/.game3_secret

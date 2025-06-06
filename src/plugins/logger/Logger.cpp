@@ -10,10 +10,12 @@
 namespace Algiz::Plugins {
 	void Logger::postinit(PluginHost *host) {
 		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.emplace_back(handler);
+		dynamic_cast<HTTP::Server &>(*(parent = host)).postHandlers.emplace_back(handler);
 	}
 
 	void Logger::cleanup(PluginHost *host) {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, handler);
+		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).postHandlers, handler);
 	}
 
 	CancelableResult Logger::handle(const HTTP::Server::HandlerArgs &args, bool) {

@@ -164,6 +164,12 @@ namespace Algiz::HTTP {
 	}
 
 	void Request::absorbPOST() {
+		if (auto iter = headers.find("content-type"); iter != headers.end()) {
+			if (iter->second != "application/x-www-form-urlencoded") {
+				return;
+			}
+		}
+
 		postParameters = getParameters(content, false);
 		content.clear();
 	}
@@ -232,21 +238,35 @@ namespace Algiz::HTTP {
 	}
 
 	AuthenticationResult Request::checkAuthentication(std::string_view username, std::string_view password) const {
-		if (!headers.contains("authorization"))
+		auto iter = headers.find("authorization");
+		if (iter == headers.end()) {
 			return AuthenticationResult::Missing;
-		std::string_view auth = headers.at("authorization");
-		if (auth.substr(0, 6) != "Basic ")
+		}
+		std::string_view auth = iter->second;
+		if (auth.substr(0, 6) != "Basic ") {
 			return AuthenticationResult::Malformed;
+		}
 		auth.remove_prefix(6);
 		const std::string decoded_str = base64Decode(auth);
 		const std::string_view decoded = decoded_str;
 		const size_t colon = decoded.find(':');
-		if (colon == std::string::npos)
+		if (colon == std::string::npos) {
 			return AuthenticationResult::Malformed;
-		if (decoded.substr(0, colon) != username)
+		}
+		if (decoded.substr(0, colon) != username) {
 			return AuthenticationResult::BadUsername;
-		if (decoded.substr(colon + 1) != password)
+		}
+		if (decoded.substr(colon + 1) != password) {
 			return AuthenticationResult::BadPassword;
+		}
 		return AuthenticationResult::Success;
+	}
+
+	std::string_view Request::getHeader(const std::string &name) const {
+		if (auto iter = headers.find(name); iter != headers.end()) {
+			return iter->second;
+		}
+
+		return {};
 	}
 }
