@@ -90,8 +90,8 @@ namespace Algiz::Plugins {
 		}
 
 		if (request.getHeader("content-type") != "application/json") {
-			http.server->send(client.id, HTTP::Response(400, "What?", "text/plain"));
-			http.server->close(client.id);
+			client.send(HTTP::Response(400, "What?", "text/plain"));
+			client.close();
 			return CancelableResult::Kill;
 		}
 
@@ -100,8 +100,8 @@ namespace Algiz::Plugins {
 		signature.resize(expected.size());
 
 		if (!compareHMAC(signature, expected)) {
-			http.server->send(client.id, HTTP::Response(403, "No.", "text/plain"));
-			http.server->close(client.id);
+			client.send(HTTP::Response(403, "No.", "text/plain"));
+			client.close();
 			return CancelableResult::Kill;
 		}
 
@@ -122,8 +122,8 @@ namespace Algiz::Plugins {
 			}
 		}();
 
-		http.server->send(client.id, HTTP::Response(200, "Thanks", "text/plain"));
-		http.server->close(client.id);
+		client.send(HTTP::Response(200, "Thanks!", "text/plain"));
+		client.close();
 		return CancelableResult::Approve;
 	}
 }
