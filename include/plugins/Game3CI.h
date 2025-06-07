@@ -13,8 +13,6 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Game3CI: public Plugin {
 		public:
-			bool force = false;
-
 			[[nodiscard]] std::string getName()        const override { return "Game3 CI"; }
 			[[nodiscard]] std::string getDescription() const override { return "Does CI stuff for Game3."; }
 			[[nodiscard]] std::string getVersion()     const override { return "0.0.1"; }
@@ -29,7 +27,9 @@ namespace Algiz::Plugins {
 			std::string repoRoot;
 			std::string builddir;
 			std::string secret;
+			std::string quasiMsys2;
 			ThreadPool pool{1}; // lol
+			bool force = false;
 
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 			ThreadPool::Function makeJob(std::string commit_hash);

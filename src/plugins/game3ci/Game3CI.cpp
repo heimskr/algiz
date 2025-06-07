@@ -50,6 +50,9 @@ namespace Algiz::Plugins {
 		repoRoot = config.at("repo");
 		builddir = config.at("builddir");
 		secret = config.at("secret");
+		if (auto iter = config.find("quasiMsys2"); iter != config.end()) {
+			quasiMsys2 = *iter;
+		}
 		if (auto iter = config.find("force"); iter != config.end()) {
 			force = *iter;
 		}
@@ -113,7 +116,7 @@ namespace Algiz::Plugins {
 	concept Stringable = std::constructible_from<std::string, T>;
 
 	ThreadPool::Function Game3CI::makeJob(std::string commit_hash) {
-		return [repo_root = repoRoot, build_dir = builddir, force = force, commit_hash = std::move(commit_hash)](ThreadPool &, size_t) -> void {
+		return [repo_root = repoRoot, build_dir = builddir, force = force, quasi_msys2 = quasiMsys2, commit_hash = std::move(commit_hash)](ThreadPool &, size_t) -> void {
 			INFO("Getting to work on commit " << commit_hash << "...");
 
 			const std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
@@ -158,9 +161,19 @@ namespace Algiz::Plugins {
 				return;
 			}
 
+			INFO("Starting Linux build for commit " << commit_hash << "...");
+
 			if (!run(repo_root + "/linzip.sh", repo_root, build_dir, "publish")) {
 				ERROR("Failed to produce and publish a Linux zip.");
 				return;
+			}
+
+			if (!quasi_msys2.empty()) {
+				INFO("Starting Windows build for commit " << commit_hash << "...");
+				if (!run(repo_root + "/quasi_msys2.sh", repo_root, quasi_msys2, "publish")) {
+					ERROR("Failed to produce and publish a Windows zip.");
+					return;
+				}
 			}
 
 			double seconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() / 1000.0;
