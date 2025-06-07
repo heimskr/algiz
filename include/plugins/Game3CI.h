@@ -13,8 +13,6 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Game3CI: public Plugin {
 		public:
-			std::string repoRoot;
-			std::string builddir;
 			bool force = false;
 
 			[[nodiscard]] std::string getName()        const override { return "Game3 CI"; }
@@ -28,6 +26,9 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Game3CI::handle));
 
 		private:
+			std::string repoRoot;
+			std::string builddir;
+			std::string secret;
 			ThreadPool pool{1}; // lol
 
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);

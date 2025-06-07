@@ -49,6 +49,7 @@ namespace Algiz::Plugins {
 	void Game3CI::postinit(PluginHost *host) {
 		repoRoot = config.at("repo");
 		builddir = config.at("builddir");
+		secret = config.at("secret");
 		if (auto iter = config.find("force"); iter != config.end()) {
 			force = *iter;
 		}
@@ -79,7 +80,7 @@ namespace Algiz::Plugins {
 		}
 
 		std::string signature(request.getHeader("x-hub-signature-256").substr(7));
-		std::string expected = hexString(hmacSHA256(std::string(config.at("secret")), request.content));
+		std::string expected = hexString(hmacSHA256(secret, request.content));
 		signature.resize(expected.size());
 
 		if (!compareHMAC(signature, expected)) {
