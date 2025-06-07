@@ -68,6 +68,8 @@ namespace Algiz {
 		return out;
 	}
 
+	std::string hexString(std::string_view);
+
 	template <template <typename...> typename C, typename T, typename D>
 	std::string join(const C<T> &container, D &&delimiter) {
 		std::stringstream ss;

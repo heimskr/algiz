@@ -2,6 +2,7 @@
 
 #include "http/Server.h"
 #include "plugins/Plugin.h"
+#include "threading/ThreadPool.h"
 #include "util/Util.h"
 
 namespace Algiz::HTTP {
@@ -23,6 +24,9 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Game3CI::handle));
 
 		private:
+			ThreadPool pool{1}; // lol
+
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+			static ThreadPool::Function makeJob(std::string repo_root, std::string build_dir, std::string commit_hash);
 	};
 }

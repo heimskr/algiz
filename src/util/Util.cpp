@@ -244,8 +244,7 @@ namespace Algiz {
 		return out;
 	}
 
-	template <>
-	std::string hex<std::string>(const std::string &string) {
+	std::string hexString(std::string_view string) {
 		std::string out;
 		out.reserve(string.size() * 2);
 
