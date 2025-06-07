@@ -32,15 +32,17 @@ static bool compareHMAC(std::string_view one, std::string_view two) {
 		throw std::runtime_error("Strings must have same length to be fully compared");
 	}
 
-	bool out = true;
+	int sum = one.size();
 
 	for (size_t i = 0; i < one.size(); ++i) {
-		if (one[i] != two[i]) {
-			out = false;
+		if (one[i] == two[i]) {
+			--sum;
+		} else {
+			++sum;
 		}
 	}
 
-	return out;
+	return sum == 0;
 }
 
 namespace Algiz::Plugins {
