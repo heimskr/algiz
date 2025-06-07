@@ -13,8 +13,9 @@
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
 
-#include <string>
 #include <array>
+#include <chrono>
+#include <string>
 
 static std::string hmacSHA256(std::string_view decoded_key, std::string_view message) {
 	// https://stackoverflow.com/a/64570079
@@ -44,6 +45,11 @@ static bool compareHMAC(std::string_view one, std::string_view two) {
 
 namespace Algiz::Plugins {
 	void Game3CI::postinit(PluginHost *host) {
+		repoRoot = config.at("repo");
+		builddir = config.at("builddir");
+		if (auto iter = config.find("force"); iter != config.end()) {
+			force = *iter;
+		}
 		pool.start();
 		dynamic_cast<HTTP::Server &>(*(parent = host)).postHandlers.emplace_back(handler);
 	}
@@ -91,7 +97,7 @@ namespace Algiz::Plugins {
 
 		if (auto ref_iter = json.find("ref"); ref_iter != json.end() && *ref_iter == "refs/heads/master") {
 			if (auto after_iter = json.find("after"); after_iter != json.end()) {
-				pool.add(makeJob(config.at("repo"), config.at("builddir"), *after_iter));
+				pool.add(makeJob(*after_iter));
 			}
 		}
 
@@ -103,9 +109,11 @@ namespace Algiz::Plugins {
 	template <typename T>
 	concept Stringable = std::constructible_from<std::string, T>;
 
-	ThreadPool::Function Game3CI::makeJob(std::string repo_root, std::string build_dir, std::string commit_hash) {
-		return [repo_root = std::move(repo_root), build_dir = std::move(build_dir), commit_hash = std::move(commit_hash)](ThreadPool &, size_t) -> void {
-			INFO("Getting to work on commit " << commit_hash << '.');
+	ThreadPool::Function Game3CI::makeJob(std::string commit_hash) {
+		return [repo_root = repoRoot, build_dir = builddir, force = force, commit_hash = std::move(commit_hash)](ThreadPool &, size_t) -> void {
+			INFO("Getting to work on commit " << commit_hash << "...");
+
+			const std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
 
 			int code{}, signal{};
 			std::string out, err;
@@ -142,12 +150,18 @@ namespace Algiz::Plugins {
 				return;
 			}
 
-			if (out.contains("ninja: no work to do.\n")) {
+			if (!force && out.contains("ninja: no work to do.\n")) {
 				WARN("No work to do for commit " << commit_hash << '.');
 				return;
 			}
 
-			SUCCESS("ja");
+			if (!run(repo_root + "/linzip.sh", repo_root, build_dir, "publish")) {
+				ERROR("Failed to produce and publish a Linux zip.");
+				return;
+			}
+
+			double seconds = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() / 1000.0;
+			SUCCESS("Published commit " << commit_hash << " in " << seconds << " seconds.");
 		};
 	}
 }
