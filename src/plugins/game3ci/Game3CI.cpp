@@ -151,6 +151,8 @@ namespace Algiz::Plugins {
 				return;
 			}
 
+			INFO("Starting Linux build for commit " << commit_hash << "...");
+
 			if (!run("ninja", "-C", build_dir)) {
 				ERROR("Failed to build.");
 				return;
@@ -160,8 +162,6 @@ namespace Algiz::Plugins {
 				WARN("No work to do for commit " << commit_hash << '.');
 				return;
 			}
-
-			INFO("Starting Linux build for commit " << commit_hash << "...");
 
 			if (!run(repo_root + "/linzip.sh", repo_root, build_dir, "publish")) {
 				ERROR("Failed to produce and publish a Linux zip.");
