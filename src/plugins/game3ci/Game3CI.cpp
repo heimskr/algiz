@@ -151,7 +151,7 @@ namespace Algiz::Plugins {
 				return;
 			}
 
-			INFO("Starting Linux build for commit " << commit_hash << "...");
+			INFO("Starting Linux build...");
 
 			if (!run("ninja", "-C", build_dir)) {
 				ERROR("Failed to build.");
@@ -159,7 +159,7 @@ namespace Algiz::Plugins {
 			}
 
 			if (!force && out.contains("ninja: no work to do.\n")) {
-				WARN("No work to do for commit " << commit_hash << '.');
+				WARN("No work to do.");
 				return;
 			}
 
@@ -169,7 +169,7 @@ namespace Algiz::Plugins {
 			}
 
 			if (!quasi_msys2.empty()) {
-				INFO("Starting Windows build for commit " << commit_hash << "...");
+				INFO("Starting Windows build...");
 				if (!run(repo_root + "/quasi_msys2.sh", repo_root, quasi_msys2, "publish")) {
 					ERROR("Failed to produce and publish a Windows zip.");
 					return;
