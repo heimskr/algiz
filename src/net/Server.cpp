@@ -1,5 +1,6 @@
 #include "Log.h"
 
+#include "error/ParseError.h"
 #include "http/Client.h"
 #include "net/NetError.h"
 #include "net/Server.h"
@@ -423,14 +424,15 @@ namespace Algiz {
 
 				if (!str.empty()) {
 					if (client.lineMode) {
-						throw std::runtime_error("Text is left over in the buffer, but " + client.describe() +
-							" is still in line mode");
+						throw ParseError("Text is left over in the buffer, but " + client.describe() + " is still in line mode");
 					}
 					server.handleMessage(client, str);
 				}
 
 				readable = evbuffer_get_length(input);
 			}
+		} catch (const ParseError &) {
+			remove(buffer_event);
 		} catch (const std::runtime_error &err) {
 			ERROR(err.what());
 			remove(buffer_event);
