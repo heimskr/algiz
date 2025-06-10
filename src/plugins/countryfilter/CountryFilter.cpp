@@ -33,7 +33,12 @@ namespace Algiz::Plugins {
 
 	bool CountryFilter::filter(const std::string &ip, int fd) {
 		if (GeoIP &geo = GeoIP::get()) {
-			std::string country = geo.getCountry(ip);
+			std::string country = "Unknown";
+
+			try {
+				country = geo.getCountry(ip);
+			} catch (const std::exception &) {}
+
 			if ((!whitelist || whitelist->contains(country)) && (!blacklist || !blacklist->contains(country))) {
 				return true;
 			}

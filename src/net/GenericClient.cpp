@@ -11,6 +11,10 @@ namespace Algiz {
 			return ip;
 		}
 
-		return std::format("{} ({})", ip, geoip.getCountry(ip));
+		try {
+			return std::format("{} ({})", ip, geoip.getCountry(ip));
+		} catch (const std::exception &err) {
+			return std::format("{} (?: {})", ip, err.what());
+		}
 	}
 }
