@@ -46,7 +46,7 @@ namespace Algiz {
 			}
 
 			pipeIgnorer = std::unique_ptr<event, decltype(&event_free)>(evsignal_new(base, SIGPIPE, +[](int, short, void*) {
-				WARN("SIGPIPE caught in Worker");
+				// WARN("SIGPIPE caught in Worker");
 			}, nullptr), event_free);
 
 			acceptEvent = event_new(base, -1, EV_PERSIST, &worker_acceptcb, this);
@@ -236,7 +236,7 @@ namespace Algiz {
 		}
 
 		auto pipe_ignorer = std::unique_ptr<event, decltype(&event_free)>(evsignal_new(base, SIGPIPE, +[](int, short, void*) {
-			WARN("SIGPIPE caught in Server::mainLoop");
+			// WARN("SIGPIPE caught in Server::mainLoop");
 		}, nullptr), event_free);
 
 		if (event_add(pipe_ignorer.get(), nullptr) != 0) {
