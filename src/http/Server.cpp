@@ -36,12 +36,25 @@ namespace Algiz::HTTP {
 			watcher.emplace({webRoot.string()}, true);
 
 			watcher->onModify = [this](const std::filesystem::path &path) {
-				if (path.filename() == ".algiz")
+				if (path.filename() == ".algiz") {
 					addConfig(path);
+				}
 			};
 
 			watcherThread = std::thread([this] {
-				watcher->start();
+				for (;;) {
+					try {
+						watcher->start();
+					} catch (const Wahtwo::Error &error) {
+						INFO("Wahtwo error: " << error.what());
+						if (!std::string_view(error.what()).starts_with("select failed:")) {
+							break;
+						}
+					} catch (const std::exception &error) {
+						INFO("Watcher error: " << error.what());
+						break;
+					}
+				}
 			});
 
 			watcherThread.detach();
