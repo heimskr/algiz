@@ -44,6 +44,9 @@ namespace Algiz::HTTP {
 			watcherThread = std::thread([this] {
 				for (;;) {
 					try {
+						if (!watcher) {
+							break;
+						}
 						watcher->start();
 					} catch (const Wahtwo::Error &error) {
 						INFO("Wahtwo error: " << error.what());
