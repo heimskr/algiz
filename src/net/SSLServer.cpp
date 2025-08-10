@@ -105,8 +105,6 @@ namespace Algiz {
 			} else {
 				WARN("inet_ntop failed: " << strerror(errno));
 			}
-		} else {
-			WARN("getpeername failed:  " << strerror(errno));
 		}
 
 		if (std::string_view(ip).substr(0, 7) == "::ffff:" && ip.find('.') != std::string::npos) {
