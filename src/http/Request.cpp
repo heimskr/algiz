@@ -38,16 +38,17 @@ namespace Algiz::HTTP {
 
 				const std::string_view method_view = line.substr(0, first_space);
 
-				if (method_view == "GET")
+				if (method_view == "GET") {
 					method = Method::GET;
-				else if (method_view == "HEAD")
+				} else if (method_view == "HEAD") {
 					method = Method::HEAD;
-				else if (method_view == "PUT")
+				} else if (method_view == "PUT") {
 					method = Method::PUT;
-				else if (method_view == "POST")
+				} else if (method_view == "POST") {
 					method = Method::POST;
-				else
+				} else {
 					throw UnsupportedMethod(std::string(method_view));
+				}
 
 				line = line.substr(first_space + 1);
 				const size_t next_space = line.find(' ');

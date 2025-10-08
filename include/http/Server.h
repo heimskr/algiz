@@ -27,9 +27,11 @@ namespace Algiz::HTTP {
 				Request request;
 				const StringVector parts;
 
-				explicit HandlerArgs(Server &server_, Client &client_, Request &&request_,
-				                     StringVector &&parts_):
-					server(server_), client(client_), request(std::move(request_)), parts(std::move(parts_)) {}
+				explicit HandlerArgs(Server &server, Client &client, Request request, StringVector parts):
+					server(server),
+					client(client),
+					request(std::move(request)),
+					parts(std::move(parts)) {}
 			};
 
 			struct WebSocketConnectionArgs: HandlerArgs {
@@ -41,10 +43,9 @@ namespace Algiz::HTTP {
 				 *  Expected to be changed by connection handlers. */
 				std::string acceptedProtocol;
 
-				explicit WebSocketConnectionArgs(Server &server_, Client &client_, Request &&request_, StringVector &&parts_,
-				                       StringVector &&protocols_):
-					HandlerArgs(server_, client_, std::move(request_), std::move(parts_)),
-					protocols(std::move(protocols_)) {}
+				explicit WebSocketConnectionArgs(Server &server, Client &client, Request request, StringVector parts, StringVector protocols):
+					HandlerArgs(server, client, std::move(request), std::move(parts)),
+					protocols(std::move(protocols)) {}
 			};
 
 			struct WebSocketMessageArgs {
@@ -52,8 +53,10 @@ namespace Algiz::HTTP {
 				Client &client;
 				std::string_view message;
 
-				explicit WebSocketMessageArgs(Server &server_, Client &client_, std::string_view message_):
-					server(server_), client(client_), message(message_) {}
+				explicit WebSocketMessageArgs(Server &server, Client &client, std::string_view message):
+					server(server),
+					client(client),
+					message(message) {}
 			};
 
 			using MessageHandler = PreFn<WebSocketMessageArgs &>;
@@ -125,8 +128,10 @@ namespace Algiz::HTTP {
 
 			template <typename T = nlohmann::json, typename N>
 			std::optional<T> getOption(std::string_view web_path, const N &name) {
-				if (!web_path.empty() && web_path.front() == '/')
+				if (!web_path.empty() && web_path.front() == '/') {
 					web_path.remove_prefix(1);
+				}
+
 				return getOption(webRoot / web_path, name);
 			}
 
@@ -143,25 +148,35 @@ namespace Algiz::HTTP {
 
 				auto dir = path.parent_path();
 				const auto root = dir.root_path();
+
 				do {
 					auto lock = lockConfigs();
 					if (configs.contains(dir)) {
 						auto &config = configs.at(dir);
 						if (config.contains(name)) {
-							if constexpr (std::is_same_v<T, nlohmann::json>)
+							if constexpr (std::is_same_v<T, nlohmann::json>) {
 								return config.at(name);
-							return config.at(name).template get<T>();
+							} else {
+								return config.at(name).template get<T>();
+							}
 						}
 					}
-					if (dir == webRoot)
+
+					if (dir == webRoot) {
 						break;
+					}
+
 					dir = dir.parent_path();
 				} while (dir != root);
+
 				if (options.contains(name)) {
-					if constexpr (std::is_same_v<T, nlohmann::json>)
+					if constexpr (std::is_same_v<T, nlohmann::json>) {
 						return options.at(name);
-					return options.at(name).template get<T>();
+					} else {
+						return options.at(name).template get<T>();
+					}
 				}
+
 				return std::nullopt;
 			}
 

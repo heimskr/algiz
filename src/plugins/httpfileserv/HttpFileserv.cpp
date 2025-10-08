@@ -1,5 +1,3 @@
-#include <inja/inja.hpp>
-
 #include "Log.h"
 #include "http/Client.h"
 #include "http/Response.h"
@@ -7,9 +5,26 @@
 #include "plugins/HttpFileserv.h"
 #include "util/FS.h"
 #include "util/MIME.h"
+#include "util/Shell.h"
 #include "util/Templates.h"
 #include "util/Usage.h"
 #include "util/Util.h"
+
+#include <dlfcn.h>
+#include <inja/inja.hpp>
+
+namespace {
+	void compileObject(const std::filesystem::path &source, const std::filesystem::path &output) {
+		using namespace Algiz;
+		CommandOutput result = runCommand("c++", {"-std=c++23", "-Iinclude", "-Isubprojects/wahtwo/include", "-fPIC", source.string(), "-shared", "-o", output.string()});
+		if (result.code || result.signal != -1) {
+			if (!result.err.empty()) {
+				ERROR("Failed to compile " << source << ":\n" << result.err);
+			}
+			throw std::runtime_error(std::format("Failed to compile {} to {}", source.string(), output.string()));
+		}
+	}
+}
 
 namespace Algiz::Plugins {
 	void HttpFileserv::postinit(PluginHost *host) {
@@ -24,6 +39,10 @@ namespace Algiz::Plugins {
 
 		if (auto iter = config.find("root"); iter != config.end()) {
 			root = std::filesystem::canonical(iter->get<std::string>());
+		}
+
+		if (auto iter = config.find("enableModules"); iter != config.end()) {
+			enableModules = *iter;
 		}
 	}
 
@@ -68,7 +87,7 @@ namespace Algiz::Plugins {
 
 		const std::filesystem::path &web_root = getRoot(http);
 
-		auto full_path = expand(web_root, request.path);
+		std::filesystem::path full_path = expand(web_root, request.path);
 
 		if (std::filesystem::is_directory(full_path)) {
 			full_path /= "";
@@ -91,19 +110,23 @@ namespace Algiz::Plugins {
 			return CancelableResult::Kill;
 		}
 
-		if (!findPath(full_path))
+		if (!findPath(full_path)) {
 			return CancelableResult::Pass;
+		}
 
 		try {
 			const auto extension = full_path.extension();
+
 			if (extension == ".t") {
-				http.server->send(client.id,
-					HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
+				http.server->send(client.id, HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
+			} else if (shouldServeModule(http, full_path)) {
+				serveModule(args, full_path);
 			} else if (!request.ranges.empty() || request.suffixLength != 0) {
 				serveRange(args, full_path);
 			} else {
 				serveFull(args, full_path);
 			}
+
 			client.close();
 			return CancelableResult::Approve;
 		} catch (const std::exception &err) {
@@ -300,6 +323,34 @@ namespace Algiz::Plugins {
 		}
 	}
 
+	void HttpFileserv::serveModule(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
+		std::filesystem::path object = full_path;
+		object.replace_extension(".so");
+		if (!std::filesystem::exists(object) || isNewerThan(full_path, object)) {
+			compileObject(full_path, object);
+		}
+
+		void *handle = dlopen(object.c_str(), RTLD_LAZY | RTLD_LOCAL);
+		if (handle == nullptr) {
+			throw std::runtime_error("Couldn't dlopen " + object.string());
+		}
+
+		void *symbol = dlsym(handle, "algizModule");
+		if (symbol == nullptr) {
+			throw std::runtime_error("Couldn't find algizModule symbol");
+		}
+
+		try {
+			auto *function = reinterpret_cast<ModuleFunction>(symbol);
+			function(args);
+		} catch (...) {
+			dlclose(handle);
+			throw;
+		}
+
+		dlclose(handle);
+	}
+
 	std::vector<std::string> HttpFileserv::getDefaults() const {
 		if (config.contains("default")) {
 			const auto &defaults = config.at("default");
@@ -310,6 +361,15 @@ namespace Algiz::Plugins {
 			return defaults;
 		}
 		return {};
+	}
+
+	bool HttpFileserv::shouldServeModule(HTTP::Server &http, const std::filesystem::path &path) const {
+		bool enable = enableModules;
+		if (!enable) {
+			auto option = http.getOption<bool>(path, "enableModules");
+			enable = option && *option;
+		}
+		return enable && path.extension() == ".cpp" && canExecute(path);
 	}
 }
 
