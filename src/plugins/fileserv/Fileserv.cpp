@@ -2,7 +2,7 @@
 #include "http/Client.h"
 #include "http/Response.h"
 #include "http/Server.h"
-#include "plugins/HttpFileserv.h"
+#include "plugins/fileserv/Fileserv.h"
 #include "util/FS.h"
 #include "util/MIME.h"
 #include "util/Shell.h"
@@ -27,7 +27,7 @@ namespace {
 }
 
 namespace Algiz::Plugins {
-	void HttpFileserv::postinit(PluginHost *host) {
+	void Fileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
 
 		http.getHandlers.emplace_back(getHandler);
@@ -46,12 +46,12 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	void HttpFileserv::cleanup(PluginHost *host) {
+	void Fileserv::cleanup(PluginHost *host) {
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).getHandlers, getHandler);
 		PluginHost::erase(dynamic_cast<HTTP::Server &>(*host).postHandlers, postHandler);
 	}
 
-	const std::filesystem::path & HttpFileserv::getRoot(const HTTP::Server &server) const {
+	const std::filesystem::path & Fileserv::getRoot(const HTTP::Server &server) const {
 		if (root) {
 			return *root;
 		}
@@ -59,7 +59,7 @@ namespace Algiz::Plugins {
 		return server.webRoot;
 	}
 
-	bool HttpFileserv::hostMatches(const HTTP::Request &request) const {
+	bool Fileserv::hostMatches(const HTTP::Request &request) const {
 		if (hostnames) {
 			if (auto iter = request.headers.find("host"); iter != request.headers.end()) {
 				return hostnames->contains(iter->second);
@@ -74,7 +74,7 @@ namespace Algiz::Plugins {
 		return (std::filesystem::canonical(web_root) / ("./" + unescape(request_path, true))).lexically_normal();
 	}
 
-	CancelableResult HttpFileserv::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {
+	CancelableResult Fileserv::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {
 		if (!not_disabled) {
 			return CancelableResult::Pass;
 		}
@@ -137,7 +137,7 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	CancelableResult HttpFileserv::handlePOST(HTTP::Server::HandlerArgs &args, bool not_disabled) {
+	CancelableResult Fileserv::handlePOST(HTTP::Server::HandlerArgs &args, bool not_disabled) {
 		if (!not_disabled)
 			return CancelableResult::Pass;
 
@@ -196,7 +196,7 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	bool HttpFileserv::authFailed(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
+	bool Fileserv::authFailed(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		auto &[http, client, request, parts] = args;
 
 		auto auth = http.getOption(full_path, "auth");
@@ -228,7 +228,7 @@ namespace Algiz::Plugins {
 		return false;
 	}
 
-	bool HttpFileserv::findPath(std::filesystem::path &full_path) const {
+	bool Fileserv::findPath(std::filesystem::path &full_path) const {
 		if (std::filesystem::is_regular_file(full_path)) {
 			// Use the path as-is.
 			return true;
@@ -246,7 +246,7 @@ namespace Algiz::Plugins {
 		return false;
 	}
 
-	void HttpFileserv::serveRange(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
+	void Fileserv::serveRange(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		auto &[http, client, request, parts] = args;
 		const size_t filesize = std::filesystem::file_size(full_path);
 		if (request.valid(filesize)) {
@@ -296,7 +296,7 @@ namespace Algiz::Plugins {
 			http.send400(client);
 	}
 
-	void HttpFileserv::serveFull(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
+	void Fileserv::serveFull(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		auto &[http, client, request, parts] = args;
 		std::ifstream stream;
 		stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
@@ -323,7 +323,7 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	void HttpFileserv::serveModule(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
+	void Fileserv::serveModule(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		std::filesystem::path object = full_path;
 		object.replace_extension(".so");
 		if (!std::filesystem::exists(object) || isNewerThan(full_path, object)) {
@@ -351,7 +351,7 @@ namespace Algiz::Plugins {
 		dlclose(handle);
 	}
 
-	std::vector<std::string> HttpFileserv::getDefaults() const {
+	std::vector<std::string> Fileserv::getDefaults() const {
 		if (config.contains("default")) {
 			const auto &defaults = config.at("default");
 			if (defaults.is_string())
@@ -363,7 +363,7 @@ namespace Algiz::Plugins {
 		return {};
 	}
 
-	bool HttpFileserv::shouldServeModule(HTTP::Server &http, const std::filesystem::path &path) const {
+	bool Fileserv::shouldServeModule(HTTP::Server &http, const std::filesystem::path &path) const {
 		bool enable = enableModules;
 		if (!enable) {
 			auto option = http.getOption<bool>(path, "enableModules");
@@ -374,5 +374,5 @@ namespace Algiz::Plugins {
 }
 
 extern "C" Algiz::Plugins::Plugin * make_plugin() {
-	return new Algiz::Plugins::HttpFileserv;
+	return new Algiz::Plugins::Fileserv;
 }

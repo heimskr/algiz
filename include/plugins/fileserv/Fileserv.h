@@ -19,7 +19,7 @@ namespace Algiz::HTTP {
 }
 
 namespace Algiz::Plugins {
-	class HttpFileserv: public Plugin {
+	class Fileserv: public Plugin {
 		public:
 			using ModuleFunction = void (*)(Algiz::HTTP::Server::HandlerArgs &);
 
@@ -41,10 +41,10 @@ namespace Algiz::Plugins {
 			bool hostMatches(const HTTP::Request &) const;
 
 			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> getHandler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &HttpFileserv::handleGET));
+				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Fileserv::handleGET));
 
 			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> postHandler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &HttpFileserv::handlePOST));
+				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Fileserv::handlePOST));
 
 		private:
 			Plugins::CancelableResult handleGET(HTTP::Server::HandlerArgs &, bool not_disabled);
