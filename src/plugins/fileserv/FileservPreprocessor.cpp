@@ -53,11 +53,6 @@ namespace Algiz::Plugins {
 				diagnostics.setClient(new DiagnosticConsumer(*this), true);
 				clang::ASTFrontendAction::ExecuteAction();
 			}
-
-		private:
-			bool BeginSourceFileAction(clang::CompilerInstance &) override {
-				return true;
-			}
 	};
 
 	std::string preprocessFileservModule(const std::filesystem::path &path) {
@@ -97,9 +92,6 @@ namespace Algiz::Plugins {
 			}
 			std::string_view shortened = view.substr(0, last);
 			std::string surrounded;
-
-			std::optional<size_t> interior_size;
-
 			std::unique_ptr<PreprocessAction> action;
 
 			if (force_echo) {
@@ -107,34 +99,28 @@ namespace Algiz::Plugins {
 				clang::CommentOptions::BlockCommandNamesTy includes;
 				clang::LangOptions::setLangDefaults(lang_options, clang::Language::CXX, llvm::Triple{}, includes, clang::LangStandard::lang_cxx26);
 				clang::Lexer lexer(clang::SourceLocation(), lang_options, shortened.begin(), shortened.begin(), shortened.end());
-
-				clang::Token previous_token;
-				clang::Token token;
-
-				while (!lexer.LexFromRawLexer(token)) {
+				for (clang::Token previous_token, token; !lexer.LexFromRawLexer(token); previous_token = token) {
 					if (previous_token.is(clang::tok::question)) {
 						if (token.is(clang::tok::greater) || token.is(clang::tok::greatergreater) || token.is(clang::tok::greaterequal) || token.is(clang::tok::greatergreaterequal) || token.is(clang::tok::greatergreatergreater)) {
 							ssize_t offset = lexer.getCurrentBufferOffset();
 							offset -= token.getLength() + 1;
 							assert(offset >= 0);
 							if (shortened.at(offset) == '?') {
-								surrounded = std::string(R"(
-									#include "include/Module.h"
+								surrounded = R"(
+#include "include/Module.h"
 
-									extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
-										auto &[http, client, request, parts] = algiz_args;
-										auto echo = [](auto &&...) {};
-										echo()");
+extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
+	auto &[http, client, request, parts] = algiz_args;
+	auto echo = [](auto &&...) {};
+	echo()";
 								surrounded += shortened.substr(0, offset);
 								delimiter_end = offset;
-								surrounded += R"();
-									})""\n";
+								surrounded += ");\n}\n";
 								action = std::make_unique<PreprocessAction>(surrounded, delimiter_end);
 								break;
 							}
 						}
 					}
-					previous_token = token;
 				}
 			}
 
