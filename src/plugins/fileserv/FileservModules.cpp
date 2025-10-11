@@ -16,13 +16,9 @@
 namespace {
 	constexpr std::string_view CODE_START = "<?";
 	constexpr std::string_view CODE_END = "?>";
-	constexpr std::string_view RAW_START = "<%";
-	constexpr std::string_view RAW_END = "%>";
 }
 
 namespace Algiz::Plugins {
-	enum class Delimiter {Code, Raw};
-
 	class PreprocessAction;
 
 	class DiagnosticConsumer final: public clang::DiagnosticConsumer {
@@ -40,15 +36,13 @@ namespace Algiz::Plugins {
 		friend class DiagnosticConsumer;
 
 		public:
-			PreprocessAction(std::string_view code, std::optional<size_t> &delimiterEnd, Delimiter delimiter):
+			PreprocessAction(std::string_view code, std::optional<size_t> &delimiterEnd):
 				code(code),
-				delimiterEnd(delimiterEnd),
-				delimiter(delimiter) {}
+				delimiterEnd(delimiterEnd) {}
 
 		protected:
 			std::string_view code;
 			std::optional<size_t> &delimiterEnd;
-			Delimiter delimiter;
 
 			std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &, llvm::StringRef) override {
 				return std::make_unique<clang::ASTConsumer>();
@@ -73,7 +67,7 @@ namespace Algiz::Plugins {
 		}
 		std::filesystem::path tempdir{tempdir_template};
 		std::vector<std::string> sources{path.string()};
-		std::array argv{"algiz", "--", "-I/usr/include/c++/v1", path.c_str(), static_cast<const char *>(nullptr)};
+		std::array argv{"algiz", "--", path.c_str(), static_cast<const char *>(nullptr)};
 		int argc(argv.size() - 1);
 		llvm::cl::OptionCategory category("algiz-preprocess options");
 		auto expected = clang::tooling::CommonOptionsParser::create(argc, argv.data(), category, llvm::cl::ZeroOrMore);
@@ -81,79 +75,47 @@ namespace Algiz::Plugins {
 			throw std::runtime_error("Couldn't construct CommonOptionsParser");
 		}
 		clang::tooling::ClangTool tool(expected->getCompilations(), sources);
-		std::string output = R"(
-extern "C" void algizModule(HTTP::Server::HandlerArgs &args) {
-	auto &[http, client, request, parts] = args;
-	http.server->send(client.id, HTTP::Response(200, "preprocessing not yet implemented"));
-}
-		)";
 		std::string source = readFile(path);
 		std::string_view view(source);
-		std::filesystem::path build_path = tempdir / "input.alg";
-		std::stringstream build_stream(build_path);
+		std::stringstream stream;
 
 		for (;;) {
 			std::optional<size_t> delimiter_end;
 			size_t code_start = view.find(CODE_START);
-			size_t raw_start = view.find(RAW_START);
 
-			if (code_start < raw_start) {
-				if (code_start != 0) {
-					build_stream << "echo(\"" << escape(view.substr(0, code_start)) << "\");\n";
-				}
-				view.remove_prefix(code_start + CODE_START.size());
-				size_t last = findLast(view, CODE_END);
-				if (last < std::string::npos) {
-					last += CODE_END.size();
-				}
-				std::string_view shortened = view.substr(0, last);
-				std::string code = R"(
-					namespace Algiz {
-						template <typename... T>
-						void echo(const T &...);
-						class _no1_ { private: _no1_() = default; public: static _no1_ create() { return {}; } };
-						_no1_ _exec_() {
-				)"; // this silliness is a meek attempt to prevent things like "<? return {}; ?>"
-				const size_t initial_size = code.size();
-				code += shortened;
-				code += "return _no1_::create(); } }";
-				auto action = std::make_unique<PreprocessAction>(code, delimiter_end, Delimiter::Code);
-				clang::tooling::runToolOnCode(std::move(action), llvm::Twine(code));
-				if (delimiter_end) {
-					size_t valid_size = *delimiter_end - initial_size;
-					build_stream << view.substr(0, valid_size) << '\n';
-					view.remove_prefix(valid_size + CODE_END.size());
-				} else {
-					throw std::runtime_error("Syntax error");
-				}
-			} else if (raw_start < code_start) {
-				if (raw_start != 0) {
-					build_stream << "echo(\"" << escape(view.substr(0, raw_start)) << "\");\n";
-				}
-				view.remove_prefix(raw_start + RAW_START.size());
-				size_t last = findLast(view, RAW_END);
-				if (last < std::string::npos) {
-					last += RAW_END.size();
-				}
-				std::string_view shortened = view.substr(0, last);
-				auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end, Delimiter::Raw);
-				clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
-				if (delimiter_end) {
-					size_t valid_size = *delimiter_end;
-					build_stream << view.substr(0, valid_size) << '\n';
-					view.remove_prefix(valid_size + RAW_END.size());
-				} else {
-					throw std::runtime_error("Syntax error");
-				}
-			} else {
+			if (code_start == std::string::npos) {
 				if (!view.empty()) {
-					build_stream << "echo(\"" << escape(view) << "\");\n";
+					stream << "echo(\"" << escape(view) << "\");\n";
 				}
+
 				break;
+			}
+
+			if (code_start != 0) {
+				stream << "echo(\"" << escape(view.substr(0, code_start)) << "\");\n";
+			}
+
+			view.remove_prefix(code_start + CODE_START.size());
+
+			size_t last = findLast(view, CODE_END);
+			if (last < std::string::npos) {
+				last += CODE_END.size();
+			}
+			std::string_view shortened = view.substr(0, last);
+
+			auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end);
+			clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
+
+			if (delimiter_end) {
+				size_t valid_size = *delimiter_end;
+				stream << shortened.substr(0, valid_size) << '\n';
+				view.remove_prefix(valid_size + CODE_END.size());
+			} else {
+				throw std::runtime_error("Syntax error");
 			}
 		}
 
-		return std::move(build_stream).str();
+		return std::move(stream).str();
 	}
 
 	void DiagnosticConsumer::HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic &diagnostic) {
@@ -176,9 +138,8 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &args) {
 				const clang::SourceLocation &location = diagnostic.getLocation();
 				const unsigned offset = manager.getFileOffset(location);
 				// We need enough space for the end delimiter.
-				std::string_view end = action.delimiter == Delimiter::Code? CODE_END : RAW_END;
-				if (offset + end.size() <= action.code.size()) {
-					if (action.code.substr(offset, end.size()) == end) {
+				if (offset + CODE_END.size() <= action.code.size()) {
+					if (action.code.substr(offset, CODE_END.size()) == CODE_END) {
 						if (!action.delimiterEnd || offset < *action.delimiterEnd) {
 							action.delimiterEnd = offset;
 						}
