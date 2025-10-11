@@ -177,11 +177,13 @@ namespace Algiz::HTTP {
 
 	bool Request::valid(size_t total_size) {
 		// Can't request a suffix larger than the total size.
-		if (total_size < suffixLength)
+		if (total_size < suffixLength) {
 			return false;
+		}
 
-		if (ranges.empty())
+		if (ranges.empty()) {
 			return true;
+		}
 
 		// Sort all the ranges so we can go through them in linear time.
 		std::sort(ranges.begin(), ranges.end(), [](const auto &left, const auto &right) {
@@ -190,14 +192,26 @@ namespace Algiz::HTTP {
 
 		// Once the ranges are sorted, no range can begin before the previous one ends.
 		for (size_t i = 1, max = ranges.size(); i < max; ++i) {
-			const size_t start = std::get<0>(ranges[i]);
-			const size_t end   = std::get<1>(ranges[i]);
+			auto [start, end] = ranges[i];
 			const size_t prev_end = std::get<1>(ranges[i - 1]);
-			if (end <= start || start < prev_end || total_size <= start || total_size < end)
+			if (end <= start || start < prev_end || total_size <= start || total_size < end) {
 				return false;
+			}
 		}
 
 		return std::get<1>(ranges.back()) <= total_size - suffixLength;
+	}
+
+	bool Request::hackRanges() {
+		if (ranges.size() == 1) {
+			auto [start, end] = ranges.front();
+			if (start == 0 && end == -1uz) {
+				ranges.clear();
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	std::string_view Request::getPath(std::string_view path) {

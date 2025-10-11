@@ -143,7 +143,7 @@ namespace Algiz::Plugins {
 				http.server->send(client.id, HTTP::Response(200, renderTemplate(readFile(full_path))).setMIME("text/html"));
 			} else if (shouldServeModule(http, full_path)) {
 				serveModule(args, full_path);
-			} else if (!request.ranges.empty() || request.suffixLength != 0) {
+			} else if (!request.hackRanges() && (!request.ranges.empty() || request.suffixLength != 0)) {
 				serveRange(args, full_path);
 			} else {
 				serveFull(args, full_path);
@@ -282,8 +282,9 @@ namespace Algiz::Plugins {
 				HTTP::Response response(206, "");
 
 				size_t length = request.suffixLength;
-				for (const auto &[start, end]: request.ranges)
+				for (const auto &[start, end]: request.ranges) {
 					length += end - start + 1;
+				}
 
 				response.setAcceptRanges();
 				response["content-length"] = std::to_string(length);
@@ -314,8 +315,9 @@ namespace Algiz::Plugins {
 					}
 				}
 			}
-		} else
+		} else {
 			http.send400(client);
+		}
 	}
 
 	void Fileserv::serveFull(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
