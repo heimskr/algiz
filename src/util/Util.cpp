@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <charconv>
 #include <cstring>
 
@@ -315,5 +316,18 @@ namespace Algiz {
 		}
 
 		return out;
+	}
+
+	size_t findLast(std::string_view haystack, std::string_view needle) {
+		if (needle.empty()) {
+			return haystack.size();
+		}
+
+		auto iter = std::find_end(haystack.begin(), haystack.end(), needle.begin(), needle.end());
+		if (iter == haystack.end()) {
+			return std::string::npos;
+		}
+
+		return iter - haystack.begin();
 	}
 }
