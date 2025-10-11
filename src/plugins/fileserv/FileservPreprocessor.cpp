@@ -86,11 +86,7 @@ namespace Algiz::Plugins {
 				view.remove_prefix(1);
 			}
 
-			size_t last = findLast(view, CODE_END);
-			if (last < std::string::npos) {
-				last += CODE_END.size();
-			}
-			std::string_view shortened = view.substr(0, last);
+			std::string_view shortened = view.substr(0, findLast(view, CODE_END));
 			std::string surrounded;
 			std::unique_ptr<PreprocessAction> action;
 
@@ -105,7 +101,7 @@ namespace Algiz::Plugins {
 							ssize_t offset = lexer.getCurrentBufferOffset();
 							offset -= token.getLength() + 1;
 							assert(offset >= 0);
-							if (shortened.at(offset) == '?') {
+							if (view.at(offset) == '?') {
 								surrounded = R"(
 #include "include/Module.h"
 
@@ -132,7 +128,7 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
 			clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
 
 			if (!delimiter_end) {
-				throw std::runtime_error("Syntax error");
+				delimiter_end = shortened.size();
 			}
 
 			size_t valid_size = *delimiter_end;
