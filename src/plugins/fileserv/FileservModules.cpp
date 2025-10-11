@@ -128,8 +128,8 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
 	int code = 200;
 
 	std::stringstream stream;
-	auto echo = [&](const auto &thing) {
-		stream << thing;
+	auto echo = [&](auto &&...things) {
+		(stream << ... << std::forward<decltype(things)>(things));
 	};
 
 		)" << body.view() << R"(
