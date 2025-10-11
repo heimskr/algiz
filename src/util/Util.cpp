@@ -6,12 +6,14 @@
 
 namespace Algiz {
 	std::vector<std::string_view> split(const std::string_view &str, const std::string &delimiter, bool condense) {
-		if (str.empty())
+		if (str.empty()) {
 			return {};
+		}
 
 		size_t next = str.find(delimiter);
-		if (next == std::string::npos)
+		if (next == std::string::npos) {
 			return {str};
+		}
 
 		std::vector<std::string_view> out;
 		const size_t delimiter_length = delimiter.size();
@@ -23,8 +25,9 @@ namespace Algiz {
 			last = next;
 			next = str.find(delimiter, last + delimiter_length);
 			std::string_view sub = str.substr(last + delimiter_length, next - last - delimiter_length);
-			if (!sub.empty() || !condense)
+			if (!sub.empty() || !condense) {
 				out.push_back(sub);
+			}
 		}
 
 		return out;
@@ -34,24 +37,27 @@ namespace Algiz {
 		const char *c_str = str.c_str();
 		char *end = nullptr;
 		const long parsed = strtol(c_str, &end, base);
-		if (c_str + str.length() != end)
+		if (c_str + str.length() != end) {
 			throw std::invalid_argument("Not an integer: \"" + str + "\"");
+		}
 		return parsed;
 	}
 
 	long parseLong(const char *str, int base) {
 		char *end = nullptr;
 		const long parsed = strtol(str, &end, base);
-		if (str + strlen(str) != end)
+		if (str + strlen(str) != end) {
 			throw std::invalid_argument("Not an integer: \"" + std::string(str) + "\"");
+		}
 		return parsed;
 	}
 
 	long parseLong(std::string_view view, int base) {
 		long out;
 		auto result = std::from_chars(view.begin(), view.end(), out, base);
-		if (result.ec == std::errc::invalid_argument)
+		if (result.ec == std::errc::invalid_argument) {
 			throw std::invalid_argument("Not an integer: \"" + std::string(view) + "\"");
+		}
 		return out;
 	}
 
@@ -59,46 +65,54 @@ namespace Algiz {
 		const char *c_str = str.c_str();
 		char *end = nullptr;
 		const unsigned long parsed = strtoul(c_str, &end, base);
-		if (c_str + str.length() != end)
+		if (c_str + str.length() != end) {
 			throw std::invalid_argument("Not an integer: \"" + str + "\"");
+		}
 		return parsed;
 	}
 
 	unsigned long parseUlong(const char *str, int base) {
 		char *end = nullptr;
 		const unsigned long parsed = strtoul(str, &end, base);
-		if (str + strlen(str) != end)
+		if (str + strlen(str) != end) {
 			throw std::invalid_argument("Not an integer: \"" + std::string(str) + "\"");
+		}
 		return parsed;
 	}
 
 	unsigned long parseUlong(std::string_view view, int base) {
 		unsigned long out;
 		auto result = std::from_chars(view.begin(), view.end(), out, base);
-		if (result.ec == std::errc::invalid_argument)
+		if (result.ec == std::errc::invalid_argument) {
 			throw std::invalid_argument("Not an integer: \"" + std::string(view) + "\"");
+		}
 		return out;
 	}
 
 	std::string toLower(std::string_view view) {
 		std::string str(view);
-		for (size_t i = 0, length = str.length(); i < length; ++i)
-			if ('A' <= str[i] && str[i] <= 'Z')
+		for (size_t i = 0, length = str.length(); i < length; ++i) {
+			if ('A' <= str[i] && str[i] <= 'Z') {
 				str[i] += 'a' - 'A';
+			}
+		}
 		return str;
 	}
 
 	std::string toUpper(std::string_view view) {
 		std::string str(view);
-		for (size_t i = 0, length = str.length(); i < length; ++i)
-			if ('a' <= str[i] && str[i] <= 'z')
+		for (size_t i = 0, length = str.length(); i < length; ++i) {
+			if ('a' <= str[i] && str[i] <= 'z') {
 				str[i] -= 'a' - 'A';
+			}
+		}
 		return str;
 	}
 
 	std::string unescape(std::string_view path, bool plus_to_space) {
-		if (path.find('%') == std::string::npos && !(plus_to_space && path.find('+') != std::string::npos))
+		if (path.find('%') == std::string::npos && !(plus_to_space && path.find('+') != std::string::npos)) {
 			return std::string(path);
+		}
 
 		std::string out;
 
@@ -123,19 +137,21 @@ namespace Algiz {
 
 			char to_add = 0;
 
-			if ('a' <= next && next <= 'f')
+			if ('a' <= next && next <= 'f') {
 				to_add += (next - 'a' + 10) << 4;
-			else if ('A' <= next && next <= 'F')
+			} else if ('A' <= next && next <= 'F') {
 				to_add += (next - 'A' + 10) << 4;
-			else
+			} else {
 				to_add += (next - '0') << 4;
+			}
 
-			if ('a' <= after && after <= 'f')
+			if ('a' <= after && after <= 'f') {
 				to_add += after - 'a' + 10;
-			else if ('A' <= after && after <= 'F')
+			} else if ('A' <= after && after <= 'F') {
 				to_add += after - 'A' + 10;
-			else
+			} else {
 				to_add += after - '0';
+			}
 
 			out += to_add;
 			i += 2;
@@ -149,11 +165,16 @@ namespace Algiz {
 	}
 
 	bool isNumeric(std::string_view str) {
-		if (str.empty())
+		if (str.empty()) {
 			return false;
-		for (char ch: str)
-			if (!isNumeric(ch))
+		}
+
+		for (char ch: str) {
+			if (!isNumeric(ch)) {
 				return false;
+			}
+		}
+
 		return true;
 	}
 
@@ -237,6 +258,39 @@ namespace Algiz {
 		for (char ch: view) {
 			if (ch == '"') {
 				out += "\\\"";
+			} else {
+				out += ch;
+			}
+		}
+		return out;
+	}
+
+	std::string escape(std::string_view view) {
+		std::string out;
+		out.reserve(view.size());
+		for (char ch: view) {
+			if (ch == '\t') {
+				out += "\\t";
+			} else if (ch == '\r') {
+				out += "\\r";
+			} else if (ch == '\n') {
+				out += "\\n";
+			} else if (ch == '\v') {
+				out += "\\v";
+			} else if (ch == '\b') {
+				out += "\\b";
+			} else if (ch == '\a') {
+				out += "\\a";
+			} else if (ch == '\f') {
+				out += "\\f";
+			} else if (ch == '\0') {
+				out += "\\0";
+			} else if (ch == '\\') {
+				out += "\\\\";
+			} else if (ch == '"') {
+				out += "\\\"";
+			} else if (ch == '\x1b') {
+				out += "\\x1b";
 			} else {
 				out += ch;
 			}

@@ -21,3 +21,4 @@ callgrind.*
 /geolite2++
 *.mmdb
 /.game3_secret
+/subprojects/.wraplock

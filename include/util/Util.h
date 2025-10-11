@@ -31,6 +31,7 @@ namespace Algiz {
 	std::string escapeURL(std::string_view);
 	std::string charHex(uint8_t);
 	std::string escapeQuotes(std::string_view);
+	std::string escape(std::string_view);
 
 	template <size_t BL = 128>
 	std::string formatTime(const char *format,

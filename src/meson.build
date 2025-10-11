@@ -12,6 +12,7 @@ algiz_deps = [
 	dependency('libevent'),
 	dependency('libevent_pthreads'),
 	dependency('libevent_openssl'),
+	dependency('llvm'),
 	wahtwo.get_variable('wahtwo'),
 	inja.dependency('inja'),
 	json.dependency('nlohmann_json')
@@ -23,7 +24,7 @@ inc_dirs = [
 
 link_with = [wahtwo.get_variable('wahtwo_lib')]
 
-link_args = []
+link_args = ['-lclang', '-lclang-cpp']
 
 if get_option('enable_geoip')
 	inc_dirs += include_directories('../geolite2++/src-lib')
