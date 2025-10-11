@@ -49,6 +49,9 @@ namespace {
 }
 
 namespace Algiz::Plugins {
+	Fileserv::Fileserv():
+		moduleCache(64) {}
+
 	void Fileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
 
@@ -354,25 +357,8 @@ namespace Algiz::Plugins {
 			compileObject(full_path, object, full_path.extension() == PREPROCESSED_EXTENSION);
 		}
 
-		void *handle = dlopen(object.c_str(), RTLD_LAZY | RTLD_LOCAL);
-		if (handle == nullptr) {
-			throw std::runtime_error("Couldn't dlopen " + object.string());
-		}
-
-		void *symbol = dlsym(handle, "algizModule");
-		if (symbol == nullptr) {
-			throw std::runtime_error("Couldn't find algizModule symbol");
-		}
-
-		try {
-			auto *function = reinterpret_cast<ModuleFunction>(symbol);
-			function(args);
-		} catch (...) {
-			dlclose(handle);
-			throw;
-		}
-
-		dlclose(handle);
+		auto [function, lock] = moduleCache[object];
+		function(args);
 	}
 
 	std::vector<std::string> Fileserv::getDefaults() const {

@@ -2,6 +2,7 @@
 
 #include "http/Server.h"
 #include "nlohmann/json.hpp"
+#include "plugins/fileserv/ModuleCache.h"
 #include "plugins/Plugin.h"
 #include "util/Util.h"
 
@@ -21,7 +22,7 @@ namespace Algiz::HTTP {
 namespace Algiz::Plugins {
 	class Fileserv: public Plugin {
 		public:
-			using ModuleFunction = void (*)(Algiz::HTTP::Server::HandlerArgs &);
+			Fileserv();
 
 			/** Largest amount to read from a file at one time. */
 			size_t chunkSize = 1 << 20;
@@ -47,6 +48,8 @@ namespace Algiz::Plugins {
 				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &Fileserv::handlePOST));
 
 		private:
+			mutable ModuleCache moduleCache;
+
 			Plugins::CancelableResult handleGET(HTTP::Server::HandlerArgs &, bool not_disabled);
 			Plugins::CancelableResult handlePOST(HTTP::Server::HandlerArgs &, bool not_disabled);
 

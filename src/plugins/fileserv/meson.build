@@ -1,4 +1,4 @@
-fileserv_plugin = shared_module('fileserv_plugin', ['Fileserv.cpp', 'FileservPreprocessor.cpp'],
+fileserv_plugin = shared_module('fileserv_plugin', ['Fileserv.cpp', 'Preprocessor.cpp', 'ModuleCache.cpp'],
 	dependencies: algiz_deps,
 	link_args: link_args,
 	install: true,
