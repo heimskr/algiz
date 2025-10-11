@@ -392,7 +392,7 @@ namespace Algiz::Plugins {
 			enable = option && *option;
 		}
 		std::filesystem::path extension = path.extension();
-		return enable && (extension == ".cpp" || extension == PREPROCESSED_EXTENSION) && canExecute(path);
+		return enable && ((extension == ".cpp" && canExecute(path)) || extension == PREPROCESSED_EXTENSION);
 	}
 }
 
