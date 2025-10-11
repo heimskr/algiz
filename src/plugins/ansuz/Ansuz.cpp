@@ -35,18 +35,21 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Ansuz::handleGET(HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		auto &[http, client, request, parts] = args;
 
 		if (!parts.empty() && parts.front() == "ansuz") {
-			if (!checkAuth(http, client, request))
+			if (!checkAuth(http, client, request)) {
 				return CancelableResult::Kill;
+			}
 
 			try {
-				if (parts.size() == 1)
+				if (parts.size() == 1) {
 					return serveIndex(http, client);
+				}
 
 				if (parts.size() == 2) {
 					if (parts[1] == "load") {
@@ -54,8 +57,9 @@ namespace Algiz::Plugins {
 						for (const auto &entry: std::filesystem::directory_iterator("plugin")) {
 							const auto &path = entry.path();
 							const std::string filename = "plugin/" + path.filename().string();
-							if (!http.hasPlugin(path))
+							if (!http.hasPlugin(path)) {
 								plugins.emplace_back(escapeHTML(filename), escapeURL(filename));
+							}
 						}
 						return serve(http, client, RESOURCE(load, "load.t"), {CSS,
 							{"plugins", std::move(plugins)}});
@@ -65,19 +69,18 @@ namespace Algiz::Plugins {
 						const auto &to_unload = parts[2];
 						const auto canonical = std::filesystem::canonical("plugin/" + to_unload);
 						auto *tuple = http.getPlugin(canonical);
-						if (tuple == nullptr)
-							return serve(http, client, MESSAGE, {CSS,
-								{"message", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
+						if (tuple == nullptr) {
+							return serve(http, client, MESSAGE, {CSS, {"message", "Plugin " + escapeHTML(to_unload) + " not loaded."}});
+						}
 						http.unloadPlugin(*tuple);
-						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {CSS,
-							{"plugin", escapeHTML(to_unload)}});
+						return serve(http, client, RESOURCE(unloaded, "unloaded.t"), {CSS, {"plugin", escapeHTML(to_unload)}});
 					} else if (parts[1] == "edit") {
 						const auto &to_edit = parts[2];
 						const auto canonical = std::filesystem::canonical("plugin/" + to_edit);
 						auto *tuple = http.getPlugin(canonical);
-						if (tuple == nullptr)
-							return serve(http, client, MESSAGE, {CSS,
-								{"message", "Plugin " + escapeHTML(to_edit) + " not loaded."}});
+						if (tuple == nullptr) {
+							return serve(http, client, MESSAGE, {CSS, {"message", "Plugin " + escapeHTML(to_edit) + " not loaded."}});
+						}
 						return serve(http, client, RESOURCE(edit_config, "edit_config.t"), {CSS,
 							{"config", std::get<1>(*tuple)->getConfig().dump()},
 							{"pluginName", escapeHTML(escapeQuotes(canonical.string()))}
@@ -97,43 +100,49 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Ansuz::handlePOST(HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		auto &[http, client, request, parts] = args;
 
 		if (2 <= parts.size() && parts.front() == "ansuz") {
-			if (!checkAuth(http, client, request))
+			if (!checkAuth(http, client, request)) {
 				return CancelableResult::Kill;
+			}
 
 			try {
 				if (parts[1] == "load") {
 					const auto &post = request.postParameters;
-					if (!post.contains("pluginName") || !post.contains("pluginConfig"))
+					if (!post.contains("pluginName") || !post.contains("pluginConfig")) {
 						return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
+					}
 					const auto &name = post.at("pluginName");
 					std::filesystem::path path(name);
-					if (http.hasPlugin(path))
+					if (http.hasPlugin(path)) {
 						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin already loaded."}}, 404);
+					}
 					const auto json = nlohmann::json::parse(post.at("pluginConfig"));
 					auto result = http.loadPlugin(path);
 					auto &plugin = std::get<1>(result);
 					plugin->setConfig(std::move(json));
 					plugin->postinit(&http);
-					return serve(http, client, MESSAGE, {CSS,
-						{"message", "Plugin loaded. <pre>" + escapeHTML(json.dump()) + "</pre>"}});
+					return serve(http, client, MESSAGE, {CSS, {"message", "Plugin loaded. <pre>" + escapeHTML(json.dump()) + "</pre>"}});
 				} else if (parts[1] == "edit") {
 					const auto &post = request.postParameters;
-					if (!post.contains("pluginName") || !post.contains("pluginConfig"))
+					if (!post.contains("pluginName") || !post.contains("pluginConfig")) {
 						return serve(http, client, MESSAGE, {CSS, {"message", "Invalid request."}}, 400);
+					}
 					const auto json = nlohmann::json::parse(post.at("pluginConfig"));
 					const auto &name = post.at("pluginName");
 					auto path = std::filesystem::canonical(name);
-					if (!http.hasPlugin(path))
+					if (!http.hasPlugin(path)) {
 						return serve(http, client, MESSAGE, {CSS, {"message", "Plugin not loaded."}}, 404);
+					}
 					auto *tuple = http.getPlugin(path);
-					if (!tuple)
+					if (!tuple) {
 						return serve(http, client, MESSAGE, {CSS, {"message", "Couldn't get plugin."}}, 500);
+					}
 					std::get<1>(*tuple)->setConfig(json);
 					return serve(http, client, MESSAGE, {CSS, {"message", "Configuration updated."}});
 				}
@@ -168,10 +177,11 @@ namespace Algiz::Plugins {
 
 	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content,
 	                              const nlohmann::json &json, int code, const char *mime) {
-		if (json.empty())
+		if (json.empty()) {
 			http.server->send(client.id, HTTP::Response(code, content).setMIME(mime));
-		else
+		} else {
 			http.server->send(client.id, HTTP::Response(code, inja::render(content, json)).setMIME(mime));
+		}
 		http.server->close(client.id);
 		return CancelableResult::Approve;
 	}
@@ -179,7 +189,7 @@ namespace Algiz::Plugins {
 	CancelableResult Ansuz::serveIndex(HTTP::Server &http, HTTP::Client &client) {
 		const auto plugins = map(http.getPlugins(), [](const auto &tuple) {
 			const auto &plugin = std::get<1>(tuple);
-			return std::vector<std::string> {
+			return std::vector<std::string>{
 				escapeHTML(std::string(std::filesystem::path(std::get<0>(tuple)).filename())),
 				escapeHTML(plugin->getName()),
 				escapeHTML(plugin->getDescription()),
@@ -187,7 +197,7 @@ namespace Algiz::Plugins {
 			};
 		});
 
-		nlohmann::json json {
+		nlohmann::json json{
 			{"css", RESOURCE(css, "style.css")},
 			{"plugins", plugins}
 		};
