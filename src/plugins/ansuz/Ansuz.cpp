@@ -61,8 +61,7 @@ namespace Algiz::Plugins {
 								plugins.emplace_back(escapeHTML(filename), escapeURL(filename));
 							}
 						}
-						return serve(http, client, RESOURCE(load, "load.t"), {CSS,
-							{"plugins", std::move(plugins)}});
+						return serve(http, client, RESOURCE(load, "load.t"), {CSS, {"plugins", std::move(plugins)}});
 					}
 				} else if (parts.size() == 3) {
 					if (parts[1] == "unload") {
@@ -175,8 +174,7 @@ namespace Algiz::Plugins {
 		return true;
 	}
 
-	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content,
-	                              const nlohmann::json &json, int code, const char *mime) {
+	CancelableResult Ansuz::serve(HTTP::Server &http, HTTP::Client &client, std::string_view content, const nlohmann::json &json, int code, const char *mime) {
 		if (json.empty()) {
 			http.server->send(client.id, HTTP::Response(code, content).setMIME(mime));
 		} else {
