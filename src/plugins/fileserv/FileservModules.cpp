@@ -61,15 +61,6 @@ namespace Algiz::Plugins {
 	};
 
 	std::string preprocessFileservModule(const std::filesystem::path &path) {
-		std::vector<std::string> sources{path.string()};
-		std::array argv{"algiz", "--", path.c_str(), static_cast<const char *>(nullptr)};
-		int argc(argv.size() - 1);
-		llvm::cl::OptionCategory category("algiz-preprocess options");
-		auto expected = clang::tooling::CommonOptionsParser::create(argc, argv.data(), category, llvm::cl::ZeroOrMore);
-		if (!expected) {
-			throw std::runtime_error("Couldn't construct CommonOptionsParser");
-		}
-		clang::tooling::ClangTool tool(expected->getCompilations(), sources);
 		std::string source = readFile(path);
 		std::string_view view(source);
 		std::stringstream preamble;
@@ -94,7 +85,9 @@ namespace Algiz::Plugins {
 			view.remove_prefix(code_start + CODE_START.size());
 
 			const bool use_preamble = !view.empty() && view[0] == ':';
-			if (use_preamble) {
+			const bool force_echo = !view.empty() && view[0] == '=';
+
+			if (use_preamble || force_echo) {
 				view.remove_prefix(1);
 			}
 
@@ -103,8 +96,53 @@ namespace Algiz::Plugins {
 				last += CODE_END.size();
 			}
 			std::string_view shortened = view.substr(0, last);
+			std::string surrounded;
 
-			auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end);
+			std::optional<size_t> interior_size;
+
+			std::unique_ptr<PreprocessAction> action;
+
+			if (force_echo) {
+				clang::LangOptions lang_options;
+				clang::CommentOptions::BlockCommandNamesTy includes;
+				clang::LangOptions::setLangDefaults(lang_options, clang::Language::CXX, llvm::Triple{}, includes, clang::LangStandard::lang_cxx26);
+				clang::Lexer lexer(clang::SourceLocation(), lang_options, shortened.begin(), shortened.begin(), shortened.end());
+
+				clang::Token previous_token;
+				clang::Token token;
+
+				while (!lexer.LexFromRawLexer(token)) {
+					if (previous_token.is(clang::tok::question)) {
+						if (token.is(clang::tok::greater) || token.is(clang::tok::greatergreater) || token.is(clang::tok::greaterequal) || token.is(clang::tok::greatergreaterequal) || token.is(clang::tok::greatergreatergreater)) {
+							ssize_t offset = lexer.getCurrentBufferOffset();
+							offset -= token.getLength() + 1;
+							assert(offset >= 0);
+							if (shortened.at(offset) == '?') {
+								surrounded = std::string(R"(
+									#include "include/Module.h"
+
+									extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
+										auto &[http, client, request, parts] = algiz_args;
+										auto echo = [](auto &&...) {};
+										echo()");
+								surrounded += shortened.substr(0, offset);
+								delimiter_end = offset;
+								surrounded += R"();
+									})""\n";
+								action = std::make_unique<PreprocessAction>(surrounded, delimiter_end);
+								break;
+							}
+						}
+					}
+					previous_token = token;
+				}
+			}
+
+			if (!action) {
+				action = std::make_unique<PreprocessAction>(shortened, delimiter_end);
+			}
+
+			std::stringstream &stream = use_preamble? preamble : body;
 			clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
 
 			if (!delimiter_end) {
@@ -112,8 +150,12 @@ namespace Algiz::Plugins {
 			}
 
 			size_t valid_size = *delimiter_end;
-			std::stringstream &stream = use_preamble? preamble : body;
-			stream << shortened.substr(0, valid_size) << '\n';
+			std::string_view valid = shortened.substr(0, valid_size);
+			if (force_echo) {
+				stream << "echo(" << valid << ");\n";
+			} else {
+				stream << valid << '\n';
+			}
 			view.remove_prefix(valid_size + CODE_END.size());
 		}
 
