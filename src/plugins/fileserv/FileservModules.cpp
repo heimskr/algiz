@@ -102,15 +102,23 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &args) {
 					build_stream << "echo(\"" << escape(view.substr(0, code_start)) << "\");\n";
 				}
 				view.remove_prefix(code_start + CODE_START.size());
-				std::string code = "namespace Algiz { template <typename T> void echo(const T &); void _exec_() {";
-				const size_t initial_size = code.size();
-				code += view;
-				code += "} }";
-				auto action = std::make_unique<PreprocessAction>(code, delimiter_end, Delimiter::Code);
-				bool success = clang::tooling::runToolOnCode(std::move(action), llvm::Twine(code));
-				if (success) {
-					throw std::runtime_error("Missing end code delimiter");
+				size_t last = findLast(view, CODE_END);
+				if (last < std::string::npos) {
+					last += CODE_END.size();
 				}
+				std::string_view shortened = view.substr(0, last);
+				std::string code = R"(
+					namespace Algiz {
+						template <typename... T>
+						void echo(const T &...);
+						class _no1_ { private: _no1_() = default; public: static _no1_ create() { return {}; } };
+						_no1_ _exec_() {
+				)"; // this silliness is a meek attempt to prevent things like "<? return {}; ?>"
+				const size_t initial_size = code.size();
+				code += shortened;
+				code += "return _no1_::create(); } }";
+				auto action = std::make_unique<PreprocessAction>(code, delimiter_end, Delimiter::Code);
+				clang::tooling::runToolOnCode(std::move(action), llvm::Twine(code));
 				if (delimiter_end) {
 					size_t valid_size = *delimiter_end - initial_size;
 					build_stream << view.substr(0, valid_size) << '\n';
@@ -123,19 +131,16 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &args) {
 					build_stream << "echo(\"" << escape(view.substr(0, raw_start)) << "\");\n";
 				}
 				view.remove_prefix(raw_start + RAW_START.size());
-				std::string_view shortened = view.substr(0, findLast(view, RAW_END));
-				shortened = view;
-				INFO("[[[[[[");
-				std::cerr << shortened << "\n";
-				INFO("]]]]]]");
-				auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end, Delimiter::Raw);
-				bool success = clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
-				if (success) {
-					throw std::runtime_error("Missing end raw delimiter");
+				size_t last = findLast(view, RAW_END);
+				if (last < std::string::npos) {
+					last += RAW_END.size();
 				}
+				std::string_view shortened = view.substr(0, last);
+				auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end, Delimiter::Raw);
+				clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
 				if (delimiter_end) {
 					size_t valid_size = *delimiter_end;
-					build_stream << view.substr(0, valid_size);
+					build_stream << view.substr(0, valid_size) << '\n';
 					view.remove_prefix(valid_size + RAW_END.size());
 				} else {
 					throw std::runtime_error("Syntax error");
@@ -148,56 +153,39 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &args) {
 			}
 		}
 
-
-		bool success = true;
-
-		if (!success) {
-			throw std::runtime_error("Failed to preprocess module");
-		}
-
 		return std::move(build_stream).str();
 	}
 
 	void DiagnosticConsumer::HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic &diagnostic) {
-		llvm::SmallVector<char> message;
-		diagnostic.FormatDiagnostic(message);
+		llvm::SmallVector<char> message_vector;
+		diagnostic.FormatDiagnostic(message_vector);
+		std::string_view message(message_vector.data(), message_vector.size());
 		const clang::DiagnosticsEngine *diagnostics = diagnostic.getDiags();
 		assert(diagnostics != nullptr);
 		auto ids = diagnostics->getDiagnosticIDs();
 		unsigned category = ids->getCategoryNumberForDiag(diagnostic.getID());
 
-		ERROR("level[" << int(level) << "]");
+		if (category == clang::diag::DiagCat_Lexical_or_Preprocessor_Issue && message.find("file not found") != std::string::npos) {
+			// don't really care
+			return;
+		}
 
-		if (level == clang::DiagnosticsEngine::Level::Error || level == clang::DiagnosticsEngine::Level::Fatal) {
-			ERROR(std::string_view(message.data(), message.size()) << " [" << ids->getCategoryNameFromID(category).str() << "]");
+		if (level >= clang::DiagnosticsEngine::Level::Error || message == "extra tokens at end of #include directive") {
 			if (category == clang::diag::DiagCat_Parse_Issue || category == clang::diag::DiagCat_Lexical_or_Preprocessor_Issue) {
-				INFO("maybe");
 				clang::SourceManager &manager = action.getCompilerInstance().getSourceManager();
 				const clang::SourceLocation &location = diagnostic.getLocation();
 				const unsigned offset = manager.getFileOffset(location);
-				// We need enough space for end token.
+				// We need enough space for the end delimiter.
 				std::string_view end = action.delimiter == Delimiter::Code? CODE_END : RAW_END;
 				if (offset + end.size() <= action.code.size()) {
 					if (action.code.substr(offset, end.size()) == end) {
-						if (!action.delimiterEnd) {
-							SUCCESS("delimiterEnd set to " << offset << ".");
-							ERROR(std::string_view(message.data(), message.size()));
+						if (!action.delimiterEnd || offset < *action.delimiterEnd) {
 							action.delimiterEnd = offset;
-							return;
 						}
-					} else {
-						WARN("it doesn't match. {" << action.code.substr(offset, end.size()) << "} vs {" << end << "}");
 					}
-				} else {
-					WARN("not enough space");
 				}
 			}
-
 		}
-
-
-		diagnostic.getLocation().dump(action.getCompilerInstance().getSourceManager());
-		clang::DiagnosticConsumer::HandleDiagnostic(level, diagnostic);
 	}
 }
 
