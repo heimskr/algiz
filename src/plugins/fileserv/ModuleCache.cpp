@@ -14,7 +14,7 @@ namespace Algiz::Plugins {
 		}
 	}
 
-	std::pair<ModuleFunction, std::unique_lock<std::mutex>> ModuleCache::operator[](const std::filesystem::path &path) {
+	std::pair<ModuleFunction, std::shared_lock<std::shared_mutex>> ModuleCache::operator[](const std::filesystem::path &path) {
 		{
 			std::shared_lock lock{cacheMutex};
 			if (auto iter = cache.find(path); iter != cache.end()) {
@@ -75,7 +75,7 @@ namespace Algiz::Plugins {
 		dlclose(handle);
 	}
 
-	std::pair<ModuleFunction, std::unique_lock<std::mutex>> ModuleCache::Item::pair() {
-		return {function, std::unique_lock{mutex}};
+	std::pair<ModuleFunction, std::shared_lock<std::shared_mutex>> ModuleCache::Item::pair() {
+		return {function, std::shared_lock{mutex}};
 	}
 }

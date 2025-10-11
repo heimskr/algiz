@@ -16,7 +16,7 @@ namespace Algiz::Plugins {
 			ModuleCache(size_t maxSize);
 			~ModuleCache();
 
-			std::pair<ModuleFunction, std::unique_lock<std::mutex>> operator[](const std::filesystem::path &);
+			std::pair<ModuleFunction, std::shared_lock<std::shared_mutex>> operator[](const std::filesystem::path &);
 
 		private:
 			struct Item {
@@ -25,10 +25,10 @@ namespace Algiz::Plugins {
 				std::chrono::system_clock::time_point lastUsed;
 				void *handle = nullptr;
 				ModuleFunction function = nullptr;
-				std::mutex mutex;
+				std::shared_mutex mutex;
 
 				void close();
-				std::pair<ModuleFunction, std::unique_lock<std::mutex>> pair();
+				std::pair<ModuleFunction, std::shared_lock<std::shared_mutex>> pair();
 			};
 
 			size_t maxSize{};
