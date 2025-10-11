@@ -1,11 +1,11 @@
 #include "util/Util.h"
+#include "plugins/fileserv/Fileserv.h"
 
 #include "clang/AST/ASTConsumer.h"
 #include "clang/Frontend/FrontendActions.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Tooling.h"
 #include "llvm/Support/CommandLine.h"
-#include "plugins/fileserv/Fileserv.h"
 
 #include <array>
 #include <fstream>
@@ -60,12 +60,7 @@ namespace Algiz::Plugins {
 			}
 	};
 
-	std::string preprocessModule(const std::filesystem::path &path) {
-		char tempdir_template[]{"/tmp/algiz-pp-XXXXXX"};
-		if (mkdtemp(tempdir_template) == nullptr) {
-			throw std::runtime_error("Couldn't create temporary directory for module preprocessing");
-		}
-		std::filesystem::path tempdir{tempdir_template};
+	std::string preprocessFileservModule(const std::filesystem::path &path) {
 		std::vector<std::string> sources{path.string()};
 		std::array argv{"algiz", "--", path.c_str(), static_cast<const char *>(nullptr)};
 		int argc(argv.size() - 1);
@@ -77,7 +72,8 @@ namespace Algiz::Plugins {
 		clang::tooling::ClangTool tool(expected->getCompilations(), sources);
 		std::string source = readFile(path);
 		std::string_view view(source);
-		std::stringstream stream;
+		std::stringstream preamble;
+		std::stringstream body;
 
 		for (;;) {
 			std::optional<size_t> delimiter_end;
@@ -85,17 +81,22 @@ namespace Algiz::Plugins {
 
 			if (code_start == std::string::npos) {
 				if (!view.empty()) {
-					stream << "echo(\"" << escape(view) << "\");\n";
+					body << "echo(\"" << escape(view) << "\");\n";
 				}
 
 				break;
 			}
 
 			if (code_start != 0) {
-				stream << "echo(\"" << escape(view.substr(0, code_start)) << "\");\n";
+				body << "echo(\"" << escape(view.substr(0, code_start)) << "\");\n";
 			}
 
 			view.remove_prefix(code_start + CODE_START.size());
+
+			const bool use_preamble = !view.empty() && view[0] == ':';
+			if (use_preamble) {
+				view.remove_prefix(1);
+			}
 
 			size_t last = findLast(view, CODE_END);
 			if (last < std::string::npos) {
@@ -106,16 +107,38 @@ namespace Algiz::Plugins {
 			auto action = std::make_unique<PreprocessAction>(shortened, delimiter_end);
 			clang::tooling::runToolOnCode(std::move(action), llvm::Twine(shortened));
 
-			if (delimiter_end) {
-				size_t valid_size = *delimiter_end;
-				stream << shortened.substr(0, valid_size) << '\n';
-				view.remove_prefix(valid_size + CODE_END.size());
-			} else {
+			if (!delimiter_end) {
 				throw std::runtime_error("Syntax error");
 			}
+
+			size_t valid_size = *delimiter_end;
+			std::stringstream &stream = use_preamble? preamble : body;
+			stream << shortened.substr(0, valid_size) << '\n';
+			view.remove_prefix(valid_size + CODE_END.size());
 		}
 
-		return std::move(stream).str();
+		preamble << R"(
+#include "Module.h"
+
+#include <sstream>
+
+extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
+	auto &[http, client, request, parts] = algiz_args;
+
+	int code = 200;
+
+	std::stringstream stream;
+	auto echo = [&](const auto &thing) {
+		stream << thing;
+	};
+
+		)" << body.view() << R"(
+
+	http.server->send(client.id, HTTP::Response(code, stream.view()));
+}
+		)";
+
+		return std::move(preamble).str();
 	}
 
 	void DiagnosticConsumer::HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic &diagnostic) {
@@ -148,13 +171,4 @@ namespace Algiz::Plugins {
 			}
 		}
 	}
-}
-
-namespace {
-	const auto _ = [] {
-		std::string result = Algiz::Plugins::preprocessModule("./www/foo.alg");
-		INFO("result:\n" << result);
-		std::exit(0);
-		return 0;
-	}();
 }

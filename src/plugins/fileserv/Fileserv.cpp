@@ -14,8 +14,30 @@
 #include <inja/inja.hpp>
 
 namespace {
-	void compileObject(const std::filesystem::path &source, const std::filesystem::path &output) {
+	constexpr std::string_view PREPROCESSED_EXTENSION = ".alg";
+
+	void compileObject(std::filesystem::path source, const std::filesystem::path &output, bool preprocess) {
 		using namespace Algiz;
+
+		if (preprocess) {
+			char temp_late[]{"/tmp/algiz-pp-XXXXXX.cpp"};
+			int fd = mkstemps(temp_late, sizeof(".cpp") - 1);
+			if (fd == -1) {
+				throw std::runtime_error("Failed to make a temporary file for module preprocessing");
+			}
+			try {
+				std::string preprocessed = Algiz::Plugins::preprocessFileservModule(source);
+				if (write(fd, preprocessed.data(), preprocessed.size()) == -1) {
+					throw std::runtime_error("Couldn't write preprocessed module");
+				}
+				source = temp_late;
+			} catch (...) {
+				close(fd);
+				throw;
+			}
+			close(fd);
+		}
+
 		CommandOutput result = runCommand("c++", {"-std=c++23", "-Iinclude", "-Isubprojects/wahtwo/include", "-fPIC", source.string(), "-shared", "-o", output.string()});
 		if (result.code || result.signal != -1) {
 			if (!result.err.empty()) {
@@ -325,9 +347,9 @@ namespace Algiz::Plugins {
 
 	void Fileserv::serveModule(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		std::filesystem::path object = full_path;
-		object.replace_extension(".so");
+		object.replace_extension(object.extension().string() + ".so");
 		if (!std::filesystem::exists(object) || isNewerThan(full_path, object)) {
-			compileObject(full_path, object);
+			compileObject(full_path, object, full_path.extension() == PREPROCESSED_EXTENSION);
 		}
 
 		void *handle = dlopen(object.c_str(), RTLD_LAZY | RTLD_LOCAL);
@@ -369,7 +391,8 @@ namespace Algiz::Plugins {
 			auto option = http.getOption<bool>(path, "enableModules");
 			enable = option && *option;
 		}
-		return enable && path.extension() == ".cpp" && canExecute(path);
+		std::filesystem::path extension = path.extension();
+		return enable && (extension == ".cpp" || extension == PREPROCESSED_EXTENSION) && canExecute(path);
 	}
 }
 

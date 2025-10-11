@@ -61,4 +61,5 @@ namespace Algiz::Plugins {
 			bool shouldServeModule(HTTP::Server &, const std::filesystem::path &) const;
 	};
 
+	std::string preprocessFileservModule(const std::filesystem::path &);
 }
