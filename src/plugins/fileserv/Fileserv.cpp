@@ -206,7 +206,9 @@ namespace Algiz::Plugins {
 					HTTP::Response(200, renderTemplate(readFile(full_path), {
 						{"post", nlohmann::json(request.postParameters).dump()}
 					})).setMIME("text/html"));
-			} else if (!request.ranges.empty() || request.suffixLength != 0) {
+			} else if (shouldServeModule(http, full_path)) {
+				serveModule(args, full_path);
+			} else if (!request.hackRanges() && (!request.ranges.empty() || request.suffixLength != 0)) {
 				serveRange(args, full_path);
 			} else {
 				serveFull(args, full_path);
