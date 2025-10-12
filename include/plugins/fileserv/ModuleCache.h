@@ -17,6 +17,7 @@ namespace Algiz::Plugins {
 			~ModuleCache();
 
 			std::pair<ModuleFunction, std::shared_lock<std::shared_mutex>> operator[](const std::filesystem::path &);
+			bool remove(const std::filesystem::path &);
 
 		private:
 			struct Item {

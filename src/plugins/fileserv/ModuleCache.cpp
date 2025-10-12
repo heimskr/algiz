@@ -42,6 +42,18 @@ namespace Algiz::Plugins {
 		return cache.try_emplace(path, handle).first->second.pair();
 	}
 
+	bool ModuleCache::remove(const std::filesystem::path &path) {
+		std::unique_lock lock{cacheMutex};
+
+		if (auto iter = cache.find(path); iter != cache.end()) {
+			iter->second.close();
+			cache.erase(iter);
+			return true;
+		}
+
+		return false;
+	}
+
 	void ModuleCache::makeSpace() {
 		if (cache.empty() || cache.size() < maxSize) {
 			return;

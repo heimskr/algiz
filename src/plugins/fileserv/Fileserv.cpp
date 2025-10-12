@@ -355,6 +355,7 @@ namespace Algiz::Plugins {
 		object.replace_extension(object.extension().string() + ".so");
 		if (!std::filesystem::exists(object) || isNewerThan(full_path, object)) {
 			compileObject(full_path, object, full_path.extension() == PREPROCESSED_EXTENSION);
+			moduleCache.remove(object);
 		}
 
 		auto [function, lock] = moduleCache[object];
