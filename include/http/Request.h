@@ -1,5 +1,6 @@
 #pragma once
 
+#include <format>
 #include <map>
 #include <string>
 #include <tuple>
@@ -55,3 +56,25 @@ namespace Algiz::HTTP {
 			std::string_view getHeader(const std::string &name) const;
 	};
 }
+
+template <>
+struct std::formatter<Algiz::HTTP::Request::Method> {
+	constexpr auto parse(auto &ctx) {
+		return ctx.begin();
+	}
+
+	auto format(const auto &method, auto &ctx) const {
+		using enum Algiz::HTTP::Request::Method;
+
+		const char *str = "???";
+		switch (method) {
+			case Invalid: str = "Invalid"; break;
+			case GET:     str = "GET";     break;
+			case HEAD:    str = "HEAD";    break;
+			case PUT:     str = "PUT";     break;
+			case POST:    str = "POST";    break;
+		}
+
+		return std::format_to(ctx.out(), "{}", str);
+	}
+};
