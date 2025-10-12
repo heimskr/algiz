@@ -44,6 +44,8 @@ namespace {
 				ERROR("Failed to compile " << source << ":\n" << result.err);
 			}
 			throw std::runtime_error(std::format("Failed to compile {} to {}", source.string(), output.string()));
+		} else if (preprocess) {
+			std::filesystem::remove(source);
 		}
 	}
 }
@@ -196,16 +198,16 @@ namespace Algiz::Plugins {
 			return CancelableResult::Kill;
 		}
 
-		if (!findPath(full_path))
+		if (!findPath(full_path)) {
 			return CancelableResult::Pass;
+		}
 
 		try {
 			const auto extension = full_path.extension();
 			if (extension == ".t") {
-				http.server->send(client.id,
-					HTTP::Response(200, renderTemplate(readFile(full_path), {
-						{"post", nlohmann::json(request.postParameters).dump()}
-					})).setMIME("text/html"));
+				http.server->send(client.id, HTTP::Response(200, renderTemplate(readFile(full_path), {
+					{"post", nlohmann::json(request.postParameters).dump()}
+				})).setMIME("text/html"));
 			} else if (shouldServeModule(http, full_path)) {
 				serveModule(args, full_path);
 			} else if (!request.hackRanges() && (!request.ranges.empty() || request.suffixLength != 0)) {

@@ -18,9 +18,11 @@ namespace Algiz {
 
 		template <typename T>
 		bool contains(const T &needle) const {
-			for (const auto &string: *this)
-				if (string == needle)
+			for (const auto &string: *this) {
+				if (string == needle) {
 					return true;
+				}
+			}
 			return false;
 		}
 	};
