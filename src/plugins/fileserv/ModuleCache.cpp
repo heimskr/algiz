@@ -18,6 +18,7 @@ namespace Algiz::Plugins {
 		{
 			std::shared_lock lock{cacheMutex};
 			if (auto iter = cache.find(path); iter != cache.end()) {
+				iter->second.lastUsed = std::chrono::system_clock::now();
 				return iter->second.pair();
 			}
 		}
@@ -25,6 +26,7 @@ namespace Algiz::Plugins {
 		std::unique_lock lock{cacheMutex};
 		// Might have appeared between unlocking and relocking.
 		if (auto iter = cache.find(path); iter != cache.end()) {
+			iter->second.lastUsed = std::chrono::system_clock::now();
 			return iter->second.pair();
 		}
 
