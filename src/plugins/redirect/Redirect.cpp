@@ -18,7 +18,7 @@ namespace Algiz::Plugins {
 			}
 		}
 
-		throw std::runtime_error("Redirect plugin requires a \"base\" string parameter");
+		base = "https";
 	}
 
 	void Redirect::cleanup(PluginHost *host) {
