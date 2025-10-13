@@ -159,6 +159,7 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
 		)" << body.view() << R"(
 
 	http.server->send(client.id, HTTP::Response(code, stream.view()));
+	// */
 }
 		)";
 

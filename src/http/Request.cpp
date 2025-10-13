@@ -284,4 +284,27 @@ namespace Algiz::HTTP {
 
 		return {};
 	}
+
+	std::string Request::pathWithParameters() const {
+		std::string out = path;
+
+		if (!parameters.empty()) {
+			for (bool first = true; const auto &[key, value]: parameters) {
+				if (first) {
+					out += '?';
+					first = false;
+				} else {
+					out += '&';
+				}
+
+				out += key;
+				if (!value.empty()) {
+					out += '=';
+					out += value;
+				}
+			}
+		}
+
+		return out;
+	}
 }
