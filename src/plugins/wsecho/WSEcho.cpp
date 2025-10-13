@@ -21,8 +21,9 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult WSEcho::handleConnect(HTTP::Server::WebSocketConnectionArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		if (args.protocols.contains("echo")) {
 			args.acceptedProtocol = "echo";
@@ -36,8 +37,10 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult WSEcho::handleMessage(HTTP::Server::WebSocketMessageArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
+
 		args.client.sendWebSocket(args.message, false);
 		return CancelableResult::Approve;
 	}

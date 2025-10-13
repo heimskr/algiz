@@ -26,8 +26,9 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Redirect::handle(HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		auto &[http, client, request, parts] = args;
 

@@ -17,8 +17,9 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Calculator::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		const auto &[http, client, request, parts] = args;
 
@@ -35,16 +36,17 @@ namespace Algiz::Plugins {
 
 			std::string out;
 
-			if (oper == "+" || oper == "plus")
+			if (oper == "+" || oper == "plus") {
 				out = std::to_string(left + right);
-			else if (oper == "-" || oper == "min")
+			} else if (oper == "-" || oper == "min") {
 				out = std::to_string(left - right);
-			else if (oper == "*" || oper == "mult")
+			} else if (oper == "*" || oper == "mult") {
 				out = std::to_string(left * right);
-			else if (oper == "/" || oper == "div")
+			} else if (oper == "/" || oper == "div") {
 				out = right == 0? "Division by zero" : std::to_string(left / right);
-			else
+			} else {
 				return CancelableResult::Pass;
+			}
 
 			http.server->send(client.id, HTTP::Response(200, out).setMIME("text/plain"));
 			http.server->close(client.id);

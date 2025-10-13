@@ -18,8 +18,9 @@ namespace Algiz::Plugins {
 	}
 
 	CancelableResult Default404::handle(const HTTP::Server::HandlerArgs &args, bool not_disabled) {
-		if (!not_disabled)
+		if (!not_disabled) {
 			return CancelableResult::Pass;
+		}
 
 		const auto &[http, client, request, parts] = args;
 
@@ -29,14 +30,16 @@ namespace Algiz::Plugins {
 		if (config.contains("file")) {
 			const std::string &filename = config.at("file");
 			response.content = readFile(filename);
-			if (std::filesystem::path(filename).extension() == ".t")
+			if (std::filesystem::path(filename).extension() == ".t") {
 				response.content = renderTemplate(response.contentView(), {
 					{"path", request.path}
 				});
+			}
 		}
 
-		if (response.contentView().empty())
+		if (response.contentView().empty()) {
 			response.content = std::string("404 Not Found");
+		}
 
 		http.server->send(client.id, response);
 		http.server->close(client.id);
