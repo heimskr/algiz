@@ -62,6 +62,8 @@ namespace Algiz::Plugins {
 			std::vector<std::string> getDefaults() const;
 
 			bool shouldServeModule(HTTP::Server &, const std::filesystem::path &) const;
+			bool getModulesEnabled(HTTP::Server &, const std::filesystem::path &) const;
+			bool filter(HTTP::Server::HandlerArgs &, const std::filesystem::path &) const;
 	};
 
 	std::string preprocessFileservModule(const std::filesystem::path &);

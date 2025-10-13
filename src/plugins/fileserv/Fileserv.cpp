@@ -14,6 +14,8 @@
 #include <inja/inja.hpp>
 
 namespace {
+	using FilterFunction = bool (*)(Algiz::HTTP::Server::HandlerArgs &, const std::filesystem::path &);
+
 	constexpr std::string_view PREPROCESSED_EXTENSION = ".alg";
 
 	void compileObject(std::filesystem::path source, const std::filesystem::path &output, bool preprocess, std::optional<std::string> &err_text) {
@@ -49,6 +51,22 @@ namespace {
 			throw std::runtime_error(std::format("Failed to compile {} to {}", source.string(), output.string()));
 		} else if (preprocess) {
 			std::filesystem::remove(source);
+		}
+	}
+
+	FilterFunction getFilterFunction(const char *name) {
+		return reinterpret_cast<FilterFunction>(dlsym(RTLD_DEFAULT, name));
+	}
+
+	bool doFilter(Algiz::HTTP::Server::HandlerArgs &args, const std::filesystem::path &path, const char *function_name, auto &&default_action) {
+		if (auto function = getFilterFunction(function_name)) {
+			return function(args, path);
+		}
+
+		if constexpr (std::invocable<decltype(default_action), decltype(args), decltype(path)>) {
+			return default_action(args, path);
+		} else {
+			return default_action();
 		}
 	}
 }
@@ -128,7 +146,7 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 		}
 
-		if (authFailed(args, full_path)) {
+		if (!filter(args, full_path)) {
 			client.close();
 			return CancelableResult::Kill;
 		}
@@ -190,7 +208,7 @@ namespace Algiz::Plugins {
 			return CancelableResult::Pass;
 		}
 
-		if (authFailed(args, full_path)) {
+		if (!filter(args, full_path)) {
 			client.close();
 			return CancelableResult::Kill;
 		}
@@ -388,13 +406,52 @@ namespace Algiz::Plugins {
 	}
 
 	bool Fileserv::shouldServeModule(HTTP::Server &http, const std::filesystem::path &path) const {
-		bool enable = enableModules;
-		if (!enable) {
-			auto option = http.getOption<bool>(path, "enableModules");
-			enable = option && *option;
+		if (!getModulesEnabled(http, path)) {
+			return false;
 		}
 		std::filesystem::path extension = path.extension();
-		return enable && ((extension == ".cpp" && canExecute(path)) || extension == PREPROCESSED_EXTENSION);
+		return (extension == ".cpp" && canExecute(path)) || extension == PREPROCESSED_EXTENSION;
+	}
+
+	bool Fileserv::getModulesEnabled(HTTP::Server &http, const std::filesystem::path &path) const {
+		if (enableModules) {
+			return true;
+		}
+
+		auto option = http.getOption<bool>(path, "enableModules");
+		return option && *option;
+	}
+
+	bool Fileserv::filter(HTTP::Server::HandlerArgs &args, const std::filesystem::path &path) const {
+		auto &[http, client, request, parts] = args;
+
+		if (!doFilter(args, path, "algizAuthCheck", [&] { return !authFailed(args, path); })) {
+			return doFilter(args, path, "algizAuthCheckFailed", [&] {
+				http.server->send(client.id, HTTP::Response(401, "Unauthorized"));
+				return false;
+			});
+		}
+
+		// Executable files ending in ".alg.so" or ".cpp.so" must not be served if modules are enabled.
+		auto module_filter = [&] {
+			if (getModulesEnabled(http, path) && path.extension() == ".so" && canExecute(path)) {
+				std::filesystem::path subextension = path.stem().extension();
+				if (subextension == ".alg" || subextension == ".cpp") {
+					return false;
+				}
+			}
+
+			return true;
+		};
+
+		if (!doFilter(args, path, "algizCompiledModuleCheck", std::move(module_filter))) {
+			return doFilter(args, path, "algizCompiledModuleCheckFailed", [&] {
+				http.server->send(client.id, HTTP::Response(401, "Nice try."));
+				return false;
+			});
+		}
+
+		return true;
 	}
 }
 
