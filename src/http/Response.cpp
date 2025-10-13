@@ -109,7 +109,7 @@ namespace Algiz::HTTP {
 		out.reserve(content_size + 1024);
 		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
 		if (!noContentType && !headers.contains("content-type"))
-		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset = " + charset) + "\r\n";
+		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset=" + charset) + "\r\n";
 		if (!headers.contains("content-length"))
 			out += "content-length: " + std::to_string(content_size) + "\r\n";
 		for (const auto &[header, value]: headers)
