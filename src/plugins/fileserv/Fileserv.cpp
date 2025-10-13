@@ -16,8 +16,10 @@
 namespace {
 	constexpr std::string_view PREPROCESSED_EXTENSION = ".alg";
 
-	void compileObject(std::filesystem::path source, const std::filesystem::path &output, bool preprocess) {
+	void compileObject(std::filesystem::path source, const std::filesystem::path &output, bool preprocess, std::optional<std::string> &err_text) {
 		using namespace Algiz;
+
+		err_text.reset();
 
 		if (preprocess) {
 			char temp_late[]{"/tmp/algiz-pp-XXXXXX.cpp"};
@@ -42,6 +44,7 @@ namespace {
 		if (result.code || result.signal != -1) {
 			if (!result.err.empty()) {
 				ERROR("Failed to compile " << source << ":\n" << result.err);
+				err_text = std::move(result.err);
 			}
 			throw std::runtime_error(std::format("Failed to compile {} to {}", source.string(), output.string()));
 		} else if (preprocess) {
@@ -357,9 +360,15 @@ namespace Algiz::Plugins {
 	void Fileserv::serveModule(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		std::filesystem::path object = full_path;
 		object.replace_extension(object.extension().string() + ".so");
+		std::optional<std::string> err_text;
 		if (!std::filesystem::exists(object) || isNewerThan(full_path, object)) {
-			compileObject(full_path, object, full_path.extension() == PREPROCESSED_EXTENSION);
 			moduleCache.remove(object);
+			try {
+				compileObject(full_path, object, full_path.extension() == PREPROCESSED_EXTENSION, err_text);
+			} catch (...) {
+				args.server.server->send(args.client.id, HTTP::Response(500, err_text.value_or("Compilation failed"), "text/plain").setCharset("utf-8"));
+				return;
+			}
 		}
 
 		auto [function, lock] = moduleCache[object];
