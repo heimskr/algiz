@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <generator>
 #include <optional>
+#include <random>
 #include <set>
 #include <string>
 #include <thread>
@@ -49,6 +50,7 @@ namespace Algiz::Plugins {
 
 		private:
 			mutable ModuleCache moduleCache;
+			mutable std::default_random_engine rng;
 
 			Plugins::CancelableResult handleGET(HTTP::Server::HandlerArgs &, bool not_disabled);
 			Plugins::CancelableResult handlePOST(HTTP::Server::HandlerArgs &, bool not_disabled);

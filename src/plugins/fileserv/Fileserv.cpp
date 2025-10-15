@@ -73,7 +73,8 @@ namespace {
 
 namespace Algiz::Plugins {
 	Fileserv::Fileserv():
-		moduleCache(64) {}
+		moduleCache(64),
+		rng(std::random_device{}()) {}
 
 	void Fileserv::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
@@ -299,52 +300,101 @@ namespace Algiz::Plugins {
 	void Fileserv::serveRange(HTTP::Server::HandlerArgs &args, const std::filesystem::path &full_path) const {
 		auto &[http, client, request, parts] = args;
 		const size_t filesize = std::filesystem::file_size(full_path);
-		if (request.valid(filesize)) {
-			std::ifstream stream;
-			stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-			stream.open(full_path);
-			stream.exceptions(std::ifstream::goodbit);
-			if (!stream.is_open()) {
-				http.send403(client);
-			} else {
-				HTTP::Response response(206, "");
-
-				size_t length = request.suffixLength;
-				for (const auto &[start, end]: request.ranges) {
-					length += end - start + 1;
-				}
-
-				response.setAcceptRanges();
-				response["content-length"] = std::to_string(length);
-				response.setLastModified(lastWritten(full_path));
-
-				http.server->send(client.id, response.noContent());
-				for (const auto &[start, end]: request.ranges) {
-					size_t remaining = end - start + 1;
-					stream.seekg(start, std::ios::beg);
-					auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
-					while (0 < remaining) {
-						const size_t to_read = std::min(chunkSize, remaining);
-						stream.read(buffer.get(), to_read);
-						http.server->send(client.id, std::string_view(buffer.get(), to_read));
-						remaining -= to_read;
-					}
-				}
-
-				if (request.suffixLength != 0) {
-					size_t remaining = request.suffixLength;
-					stream.seekg(filesize - request.suffixLength, std::ios::beg);
-					auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
-					while (0 < remaining) {
-						const size_t to_read = std::min(chunkSize, remaining);
-						stream.read(buffer.get(), to_read);
-						http.server->send(client.id, std::string_view(buffer.get(), to_read));
-						remaining -= to_read;
-					}
-				}
-			}
-		} else {
+		if (!request.valid(filesize)) {
 			http.send400(client);
+			return;
+		}
+
+		std::ifstream stream;
+		stream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+		stream.open(full_path);
+		stream.exceptions(std::ifstream::goodbit);
+		if (!stream.is_open()) {
+			http.send403(client);
+			return;
+		}
+
+		HTTP::Response response(206, "");
+
+		size_t length = request.suffixLength;
+
+		for (const auto &[start, end]: request.ranges) {
+			length += end - start + 1;
+		}
+
+		response.setAcceptRanges();
+		response["content-length"] = std::to_string(length);
+		response.setLastModified(lastWritten(full_path));
+
+		char boundary_bytes[]{"--________________"};
+		std::string_view boundary{boundary_bytes, sizeof(boundary_bytes) - 1};
+
+		assert(!request.ranges.empty());
+		const bool multi = request.ranges.size() > 1;
+
+		std::string &content_type = response["content-type"];
+		const std::string old_content_type = content_type;
+
+		if (multi) {
+			std::uniform_int_distribution<char> distribution('a', 'z');
+			for (size_t i = 2; i < boundary.size(); ++i) {
+				boundary_bytes[i] = distribution(rng);
+			}
+			content_type += std::format("; boundary={}", boundary.substr(2));
+		 } else {
+			auto [start, end] = request.ranges[0];
+			response["content-range"] = std::format("bytes {}-{}/{}", start, end, filesize);
+		 }
+
+		auto send_start = [&](size_t start, size_t end) {
+			if (multi) {
+				http.server->send(client.id, std::format("{}\r\nContent-Type: {}\r\nContent-Range: {}-{}/{}\r\n\r\n", boundary, old_content_type, start, end, filesize));
+			}
+		};
+
+		http.server->send(client.id, response.noContent());
+
+		std::unique_ptr<char[]> buffer;
+		size_t old_buffer_length = 0;
+
+		for (const auto &[start, end]: request.ranges) {
+			send_start(start, end);
+
+			size_t remaining = end - start + 1;
+			stream.seekg(start, std::ios::beg);
+
+			if (size_t buffer_length = std::min(chunkSize, remaining); !buffer || old_buffer_length != buffer_length) {
+				buffer = std::make_unique<char[]>(buffer_length);
+				old_buffer_length = buffer_length;
+			}
+
+			while (0 < remaining) {
+				const size_t to_read = std::min(chunkSize, remaining);
+				stream.read(buffer.get(), to_read);
+				http.server->send(client.id, std::string_view(buffer.get(), to_read));
+				remaining -= to_read;
+			}
+		}
+
+		if (request.suffixLength != 0) {
+			send_start(filesize - request.suffixLength, filesize - 1);
+
+			size_t remaining = request.suffixLength;
+			stream.seekg(filesize - request.suffixLength, std::ios::beg);
+
+			buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
+
+			while (0 < remaining) {
+				const size_t to_read = std::min(chunkSize, remaining);
+				stream.read(buffer.get(), to_read);
+				http.server->send(client.id, std::string_view(buffer.get(), to_read));
+				remaining -= to_read;
+			}
+		}
+
+		if (multi) {
+			http.server->send(client.id, boundary);
+			http.server->send(client.id, std::string_view{"--"});
 		}
 	}
 

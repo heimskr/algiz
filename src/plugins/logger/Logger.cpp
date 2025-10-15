@@ -27,12 +27,19 @@ namespace Algiz::Plugins {
 			INFO('[' << http.server->id << " <- " << client.describe() << "] Received request for a really large path...");
 		}
 
-		if (auto iter = request.headers.find("Host"); iter != request.headers.end()) {
-			INFO("Host: \"" << iter->second << '"');
-		} else if (auto iter = request.headers.find("host"); iter != request.headers.end()) {
-			INFO("host: \"" << iter->second << '"');
-		} else {
-			WARN("No Host header");
+		static const std::vector<std::pair<std::string, std::string>> pairs{
+			{"Host", "host"},
+			{"Range", "range"},
+		};
+
+		for (auto [upper, lower]: pairs) {
+			if (auto iter = request.headers.find(lower); iter != request.headers.end()) {
+				INFO(lower << ": \"" << iter->second << '"');
+			} else if (auto iter = request.headers.find(upper); iter != request.headers.end()) {
+				INFO(upper << ": \"" << iter->second << '"');
+			} else if (lower == "host") {
+				WARN("No Host header");
+			}
 		}
 
 		return CancelableResult::Pass;
