@@ -19,14 +19,14 @@ namespace Algiz::HTTP {
 			std::map<std::string, std::string> headers;
 			bool noContentType = false;
 
-			Response(int code_, const std::string &content_, std::string_view mime_ = "text/html");
-			Response(int code_, std::string_view content_, std::string_view mime_ = "text/html");
-			Response(int code_, const char *content_, std::string_view mime_ = "text/html");
+			Response(int code, std::string content, std::string_view mime = "text/html");
+			Response(int code, std::string_view content, std::string_view mime = "text/html");
+			Response(int code, const char *content, std::string_view mime = "text/html");
 
-			Response & setMIME(const std::string &);
-			Response & setCharset(const std::string &);
-			Response & setHeaders(const decltype(headers) &);
-			Response & setHeader(const std::string &, const std::string &);
+			Response & setMIME(std::string);
+			Response & setCharset(std::string);
+			Response & setHeaders(decltype(headers));
+			Response & setHeader(const std::string &header, std::string value);
 			Response & setClose(bool = true);
 			Response & setNoContentType(bool = true);
 			Response & setAcceptRanges(bool = true);

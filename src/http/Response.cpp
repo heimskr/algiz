@@ -3,45 +3,52 @@
 
 namespace Algiz::HTTP {
 	std::string Response::generate500() {
-		const std::string body("Internal Server Error");
-		return std::string("HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html; charset=UTF-8\r\n")
-		     + "Content-Length: " + std::to_string(body.size()) + "\r\n"
-		     + "Connection: close\r\n"
-		     + "\r\n" + body;
+		const static std::string_view body = "Internal Server Error";
+		return std::format(
+			"HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html; charset=UTF-8\r\n"
+			"Content-Length: {}\r\n"
+			"Connection: close\r\n"
+			"\r\n{}", body.size(), body);
 	}
 
-	Response::Response(int code_, const std::string &content_, std::string_view mime_):
-	code(code_), mime(mime_), content(content_) {
-		setClose(true);
-	}
+	Response::Response(int code, std::string content, std::string_view mime):
+		code(code),
+		mime(mime),
+		content(std::move(content)) {
+			setClose(true);
+		}
 
-	Response::Response(int code_, std::string_view content_, std::string_view mime_):
-	code(code_), mime(mime_), content(content_) {
-		setClose(true);
-	}
+	Response::Response(int code, std::string_view content, std::string_view mime):
+		code(code),
+		mime(mime),
+		content(content) {
+			setClose(true);
+		}
 
-	Response::Response(int code_, const char *content_, std::string_view mime_):
-	code(code_), mime(mime_), content(std::string(content_)) {
-		setClose(true);
-	}
+	Response::Response(int code, const char *content, std::string_view mime):
+		code(code),
+		mime(mime),
+		content(std::string(content)) {
+			setClose(true);
+		}
 
-	Response & Response::setMIME(const std::string &mime_) {
-		mime = mime_;
+	Response & Response::setMIME(std::string mime_) {
+		mime = std::move(mime_);
 		return *this;
 	}
 
-	Response & Response::setCharset(const std::string &charset_) {
-		charset = charset_;
+	Response & Response::setCharset(std::string charset_) {
+		charset = std::move(charset_);
 		return *this;
 	}
 
-	Response & Response::setHeaders(const decltype(headers) &headers_) {
-		headers = headers_;
+	Response & Response::setHeaders(decltype(headers) headers_) {
+		headers = std::move(headers_);
 		return *this;
 	}
 
-	Response & Response::setHeader(const std::string &header, const std::string &value) {
-		headers[toLower(header)] = value;
+	Response & Response::setHeader(const std::string &header, std::string value) {
+		headers[toLower(header)] = std::move(value);
 		return *this;
 	}
 
@@ -92,28 +99,37 @@ namespace Algiz::HTTP {
 	}
 
 	Response::operator std::string() const {
-		if (std::holds_alternative<std::string>(content))
+		if (std::holds_alternative<std::string>(content)) {
 			return noContent() + std::get<std::string>(content);
+		}
+
 		std::string no_content = noContent();
-		no_content.append(std::get<std::string_view>(content));
+		no_content += std::get<std::string_view>(content);
 		return no_content;
 	}
 
 	std::string Response::noContent() const {
-		if (!codeDescriptions.contains(code))
+		if (!codeDescriptions.contains(code)) {
 			return generate500();
+		}
 
 		std::string out;
-		const size_t content_size = std::holds_alternative<std::string>(content)?
-			std::get<std::string>(content).size() : std::get<std::string_view>(content).size();
+		const size_t content_size = std::holds_alternative<std::string>(content)? std::get<std::string>(content).size() : std::get<std::string_view>(content).size();
 		out.reserve(content_size + 1024);
-		out = "HTTP/1.1 " + std::to_string(code) + " " + codeDescriptions.at(code) + "\r\n";
-		if (!noContentType && !headers.contains("content-type"))
-		    out += "Content-Type: " + mime + (charset.empty()? "" : "; charset=" + charset) + "\r\n";
-		if (!headers.contains("content-length"))
-			out += "content-length: " + std::to_string(content_size) + "\r\n";
-		for (const auto &[header, value]: headers)
-			out += header + ": " + value + "\r\n";
+		out = std::format("HTTP/1.1 {} {}\r\n", code, codeDescriptions.at(code));
+
+		if (!noContentType && !headers.contains("content-type")) {
+			out += std::format("Content-Type: {}{}\r\n", mime, charset.empty()? "" : "; charset=" + charset);
+		}
+
+		if (!headers.contains("content-length")) {
+			out += std::format("Content-Length: {}\r\n", content_size);
+		}
+
+		for (const auto &[header, value]: headers) {
+			out += std::format("{}: {}\r\n", header, value);
+		}
+
 		out += "\r\n";
 		return out;
 	}

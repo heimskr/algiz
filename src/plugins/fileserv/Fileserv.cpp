@@ -406,22 +406,23 @@ namespace Algiz::Plugins {
 		stream.exceptions(std::ifstream::goodbit);
 		if (!stream.is_open()) {
 			http.send403(client);
-		} else {
-			const std::string mime = getMIME(full_path.extension());
-			const size_t filesize = std::filesystem::file_size(full_path);
-			HTTP::Response response(200, "");
-			response.setLastModified(lastWritten(full_path)).setAcceptRanges().setMIME(mime);
-			response["content-length"] = std::to_string(filesize);
-			http.server->send(client.id, response.noContent());
-			size_t remaining = filesize;
-			stream.seekg(0, std::ios::beg);
-			auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
-			while (0 < remaining) {
-				const size_t to_read = std::min(chunkSize, remaining);
-				stream.read(buffer.get(), to_read);
-				http.server->send(client.id, std::string_view(buffer.get(), to_read));
-				remaining -= to_read;
-			}
+			return;
+		}
+
+		std::string mime = getMIME(full_path.extension());
+		const size_t filesize = std::filesystem::file_size(full_path);
+		HTTP::Response response(200, "");
+		response.setLastModified(lastWritten(full_path)).setAcceptRanges().setMIME(std::move(mime));
+		response["content-length"] = std::to_string(filesize);
+		http.server->send(client.id, response.noContent());
+		size_t remaining = filesize;
+		stream.seekg(0, std::ios::beg);
+		auto buffer = std::make_unique<char[]>(std::min(chunkSize, remaining));
+		while (0 < remaining) {
+			const size_t to_read = std::min(chunkSize, remaining);
+			stream.read(buffer.get(), to_read);
+			http.server->send(client.id, std::string_view(buffer.get(), to_read));
+			remaining -= to_read;
 		}
 	}
 
