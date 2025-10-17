@@ -121,11 +121,22 @@ namespace Algiz::Plugins {
 #include "include/Module.h"
 
 extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::filesystem::path &path) {
-	auto &[http, client, request, parts] = algiz_args;
+	auto &[$http, $client, $request, $parts] = algiz_args;
+	auto &$get = $request.parameters;
+	auto &$post = $request.postParameters;
+	int $code = 200;
+	std::stringstream $stream;
+
 	auto echo = [](auto &&...) {};
-	echo()";
+
+	echo(
+					)";
 					surrounded += shortened.substr(0, *offset);
-					surrounded += ");\n}\n";
+					surrounded += R"(
+	);
+	// */
+}
+					)";
 					action = std::make_unique<PreprocessAction>(surrounded, delimiter_end);
 				}
 			}
@@ -161,8 +172,8 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::fi
 	auto &$get = $request.parameters;
 	auto &$post = $request.postParameters;
 	int $code = 200;
-
 	std::stringstream $stream;
+
 	auto echo = [&](auto &&...things) {
 		($stream << ... << std::forward<decltype(things)>(things));
 	};
