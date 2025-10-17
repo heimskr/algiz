@@ -1,54 +1,53 @@
-#include <iostream>
+#include "http/Client.h"
+#include "net/NetError.h"
+#include "net/SSLServer.h"
+#include "util/Defer.h"
+#include "util/GeoIP.h"
+#include "Log.h"
+
+#include <event2/bufferevent_ssl.h>
 
 #include <arpa/inet.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <fcntl.h>
+#include <iostream>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <event2/bufferevent_ssl.h>
-
-#include "http/Client.h"
-#include "net/NetError.h"
-#include "net/SSLServer.h"
-#include "util/GeoIP.h"
-
-#include "Log.h"
-
 namespace Algiz {
-	SSLServer::SSLServer(int af_, const std::string &ip_, uint16_t port_, const std::string &cert,
-	                     const std::string &key, const std::string &chain, size_t thread_count, size_t chunk_size):
-	Server(af_, ip_, port_, thread_count, chunk_size), sslContext(SSL_CTX_new(TLS_server_method())) {
-		if (sslContext == nullptr) {
-			perror("Unable to create SSL context");
-			ERR_print_errors_fp(stderr);
-			throw std::runtime_error("SSLServer OpenSSL context initialization failed");
-		}
-
-		if (SSL_CTX_use_certificate_file(sslContext, cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
-			ERR_print_errors_fp(stderr);
-			SSL_CTX_free(sslContext);
-			throw std::runtime_error("SSLServer OpenSSL certificate initialization failed");
-		}
-
-		if (SSL_CTX_use_PrivateKey_file(sslContext, key.c_str(), SSL_FILETYPE_PEM) <= 0) {
-			ERR_print_errors_fp(stderr);
-			SSL_CTX_free(sslContext);
-			throw std::runtime_error("SSLServer OpenSSL private key initialization failed");
-		}
-
-		if (!chain.empty()) {
-			if (SSL_CTX_use_certificate_chain_file(sslContext, chain.c_str()) <= 0) {
+	SSLServer::SSLServer(int af, std::string ip, uint16_t port, const std::string &cert, const std::string &key, const std::string &chain, size_t threadCount, size_t chunkSize):
+		Server(af, ip, port, threadCount, chunkSize),
+		sslContext(SSL_CTX_new(TLS_server_method())) {
+			Defer cleanup{[&] {
 				ERR_print_errors_fp(stderr);
 				SSL_CTX_free(sslContext);
-				throw std::runtime_error("SSLServer OpenSSL certificate chain initialization failed");
+			}};
+
+			if (sslContext == nullptr) {
+				perror("Unable to create SSL context");
+				throw std::runtime_error("SSLServer OpenSSL context initialization failed");
 			}
+
+			if (SSL_CTX_use_certificate_file(sslContext, cert.c_str(), SSL_FILETYPE_PEM) <= 0) {
+				throw std::runtime_error("SSLServer OpenSSL certificate initialization failed");
+			}
+
+			if (SSL_CTX_use_PrivateKey_file(sslContext, key.c_str(), SSL_FILETYPE_PEM) <= 0) {
+				throw std::runtime_error("SSLServer OpenSSL private key initialization failed");
+			}
+
+			if (!chain.empty()) {
+				if (SSL_CTX_use_certificate_chain_file(sslContext, chain.c_str()) <= 0) {
+					throw std::runtime_error("SSLServer OpenSSL certificate chain initialization failed");
+				}
+			}
+
+			cleanup.release();
 		}
-	}
 
 	SSLServer::~SSLServer() {
 		if (sslContext != nullptr) {
@@ -160,9 +159,9 @@ namespace Algiz {
 
 		{
 			auto lock = server.lockDescriptors();
-			if (server.bufferEvents.contains(new_fd))
-				throw std::runtime_error("File descriptor " + std::to_string(new_fd) + " already has a bufferevent "
-					"struct");
+			if (server.bufferEvents.contains(new_fd)) {
+				throw std::runtime_error(std::format("File descriptor {} already has a bufferevent struct", new_fd));
+			}
 			server.bufferEvents.emplace(new_fd, buffer_event);
 			server.bufferEventDescriptors.emplace(buffer_event, new_fd);
 		}

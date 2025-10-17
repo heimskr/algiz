@@ -7,3 +7,6 @@
 [submodule "subprojects/json"]
 	path = subprojects/json
 	url = https://github.com/nlohmann/json.git
+[submodule "subprojects/acme-lw"]
+	path = subprojects/acme-lw
+	url = https://github.com/jmccl/acme-lw.git

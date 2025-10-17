@@ -18,29 +18,30 @@
 #include <unistd.h>
 
 namespace Algiz {
-	Server::Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size):
-		af(af_),
-		ip(ip_),
-		port(port_),
-		chunkSize(chunk_size),
-		threadCount(thread_count) {
-			if (thread_count < 1) {
+	Server::Server(int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize):
+		af(af),
+		ip(std::move(ip)),
+		port(port),
+		chunkSize(chunkSize),
+		threadCount(threadCount) {
+			if (threadCount < 1) {
 				throw std::invalid_argument("Cannot instantiate a Server with a thread count of zero");
 			}
 		}
 
 	Server::~Server() {
-		while (!bufferEvents.empty())
+		while (!bufferEvents.empty()) {
 			remove(bufferEvents.begin()->second);
+		}
 		stop();
 	}
 
-	Server::Worker::Worker(Server &server_, size_t buffer_size, size_t id_):
-		server(server_),
-		bufferSize(buffer_size),
-		buffer(std::make_unique<char[]>(buffer_size)),
+	Server::Worker::Worker(Server &server, size_t bufferSize, size_t id):
+		server(server),
+		bufferSize(bufferSize),
+		buffer(std::make_unique<char[]>(bufferSize)),
 		base(event_base_new()),
-		id(id_) {
+		id(id) {
 			if (base == nullptr) {
 				throw std::runtime_error("Couldn't allocate a new event_base");
 			}
@@ -58,9 +59,9 @@ namespace Algiz {
 			if (event_add(acceptEvent, nullptr) < 0) {
 				char error[64] = "?";
 				if (!strerror_r(errno, error, sizeof(error))) {
-					throw std::runtime_error("Couldn't add acceptEvent (" + std::to_string(errno) + ')');
+					throw std::runtime_error(std::format("Couldn't add acceptEvent ({})", errno));
 				}
-				throw std::runtime_error("Couldn't add acceptEvent: " + std::string(error));
+				throw std::runtime_error(std::format("Couldn't add acceptEvent: {}", error));
 			}
 		}
 
@@ -216,7 +217,7 @@ namespace Algiz {
 			}));
 		}
 
-		for (auto &thread: threads) {
+		for (std::thread &thread: threads) {
 			thread.join();
 		}
 
@@ -525,12 +526,6 @@ namespace Algiz {
 		} else if ((events & (BEV_EVENT_ERROR | BEV_EVENT_TIMEOUT)) != 0) {
 			reinterpret_cast<Server::Worker *>(data)->server.remove(buffer_event);
 		}
-	}
-
-	void signal_cb(evutil_socket_t, short, void *data) {
-		auto *server = reinterpret_cast<Server *>(data);
-		WARN("Received SIGINT.");
-		server->stop();
 	}
 
 	void worker_acceptcb(evutil_socket_t, short, void *data) {

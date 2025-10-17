@@ -27,7 +27,6 @@ namespace Algiz {
 	void conn_readcb(bufferevent *, void *);
 	void conn_writecb(bufferevent *, void *);
 	void conn_eventcb(bufferevent *, short, void *);
-	void signal_cb(evutil_socket_t, short, void *);
 	void worker_acceptcb(evutil_socket_t, short, void *);
 
 	class Server {
@@ -49,7 +48,7 @@ namespace Algiz {
 
 					std::unique_ptr<event, decltype(&event_free)> pipeIgnorer{nullptr, event_free};
 
-					explicit Worker(Server &server_, size_t buffer_size, size_t id_);
+					Worker(Server &server, size_t bufferSize, size_t id);
 
 					virtual ~Worker();
 
@@ -160,7 +159,7 @@ namespace Algiz {
 			 *  Arguments: (worker, client_id, ip) */
 			std::function<void(Worker &, int, std::string_view)> addClient;
 
-			Server(int af_, const std::string &ip_, uint16_t port_, size_t thread_count, size_t chunk_size = 1024);
+			Server(int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize = 1024);
 			Server(const Server &) = delete;
 			Server(Server &&) = delete;
 			Server & operator=(const Server &) = delete;
@@ -193,7 +192,6 @@ namespace Algiz {
 			friend void conn_readcb(bufferevent *, void *);
 			friend void conn_writecb(bufferevent *, void *);
 			friend void conn_eventcb(bufferevent *, short, void *);
-			friend void signal_cb(evutil_socket_t, short, void *);
 			friend void worker_acceptcb(evutil_socket_t, short, void *);
 	};
 }
