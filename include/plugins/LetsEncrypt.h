@@ -6,6 +6,8 @@
 
 #include "acme-lw.h"
 
+#include <mutex>
+
 namespace Algiz::Plugins {
 	class LetsEncrypt: public Plugin {
 		public:
@@ -23,5 +25,9 @@ namespace Algiz::Plugins {
 			std::optional<acme_lw::AcmeClient> acmeClient;
 
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
+			void finishCertificate(std::string_view host, acme_lw::Certificate);
+
+			std::unordered_map<std::string, std::string> challenges;
+			std::mutex challengesMutex;
 	};
 }
