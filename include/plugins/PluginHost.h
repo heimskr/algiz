@@ -81,13 +81,13 @@ namespace Algiz::Plugins {
 			PluginHost(const PluginHost &) = delete;
 			PluginHost(PluginHost &&) = delete;
 
-			virtual ~PluginHost();
+			virtual ~PluginHost() = default;
 
 			PluginHost & operator=(const PluginHost &) = delete;
 			PluginHost & operator=(PluginHost &&) = delete;
 
 			/** Unloads a plugin. */
-			void unloadPlugin(const PluginTuple &);
+			void unloadPlugin(PluginTuple);
 
 			/** Unloads all plugins. */
 			void unloadPlugins();

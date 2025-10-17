@@ -5,17 +5,14 @@
 #include "util/Util.h"
 
 namespace Algiz::Plugins {
-	PluginHost::~PluginHost() {
-		unloadPlugins();
-	}
-
-	void PluginHost::unloadPlugin(const PluginTuple &tuple) {
-		auto [path, plugin, handle] = tuple;
-		plugin->cleanup(this);
+	void PluginHost::unloadPlugin(PluginTuple tuple) {
+		auto &[path, plugin, handle] = tuple;
 		auto iter = std::find(plugins.begin(), plugins.end(), tuple);
 		if (iter == plugins.end()) {
 			throw std::runtime_error("Couldn't find plugin tuple for path " + path);
 		}
+		plugin->cleanup(this);
+		plugin.reset();
 		plugins.erase(iter);
 		dlclose(handle);
 	}

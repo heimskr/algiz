@@ -22,21 +22,23 @@ int main(int argc, char **argv) {
 	try {
 		evthread_use_pthreads();
 
-		if (2 < argc && strcmp(argv[1], "--home") == 0)
-			if (chdir(argv[2]) != 0)
-				throw std::runtime_error("Couldn't chdir to " + std::string(argv[2]));
+		if (2 < argc && strcmp(argv[1], "--home") == 0) {
+			std::filesystem::current_path(argv[2]);
+		}
 
-		if (1 < argc && strcmp(argv[1], "dbg") == 0)
+		if (1 < argc && strcmp(argv[1], "dbg") == 0) {
 			std::set_terminate(+[] {
 				void *trace_elems[64];
 				int trace_elem_count = backtrace(trace_elems, sizeof(trace_elems) / sizeof(trace_elems[0]));
 				char **stack_syms = backtrace_symbols(trace_elems, trace_elem_count);
 				std::cerr << '\n';
-				for (int i = 0; i < trace_elem_count; ++i)
+				for (int i = 0; i < trace_elem_count; ++i) {
 					std::cerr << stack_syms[i] << '\n';
+				}
 				free(stack_syms);
 				exit(1);
 			});
+		}
 
 		{
 			struct sigaction sa;
@@ -47,10 +49,11 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (signal(SIGINT, +[](int) { for (auto &server: global_servers) server->stop(); }) == SIG_ERR)
+		if (signal(SIGINT, +[](int) { for (auto &server: global_servers) server->stop(); }) == SIG_ERR) {
 			throw std::runtime_error("Couldn't register SIGINT handler");
+		}
 
-		nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc == 1? "algiz.json" : argv[1]));
+		nlohmann::json options = nlohmann::json::parse(Algiz::readFile(argc <= 1 || std::string_view(argv[1]) == "dbg"? "algiz.json" : argv[1]));
 
 		if (auto iter = options.find("geoip"); iter != options.end()) {
 			INFO("Reading MMDB data from " << *iter << '.');
@@ -64,13 +67,15 @@ int main(int argc, char **argv) {
 		std::vector<std::thread> threads;
 		threads.reserve(global_servers.size());
 
-		for (auto &server: global_servers)
+		for (auto &server: global_servers) {
 			threads.emplace_back([server = server.get()] {
 				server->run();
 			});
+		}
 
-		for (auto &thread: threads)
+		for (auto &thread: threads) {
 			thread.join();
+		}
 
 		global_servers.clear();
 		return 0;

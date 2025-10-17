@@ -62,6 +62,7 @@ namespace Algiz::HTTP {
 		}
 
 	Server::~Server() {
+		unloadPlugins();
 		dying = true;
 		watcher->stop();
 		watcherThread.join();

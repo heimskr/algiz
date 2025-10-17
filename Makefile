@@ -67,7 +67,7 @@ src/plugins/%.o: src/plugins/%.cpp
 	$(COMPILER) $(strip $(CFLAGS) -fPIC -c) $< -o $@
 
 clean:
-	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out $(shell find plugin -name '*.$(SHARED_EXT)'))
+	rm -f $(strip $(OUTPUT) $(shell find src -name '*.o') PVS-Studio.log report.tasks strace_out
 
 unplug:
 	rm -f $(shell find plugin -name '*.$(SHARED_EXT)')
