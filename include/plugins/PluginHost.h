@@ -12,7 +12,7 @@
 namespace Algiz::Plugins {
 	class PluginHost {
 		public:
-			using PluginTuple = std::tuple<std::string, std::shared_ptr<Plugin>, void *>; // path, plugin
+			using PluginTuple = std::tuple<std::string, std::shared_ptr<Plugin>, void *>; // path, plugin, dlopen handle
 
 			template <typename... Args>
 			// The bool argument indicates whether the result hasn't been disabled.
@@ -36,8 +36,7 @@ namespace Algiz::Plugins {
 			/** Determines whether a pre-event should go through. Used inside functions that process sets of sets of
 			 *  handler functions. */
 			template <typename T, typename C>
-			std::pair<bool, HandlerResult> beforeMulti(T &obj, const C &funcs,
-			bool initial = true) {
+			std::pair<bool, HandlerResult> beforeMulti(T &obj, const C &funcs, bool initial = true) {
 				bool should_pass = initial;
 				for (auto &func: funcs) {
 					if (func.expired()) {
@@ -49,13 +48,13 @@ namespace Algiz::Plugins {
 
 					if (result == Plugins::CancelableResult::Kill || result == Plugins::CancelableResult::Disable) {
 						should_pass = false;
-					} else if (result == Plugins::CancelableResult::Approve
-					        || result == Plugins::CancelableResult::Enable) {
+					} else if (result == Plugins::CancelableResult::Approve || result == Plugins::CancelableResult::Enable) {
 						should_pass = true;
 					}
 
-					if (result == Plugins::CancelableResult::Kill || result == Plugins::CancelableResult::Approve)
+					if (result == Plugins::CancelableResult::Kill || result == Plugins::CancelableResult::Approve) {
 						return {should_pass, HandlerResult::Kill};
+					}
 				}
 
 				return {should_pass, HandlerResult::Pass};
@@ -66,8 +65,9 @@ namespace Algiz::Plugins {
 				for (auto &func: funcs) {
 					if (func.expired()) {
 						WARN("after: pointer is expired");
-					} else
+					} else {
 						(*func.lock())(obj);
+					}
 				}
 			}
 
@@ -81,13 +81,13 @@ namespace Algiz::Plugins {
 			PluginHost(const PluginHost &) = delete;
 			PluginHost(PluginHost &&) = delete;
 
-			virtual ~PluginHost() = default;
+			virtual ~PluginHost();
 
 			PluginHost & operator=(const PluginHost &) = delete;
 			PluginHost & operator=(PluginHost &&) = delete;
 
 			/** Unloads a plugin. */
-			void unloadPlugin(PluginTuple &);
+			void unloadPlugin(const PluginTuple &);
 
 			/** Unloads all plugins. */
 			void unloadPlugins();
