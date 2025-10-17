@@ -18,16 +18,14 @@ namespace Algiz {
 		auto *http = new HTTP::Server(std::move(server), suboptions);
 
 		try {
-			INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port")
-				<< '.');
+			INFO("Binding to " << suboptions.at("ip").get<std::string>() << " on port " << suboptions.at("port") << '.');
 
-			if (suboptions.contains("plugins")) {
-				for (const auto &[key, value]: suboptions.at("plugins").items()) {
+			if (auto iter = suboptions.find("plugins"); iter != suboptions.end()) {
+				for (const auto &[key, value]: iter->items()) {
 					if (value.is_string()) {
 						http->loadPlugin("plugin/" + value.get<std::string>() + SHARED_SUFFIX);
 					} else {
-						auto [path, plugin, object] =
-							http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
+						auto [path, plugin, object] = http->loadPlugin("plugin/" + value.at(0).get<std::string>() + SHARED_SUFFIX);
 						plugin->setConfig(value.at(1));
 					}
 				}
@@ -46,7 +44,11 @@ namespace Algiz {
 		} catch (const std::exception &err) {
 			ERROR('[' << http->server->id << "] Couldn't configure HTTP server: " << err.what());
 			delete http;
-			throw err;
+			throw;
+		} catch (...) {
+			ERROR('[' << http->server->id << "] Couldn't configure HTTP server");
+			delete http;
+			throw;
 		}
 
 		return http;

@@ -44,7 +44,7 @@ namespace Algiz::HTTP {
 			watcherThread = std::thread([this] {
 				for (;;) {
 					try {
-						if (!watcher) {
+						if (!watcher || dying) {
 							break;
 						}
 						watcher->start();
@@ -59,12 +59,12 @@ namespace Algiz::HTTP {
 					}
 				}
 			});
-
-			watcherThread.detach();
 		}
 
 	Server::~Server() {
+		dying = true;
 		watcher->stop();
+		watcherThread.join();
 		server->messageHandler = {};
 	}
 

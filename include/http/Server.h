@@ -77,6 +77,7 @@ namespace Algiz::HTTP {
 			std::optional<Wahtwo::Watcher> watcher;
 			std::thread watcherThread;
 			std::mutex configsMutex;
+			bool dying = false;
 
 			[[nodiscard]] static std::filesystem::path getWebRoot(const std::string &);
 			[[nodiscard]] static bool validatePath(const std::string_view &);
