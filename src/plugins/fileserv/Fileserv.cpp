@@ -441,7 +441,7 @@ namespace Algiz::Plugins {
 		}
 
 		auto [function, lock] = moduleCache[object];
-		function(args);
+		function(args, full_path);
 	}
 
 	std::vector<std::string> Fileserv::getDefaults() const {

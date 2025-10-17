@@ -80,9 +80,9 @@ namespace Algiz::Plugins {
 			view.remove_prefix(code_start + CODE_START.size());
 
 			const bool use_preamble = !view.empty() && view[0] == ':';
-			const bool force_echo = !view.empty() && view[0] == '=';
+			const bool echo_shorthand = !view.empty() && view[0] == '=';
 
-			if (use_preamble || force_echo) {
+			if (use_preamble || echo_shorthand) {
 				view.remove_prefix(1);
 			}
 
@@ -90,7 +90,7 @@ namespace Algiz::Plugins {
 			std::string surrounded;
 			std::unique_ptr<PreprocessAction> action;
 
-			if (force_echo) {
+			if (echo_shorthand) {
 				clang::LangOptions lang_options;
 				clang::CommentOptions::BlockCommandNamesTy includes;
 				clang::LangOptions::setLangDefaults(lang_options, clang::Language::CXX, llvm::Triple{}, includes, clang::LangStandard::lang_cxx26);
@@ -105,7 +105,7 @@ namespace Algiz::Plugins {
 								surrounded = R"(
 #include "include/Module.h"
 
-extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
+extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::filesystem::path &path) {
 	auto &[http, client, request, parts] = algiz_args;
 	auto echo = [](auto &&...) {};
 	echo()";
@@ -133,7 +133,7 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
 
 			size_t valid_size = *delimiter_end;
 			std::string_view valid = shortened.substr(0, valid_size);
-			if (force_echo) {
+			if (echo_shorthand) {
 				stream << "echo(" << valid << ");\n";
 			} else {
 				stream << valid << '\n';
@@ -146,19 +146,20 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
 
 #include <sstream>
 
-extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args) {
-	auto &[http, client, request, parts] = algiz_args;
+extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::filesystem::path &$path) {
+	auto &[$http, $client, $request, $parts] = algiz_args;
+	auto &$get = $request.parameters;
+	auto &$post = $request.postParameters;
+	int $code = 200;
 
-	int code = 200;
-
-	std::stringstream stream;
+	std::stringstream $stream;
 	auto echo = [&](auto &&...things) {
-		(stream << ... << std::forward<decltype(things)>(things));
+		($stream << ... << std::forward<decltype(things)>(things));
 	};
 
 		)" << body.view() << R"(
 
-	http.server->send(client.id, HTTP::Response(code, stream.view()));
+	$http.server->send($client.id, HTTP::Response($code, $stream.view()));
 	// */
 }
 		)";

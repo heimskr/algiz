@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 namespace Algiz::Plugins {
-	using ModuleFunction = void (*)(Algiz::HTTP::Server::HandlerArgs &);
+	using ModuleFunction = void (*)(Algiz::HTTP::Server::HandlerArgs &args, const std::filesystem::path &path);
 
 	class ModuleCache {
 		public:
