@@ -1,3 +1,4 @@
 [2025-10-13 00:06:16] Store autocompiled module shared objects in a dedicated, inaccessible directory.
 [2025-10-13 00:34:24] HEAD support.
 [2025-10-13 00:35:20] Watch for module changes and recompile on .alg updates.
+[2025-10-17 01:45:12] Plugin for automatic Let's Encrypt certificate management.
