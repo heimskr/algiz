@@ -23,13 +23,12 @@ namespace Algiz::Plugins {
 
 	class DiagnosticConsumer final: public clang::DiagnosticConsumer {
 		public:
-			DiagnosticConsumer(PreprocessAction &action):
-				action(action) {}
+			DiagnosticConsumer() = default;
 
 		private:
-			PreprocessAction &action;
-
-			void HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic &diagnostic) override;
+			void HandleDiagnostic(clang::DiagnosticsEngine::Level, const clang::Diagnostic &) override {
+				// Swallow warnings/errors
+			}
 	};
 
 	class PreprocessAction final: public clang::ASTFrontendAction {
@@ -50,10 +49,35 @@ namespace Algiz::Plugins {
 
 			void ExecuteAction() override {
 				clang::DiagnosticsEngine &diagnostics = getCompilerInstance().getDiagnostics();
-				diagnostics.setClient(new DiagnosticConsumer(*this), true);
+				diagnostics.setClient(new DiagnosticConsumer, true);
 				clang::ASTFrontendAction::ExecuteAction();
 			}
 	};
+
+	std::optional<size_t> findCodeEnd(std::string_view source) {
+		clang::LangOptions lang_options;
+		clang::CommentOptions::BlockCommandNamesTy includes;
+		clang::LangOptions::setLangDefaults(lang_options, clang::Language::CXX, llvm::Triple{}, includes, clang::LangStandard::lang_cxx26);
+		clang::Lexer lexer(clang::SourceLocation(), lang_options, source.begin(), source.begin(), source.end());
+		for (clang::Token previous_token{}, token{}; !lexer.LexFromRawLexer(token) && !token.is(clang::tok::eof); previous_token = token) {
+			if (previous_token.is(clang::tok::question)) {
+				if (token.is(clang::tok::greater) || token.is(clang::tok::greatergreater) || token.is(clang::tok::greaterequal) || token.is(clang::tok::greatergreaterequal) || token.is(clang::tok::greatergreatergreater)) {
+					ssize_t offset = lexer.getCurrentBufferOffset();
+					offset -= token.getLength() + 1;
+					assert(offset >= 0);
+					if (offset >= std::ssize(source)) {
+						break;
+					}
+
+					if (source.at(offset) == '?') {
+						return offset;
+					}
+				}
+			}
+		}
+
+		return std::nullopt;
+	}
 
 	std::string preprocessFileservModule(const std::filesystem::path &path) {
 		std::string source = readFile(path);
@@ -90,33 +114,19 @@ namespace Algiz::Plugins {
 			std::string surrounded;
 			std::unique_ptr<PreprocessAction> action;
 
-			if (echo_shorthand) {
-				clang::LangOptions lang_options;
-				clang::CommentOptions::BlockCommandNamesTy includes;
-				clang::LangOptions::setLangDefaults(lang_options, clang::Language::CXX, llvm::Triple{}, includes, clang::LangStandard::lang_cxx26);
-				clang::Lexer lexer(clang::SourceLocation(), lang_options, shortened.begin(), shortened.begin(), shortened.end());
-				for (clang::Token previous_token, token; !lexer.LexFromRawLexer(token); previous_token = token) {
-					if (previous_token.is(clang::tok::question)) {
-						if (token.is(clang::tok::greater) || token.is(clang::tok::greatergreater) || token.is(clang::tok::greaterequal) || token.is(clang::tok::greatergreaterequal) || token.is(clang::tok::greatergreatergreater)) {
-							ssize_t offset = lexer.getCurrentBufferOffset();
-							offset -= token.getLength() + 1;
-							assert(offset >= 0);
-							if (view.at(offset) == '?') {
-								surrounded = R"(
+			if (std::optional<size_t> offset = findCodeEnd(shortened)) {
+				delimiter_end = *offset;
+				if (echo_shorthand) {
+					surrounded = R"(
 #include "include/Module.h"
 
 extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::filesystem::path &path) {
 	auto &[http, client, request, parts] = algiz_args;
 	auto echo = [](auto &&...) {};
 	echo()";
-								surrounded += shortened.substr(0, offset);
-								delimiter_end = offset;
-								surrounded += ");\n}\n";
-								action = std::make_unique<PreprocessAction>(surrounded, delimiter_end);
-								break;
-							}
-						}
-					}
+					surrounded += shortened.substr(0, *offset);
+					surrounded += ");\n}\n";
+					action = std::make_unique<PreprocessAction>(surrounded, delimiter_end);
 				}
 			}
 
@@ -165,36 +175,5 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::fi
 		)";
 
 		return std::move(preamble).str();
-	}
-
-	void DiagnosticConsumer::HandleDiagnostic(clang::DiagnosticsEngine::Level level, const clang::Diagnostic &diagnostic) {
-		llvm::SmallVector<char> message_vector;
-		diagnostic.FormatDiagnostic(message_vector);
-		std::string_view message(message_vector.data(), message_vector.size());
-		const clang::DiagnosticsEngine *diagnostics = diagnostic.getDiags();
-		assert(diagnostics != nullptr);
-		auto ids = diagnostics->getDiagnosticIDs();
-		unsigned category = ids->getCategoryNumberForDiag(diagnostic.getID());
-
-		if (category == clang::diag::DiagCat_Lexical_or_Preprocessor_Issue && message.find("file not found") != std::string::npos) {
-			// don't really care
-			return;
-		}
-
-		if (level >= clang::DiagnosticsEngine::Level::Error || message == "extra tokens at end of #include directive") {
-			if (category == clang::diag::DiagCat_Parse_Issue || category == clang::diag::DiagCat_Lexical_or_Preprocessor_Issue) {
-				clang::SourceManager &manager = action.getCompilerInstance().getSourceManager();
-				const clang::SourceLocation &location = diagnostic.getLocation();
-				const unsigned offset = manager.getFileOffset(location);
-				// We need enough space for the end delimiter.
-				if (offset + CODE_END.size() <= action.code.size()) {
-					if (action.code.substr(offset, CODE_END.size()) == CODE_END) {
-						if (!action.delimiterEnd || offset < *action.delimiterEnd) {
-							action.delimiterEnd = offset;
-						}
-					}
-				}
-			}
-		}
 	}
 }

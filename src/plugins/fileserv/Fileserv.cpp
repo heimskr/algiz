@@ -35,6 +35,10 @@ namespace {
 					throw std::runtime_error("Couldn't write preprocessed module");
 				}
 				source = temp_late;
+			} catch (const std::exception &error) {
+				close(fd);
+				err_text = error.what();
+				throw;
 			} catch (...) {
 				close(fd);
 				throw;
