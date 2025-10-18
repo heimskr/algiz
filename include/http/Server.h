@@ -87,8 +87,8 @@ namespace Algiz::HTTP {
 			std::shared_ptr<Algiz::Server> server;
 			nlohmann::json options;
 			std::filesystem::path webRoot;
-			std::list<PrePtr<HandlerArgs &>> getHandlers;
-			std::list<PrePtr<HandlerArgs &>> postHandlers;
+			std::list<WeakPrePtr<HandlerArgs &>> getHandlers;
+			std::list<WeakPrePtr<HandlerArgs &>> postHandlers;
 			std::list<WeakConnectionHandlerPtr> webSocketConnectionHandlers;
 			std::map<std::filesystem::path, nlohmann::json> configs;
 

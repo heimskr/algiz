@@ -21,13 +21,13 @@ namespace Algiz::Plugins {
 			void postinit(PluginHost *) override;
 			void cleanup(PluginHost *) override;
 
-			std::shared_ptr<PluginHost::PreFn<HTTP::Server::HandlerArgs &>> handler =
-				std::make_shared<PluginHost::PreFn<HTTP::Server::HandlerArgs &>>(bind(*this, &LetsEncrypt::handle));
+			PluginHost::PrePtr<HTTP::Server::HandlerArgs &> handler = PluginHost::makePre<HTTP::Server::HandlerArgs &>(bind(*this, &LetsEncrypt::handle));
 
 		private:
 			ThreadPool pool{4};
 			std::optional<acme_lw::AcmeClient> acmeClient;
 			std::optional<decltype(SSLServer::requestCertificate)::Base> oldRequestCertificate;
+			std::optional<std::unordered_set<std::string>> whitelist;
 
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 			void issueCertificate(const std::string &host);

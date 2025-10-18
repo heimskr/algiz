@@ -22,10 +22,21 @@ namespace Algiz::Plugins {
 			using PostFn = std::function<void(const T &)>;
 
 			template <typename T>
-			using PrePtr = std::weak_ptr<PreFn<T>>;
+			using PrePtr = std::shared_ptr<PreFn<T>>;
 
 			template <typename T>
-			using PostPtr = std::weak_ptr<PostFn<T>>;
+			using PostPtr = std::shared_ptr<PostFn<T>>;
+
+			template <typename T>
+			using WeakPrePtr = std::weak_ptr<PreFn<T>>;
+
+			template <typename T>
+			using WeakPostPtr = std::weak_ptr<PostFn<T>>;
+
+			template <typename T, typename... Args>
+			static auto makePre(Args &&...args) {
+				return std::make_shared<PreFn<T>>(std::forward<Args>(args)...);
+			}
 
 			/** Determines whether a pre-event should go through. */
 			template <typename T, typename C>
@@ -61,7 +72,7 @@ namespace Algiz::Plugins {
 			}
 
 			template <typename T>
-			void after(const T &obj, const std::list<PostPtr<T>> &funcs) {
+			void after(const T &obj, const std::list<WeakPostPtr<T>> &funcs) {
 				for (auto &func: funcs) {
 					if (func.expired()) {
 						WARN("after: pointer is expired");

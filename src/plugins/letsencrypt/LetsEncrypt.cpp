@@ -35,6 +35,10 @@ namespace Algiz::Plugins {
 			throw std::out_of_range("Plugin letsencrypt requires an accountKey string option");
 		}
 
+		if (auto iter = config.find("whitelist"); iter != config.end()) {
+			whitelist = iter->get<decltype(whitelist)::value_type>();
+		}
+
 		try {
 			acme_lw::AcmeClient::Environment env = acme_lw::AcmeClient::Environment::PRODUCTION;
 			acme_lw::AcmeClient::init(env);
@@ -111,6 +115,10 @@ namespace Algiz::Plugins {
 	}
 
 	void LetsEncrypt::issueCertificate(const std::string &host) {
+		if (whitelist && !whitelist->contains(host)) {
+			return;
+		}
+
 		try {
 			acme_lw::Certificate cert = acmeClient->issueCertificate({host}, [&](const std::string &domain, const std::string &key, const std::string &authorization) {
 				if (domain != host) {
