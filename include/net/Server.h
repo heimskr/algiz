@@ -23,6 +23,8 @@
 #include "net/GenericClient.h"
 
 namespace Algiz {
+	class Core;
+
 	void listener_cb(evconnlistener *, evutil_socket_t, sockaddr *, int socklen, void *);
 	void conn_readcb(bufferevent *, void *);
 	void conn_writecb(bufferevent *, void *);
@@ -85,6 +87,7 @@ namespace Algiz {
 					[[nodiscard]] auto lockCloseQueue() { return std::unique_lock(closeQueueMutex); }
 			};
 
+			Core &core;
 			int af;
 			std::string ip;
 			int port;
@@ -105,8 +108,8 @@ namespace Algiz {
 
 			sockaddr *name = nullptr;
 			size_t nameSize = 0;
-			sockaddr_in  name4 {};
-			sockaddr_in6 name6 {};
+			sockaddr_in  name4{};
+			sockaddr_in6 name6{};
 
 			bool removeClient(int);
 
@@ -159,7 +162,7 @@ namespace Algiz {
 			 *  Arguments: (worker, client_id, ip) */
 			std::function<void(Worker &, int, std::string_view)> addClient;
 
-			Server(int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize = 1024);
+			Server(Core &core, int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize = 1024);
 			Server(const Server &) = delete;
 			Server(Server &&) = delete;
 			Server & operator=(const Server &) = delete;
@@ -178,9 +181,10 @@ namespace Algiz {
 			bool close(int client_id);
 			bool close(GenericClient &);
 
-			[[nodiscard]] inline decltype(allClients) & getClients() { return allClients; }
-			[[nodiscard]] inline const decltype(allClients) & getClients() const { return allClients; }
+			[[nodiscard]] auto & getClients() { return allClients; }
+			[[nodiscard]] const auto & getClients() const { return allClients; }
 			[[nodiscard]] auto lockClients() { return std::unique_lock(clientsMutex); }
+			[[nodiscard]] auto & getCore() { return core; }
 
 			/** Given a buffer, this function returns {-1, *} if the message is still incomplete or the {i, l} if the
 			 *  buffer contains a complete message, where i is the index at which the message ends and l is the size of

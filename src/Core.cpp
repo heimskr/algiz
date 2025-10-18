@@ -30,7 +30,6 @@ namespace Algiz {
 					}
 				}
 				http->preinitPlugins();
-				http->postinitPlugins();
 			}
 
 			http->server->messageHandler = [server = http->server](GenericClient &client, std::string_view message) {
@@ -54,42 +53,63 @@ namespace Algiz {
 		return http;
 	}
 
-	std::vector<ApplicationServer *> run(nlohmann::json &json) {
-		std::vector<ApplicationServer *> out;
-		out.reserve(4);
+	void Core::run(nlohmann::json &json) {
+		if (!servers.empty()) {
+			throw std::runtime_error("Can't run: servers already present");
+		}
+
+		servers.reserve(2);
 
 		std::cerr << braille;
 
-		if (json.contains("http")) {
-			const auto &suboptions = json.at("http");
+		if (auto iter = json.find("http"); iter != json.end()) {
+			const auto &suboptions = *iter;
 			const std::string &ip = suboptions.at("ip");
 			const uint16_t port = suboptions.at("port");
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-			const size_t threads = suboptions.contains("threads")?
-				suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
-			auto server = std::make_unique<Server>(af, ip, port, threads, 1024);
+			const size_t threads = suboptions.contains("threads")? suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
+			auto server = std::make_unique<Server>(*this, af, ip, port, threads, 1024);
 			server->id = "http";
-			out.emplace_back(makeHTTP(std::move(server), suboptions));
+			servers.emplace_back(makeHTTP(std::move(server), suboptions));
 		}
 
-		if (json.contains("https")) {
-			const auto &suboptions = json.at("https");
-			const std::string &ip = suboptions.at("ip");
+		if (auto iter = json.find("https"); iter != json.end()) {
+			const auto &suboptions = *iter;
 			const uint16_t port = suboptions.at("port");
-			const std::string &cert = suboptions.at("cert");
-			const std::string &key = suboptions.at("key");
-			std::string chain;
+			const std::string &ip = suboptions.at("ip");
+			std::string cert, key, chain;
+			if (auto iter = suboptions.find("cert"); iter != suboptions.end()) {
+				cert = *iter;
+			}
+			if (auto iter = suboptions.find("key"); iter != suboptions.end()) {
+				key = *iter;
+			}
 			if (auto iter = suboptions.find("chain"); iter != suboptions.end()) {
 				chain = *iter;
 			}
 			const int af = ip.find(':') == std::string::npos? AF_INET : AF_INET6;
-			const size_t threads = suboptions.contains("threads")?
-				suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
-			auto server = std::make_unique<SSLServer>(af, ip, port, cert, key, chain, threads, 1024);
+			const size_t threads = suboptions.contains("threads")? suboptions.at("threads").get<size_t>() : DEFAULT_THREAD_COUNT;
+			auto server = std::make_unique<SSLServer>(*this, af, ip, port, cert, key, chain, threads, 1024);
 			server->id = "https";
-			out.emplace_back(makeHTTP(std::move(server), suboptions));
+			servers.emplace_back(makeHTTP(std::move(server), suboptions));
 		}
 
-		return out;
+		for (ApplicationServer *server: servers) {
+			if (auto *host = dynamic_cast<Plugins::PluginHost *>(server)) {
+				host->postinitPlugins();
+			}
+		}
+	}
+
+	std::shared_ptr<SSLServer> Core::getSSLServer() const {
+		for (ApplicationServer *server: servers) {
+			if (auto *http = dynamic_cast<HTTP::Server *>(server)) {
+				if (auto ssl = std::dynamic_pointer_cast<SSLServer>(http->server)) {
+					return ssl;
+				}
+			}
+		}
+
+		return nullptr;
 	}
 }

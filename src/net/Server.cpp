@@ -18,7 +18,8 @@
 #include <unistd.h>
 
 namespace Algiz {
-	Server::Server(int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize):
+	Server::Server(Core &core, int af, std::string ip, uint16_t port, size_t threadCount, size_t chunkSize):
+		core(core),
 		af(af),
 		ip(std::move(ip)),
 		port(port),

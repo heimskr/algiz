@@ -60,7 +60,10 @@ int main(int argc, char **argv) {
 			Algiz::GeoIP::get(*iter);
 		}
 
-		global_servers = map(Algiz::run(options), [](auto *server) {
+		Algiz::Core core;
+		core.run(options);
+
+		global_servers = map(core.getServers(), [](auto *server) {
 			return std::unique_ptr<Algiz::ApplicationServer>(server);
 		});
 

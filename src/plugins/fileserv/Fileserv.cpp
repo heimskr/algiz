@@ -46,7 +46,7 @@ namespace {
 			close(fd);
 		}
 
-		CommandOutput result = runCommand("c++", {"-std=c++23", "-Iinclude", "-Isubprojects/wahtwo/include", "-fPIC", source.string(), "-shared", "-o", output.string()});
+		CommandOutput result = runCommand("c++", {"-std=c++23", "-Iinclude", "-Isubprojects/wahtwo/include", "-g", "-fPIC", source.string(), "-shared", "-o", output.string()});
 		if (result.code || result.signal != -1) {
 			if (!result.err.empty()) {
 				ERROR("Failed to compile " << source << ":\n" << result.err);

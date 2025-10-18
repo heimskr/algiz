@@ -7,8 +7,22 @@
 
 namespace Algiz {
 	class ApplicationServer;
+	class SSLServer;
 
 	constexpr size_t DEFAULT_THREAD_COUNT = 8;
 
-	std::vector<ApplicationServer *> run(nlohmann::json &);
+	class Core {
+		public:
+			Core() = default;
+
+			void run(nlohmann::json &);
+
+			const auto & getServers() const { return servers; }
+
+			std::shared_ptr<SSLServer> getSSLServer() const;
+
+		private:
+			std::vector<ApplicationServer *> servers;
+	};
+
 }
