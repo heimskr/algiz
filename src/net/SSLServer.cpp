@@ -47,7 +47,6 @@ namespace Algiz {
 			SSL_CTX_set_tlsext_servername_arg(sslContext, this);
 			SSL_CTX_set_tlsext_servername_callback(sslContext, (+[](SSL *ssl, int *, void *arg) {
 				const char *servername = SSL_get_servername(ssl, TLSEXT_NAMETYPE_host_name);
-				INFO("servername is [" << servername << "]");
 				if (servername == nullptr) {
 					return SSL_TLSEXT_ERR_OK;
 				}
@@ -68,13 +67,11 @@ namespace Algiz {
 						return SSL_TLSEXT_ERR_ALERT_FATAL;
 					}
 				} else {
-					ERROR("Couldn't find certificate for " << servername);
 					auto lock = server->requestCertificate.sharedLock();
 					if (server->requestCertificate) {
-						INFO("Going to request certificate.");
 						server->requestCertificate(servername);
 					} else {
-						WARN("Can't request certificate!");
+						WARN("Can't request certificate for " << servername << "!");
 					}
 				}
 

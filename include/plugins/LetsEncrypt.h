@@ -32,6 +32,7 @@ namespace Algiz::Plugins {
 			Plugins::CancelableResult handle(const HTTP::Server::HandlerArgs &, bool not_disabled);
 			void issueCertificate(const std::string &host);
 			void finishCertificate(std::string_view host, acme_lw::Certificate);
+			void loadCache();
 			std::shared_ptr<SSLServer> getSSLServer() const;
 
 			std::unordered_map<std::string, std::string> challenges;

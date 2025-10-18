@@ -22,3 +22,4 @@ callgrind.*
 *.mmdb
 /.game3_secret
 /subprojects/.wraplock
+/certs

@@ -9,11 +9,19 @@
 
 namespace {
 	constexpr size_t MAX_CHALLENGES = 128;
+	const std::filesystem::path CERTS_PATH = "certs";
+
+	void ensureDirectory() {
+		if (!std::filesystem::exists(CERTS_PATH)) {
+			std::filesystem::create_directory(CERTS_PATH);
+		}
+	}
 }
 
 namespace Algiz::Plugins {
 	void LetsEncrypt::postinit(PluginHost *host) {
-		dynamic_cast<HTTP::Server &>(*(parent = host)).getHandlers.push_back(handler);
+		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
+		http.getHandlers.push_back(handler);
 
 		std::string account_key;
 
@@ -24,7 +32,7 @@ namespace Algiz::Plugins {
 		}
 
 		try {
-			acme_lw::AcmeClient::Environment env = acme_lw::AcmeClient::Environment::STAGING;
+			acme_lw::AcmeClient::Environment env = acme_lw::AcmeClient::Environment::PRODUCTION;
 			acme_lw::AcmeClient::init(env);
 			acmeClient.emplace(account_key);
 			std::memset(account_key.data(), 0, account_key.size());
@@ -34,7 +42,8 @@ namespace Algiz::Plugins {
 			throw;
 		}
 
-		if (auto ssl = getSSLServer()) {
+		if (auto ssl = std::dynamic_pointer_cast<SSLServer>(http.server)) {
+			loadCache();
 			oldRequestCertificate = ssl->requestCertificate.swap([this](const char *servername) {
 				pool.add([this, host = std::string(servername)](ThreadPool &, size_t) {
 					issueCertificate(host);
@@ -68,8 +77,6 @@ namespace Algiz::Plugins {
 		}
 
 		auto &[http, client, request, parts] = args;
-		auto &server = http.server;
-		auto id = client.id;
 
 		try {
 			if (request.path.starts_with("/.well-known/acme-challenge/")) {
@@ -84,23 +91,6 @@ namespace Algiz::Plugins {
 				client.send(HTTP::Response(404, "Not Found"));
 				client.close();
 				return CancelableResult::Kill;
-			}
-
-			if (acmeClient && request.path == "/le-renew") {
-				std::string host(request.getHeader("host"));
-
-				if (host.empty()) {
-					client.send(HTTP::Response(403, "Forbidden"));
-					client.close();
-					return CancelableResult::Kill;
-				}
-
-				pool.add([this, host = std::move(host)](ThreadPool &, size_t) {
-					issueCertificate(host);
-				});
-
-				client.send(HTTP::Response(200, "Pending."));
-				return CancelableResult::Approve;
 			}
 		} catch (const std::exception &err) {
 			ERROR(err.what());
@@ -118,45 +108,93 @@ namespace Algiz::Plugins {
 	}
 
 	void LetsEncrypt::issueCertificate(const std::string &host) {
-		acme_lw::Certificate cert = acmeClient->issueCertificate({host}, [&](const std::string &domain, const std::string &key, const std::string &authorization) {
-			if (domain != host) {
-				throw std::runtime_error(std::format("Mismatch between host {{{}}} and domain {{{}}}", host, domain));
-			}
-
-			std::string prefix = std::format("http://{}/", host);
-
-			if (!key.starts_with(prefix)) {
-				throw std::runtime_error(std::format("Key parameter {{{}}} doesn't begin with expected {{{}}}", key, prefix));
-			}
-
-			std::unique_lock lock{challengesMutex};
-			auto [iter, inserted] = challenges.emplace(key.substr(prefix.size() - 1), authorization);
-			if (inserted) {
-				challengeIterators.push_back(iter);
-				while (challengeIterators.size() > MAX_CHALLENGES) {
-					challenges.erase(challengeIterators.front());
-					challengeIterators.pop_front();
+		try {
+			acme_lw::Certificate cert = acmeClient->issueCertificate({host}, [&](const std::string &domain, const std::string &key, const std::string &authorization) {
+				if (domain != host) {
+					throw std::runtime_error(std::format("Mismatch between host {{{}}} and domain {{{}}}", host, domain));
 				}
-			}
-		}, acme_lw::AcmeClient::Challenge::HTTP);
 
-		finishCertificate(host, std::move(cert));
-		INFO("Finished challenge for " << host << '.');
+				std::string prefix = std::format("http://{}/", host);
+
+				if (!key.starts_with(prefix)) {
+					throw std::runtime_error(std::format("Key parameter {{{}}} doesn't begin with expected {{{}}}", key, prefix));
+				}
+
+				std::unique_lock lock{challengesMutex};
+				auto [iter, inserted] = challenges.emplace(key.substr(prefix.size() - 1), authorization);
+				if (inserted) {
+					challengeIterators.push_back(iter);
+					while (challengeIterators.size() > MAX_CHALLENGES) {
+						challenges.erase(challengeIterators.front());
+						challengeIterators.pop_front();
+					}
+				}
+			}, acme_lw::AcmeClient::Challenge::HTTP);
+
+			finishCertificate(host, std::move(cert));
+			INFO("Finished challenge for " << host << '.');
+		} catch (const acme_lw::AcmeException &error) {
+			WARN("Issuing certificate failed for " << host << ": " << error.what());
+		}
 	}
 
 	void LetsEncrypt::finishCertificate(std::string_view host, acme_lw::Certificate certificate) {
-		if (auto ssl = getSSLServer()) {
-			std::string first_cert(certificate.fullchain);
-			std::string_view end = "-----END CERTIFICATE-----";
-			size_t position = first_cert.find(end);
-			if (position == std::string::npos) {
-				throw std::runtime_error("Couldn't find end of first fullchain cert");
-			}
-			first_cert.erase(first_cert.begin() + position + end.size(), first_cert.end());
-			ssl->addCertificate(std::string(host), first_cert, certificate.privkey);
-			INFO("Saved certificate for " << host);
-		} else {
+		std::shared_ptr<SSLServer> ssl = getSSLServer();
+		if (!ssl) {
 			WARN("No HTTPS server to give the certificate for " << host);
+			return;
+		}
+
+		std::string first_cert(certificate.fullchain);
+		std::string_view end = "-----END CERTIFICATE-----";
+		size_t position = first_cert.find(end);
+		if (position == std::string::npos) {
+			throw std::runtime_error("Couldn't find end of first fullchain cert");
+		}
+		first_cert.erase(first_cert.begin() + position + end.size(), first_cert.end());
+		ssl->addCertificate(std::string(host), first_cert, certificate.privkey);
+
+		if (host.contains('/')) {
+			WARN("Refusing to cache certificate for " << host);
+			INFO("Registered certificate for " << host);
+			return;
+		}
+
+		ensureDirectory();
+		std::filesystem::path path = CERTS_PATH / host;
+		path += ".json";
+		std::ofstream(path) << nlohmann::json{
+			{"expiry", certificate.getExpiry()},
+			{"hostname", host},
+			{"cert", first_cert},
+			{"privkey", certificate.privkey},
+		}.dump();
+		INFO("Registered and cached certificate for " << host);
+	}
+
+	void LetsEncrypt::loadCache() {
+		std::shared_ptr<SSLServer> ssl = getSSLServer();
+
+		if (!ssl || !std::filesystem::exists(CERTS_PATH)) {
+			return;
+		}
+
+		for (const std::filesystem::directory_entry &entry: std::filesystem::directory_iterator(CERTS_PATH)) {
+			std::filesystem::path path = entry.path();
+			if (path.extension() == ".json") {
+				nlohmann::json json = nlohmann::json::parse(readFile(path));
+				std::string hostname = json.at("hostname");
+				time_t expiry = json.at("expiry");
+				if (expiry <= time(nullptr)) {
+					WARN("Ignoring stale certificate for " << hostname);
+					continue;
+				}
+
+				std::string cert = json.at("cert");
+				std::string privkey = json.at("privkey");
+				ssl->addCertificate(hostname, cert, privkey);
+				SUCCESS("Added cached certificate for " << hostname);
+			}
 		}
 	}
 
