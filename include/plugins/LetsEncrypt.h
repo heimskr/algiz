@@ -35,8 +35,8 @@ namespace Algiz::Plugins {
 			void loadCache();
 			std::shared_ptr<SSLServer> getSSLServer() const;
 
-			std::unordered_map<std::string, std::string> challenges;
-			std::deque<decltype(challenges)::iterator> challengeIterators;
-			std::mutex challengesMutex;
+			static std::unordered_map<std::string, std::string> challenges;
+			static std::deque<decltype(challenges)::iterator> challengeIterators;
+			static std::mutex challengesMutex;
 	};
 }

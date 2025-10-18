@@ -19,6 +19,10 @@ namespace {
 }
 
 namespace Algiz::Plugins {
+	std::unordered_map<std::string, std::string> LetsEncrypt::challenges;
+	std::deque<decltype(LetsEncrypt::challenges)::iterator> LetsEncrypt::challengeIterators;
+	std::mutex LetsEncrypt::challengesMutex;
+
 	void LetsEncrypt::postinit(PluginHost *host) {
 		auto &http = dynamic_cast<HTTP::Server &>(*(parent = host));
 		http.getHandlers.push_back(handler);
@@ -82,7 +86,6 @@ namespace Algiz::Plugins {
 			if (request.path.starts_with("/.well-known/acme-challenge/")) {
 				std::unique_lock lock{challengesMutex};
 				if (auto iter = challenges.find(request.path); iter != challenges.end()) {
-					INFO("Serving ACME challenge for " << request.path << ": " << iter->second);
 					client.send(HTTP::Response(200, iter->second));
 					return CancelableResult::Approve;
 				}
@@ -132,7 +135,6 @@ namespace Algiz::Plugins {
 			}, acme_lw::AcmeClient::Challenge::HTTP);
 
 			finishCertificate(host, std::move(cert));
-			INFO("Finished challenge for " << host << '.');
 		} catch (const acme_lw::AcmeException &error) {
 			WARN("Issuing certificate failed for " << host << ": " << error.what());
 		}
