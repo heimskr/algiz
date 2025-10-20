@@ -31,6 +31,7 @@ namespace Algiz {
 
 		std::unique_lock lock{actionsMutex};
 		actions.emplace(point, std::move(action));
+		cv.notify_all();
 		return true;
 	}
 
