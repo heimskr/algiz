@@ -94,7 +94,6 @@ namespace Algiz::Plugins {
 					return CancelableResult::Approve;
 				}
 				lock.unlock();
-				WARN("Couldn't find challenge for " << request.path);
 				client.send(HTTP::Response(404, "Not Found"));
 				client.close();
 				return CancelableResult::Kill;
