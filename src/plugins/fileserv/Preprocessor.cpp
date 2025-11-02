@@ -180,7 +180,7 @@ extern "C" void algizModule(HTTP::Server::HandlerArgs &algiz_args, const std::fi
 
 		)" << body.view() << R"(
 
-	$client.send(HTTP::Response($code, $stream.view()));
+	$client.send(HTTP::Response($code, std::move($stream).str()));
 	// */
 }
 		)";
