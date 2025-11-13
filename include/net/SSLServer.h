@@ -43,7 +43,7 @@ namespace Algiz {
 
 			Lockable<std::function<void(const char *)>> requestCertificate;
 
-			void addCertificate(std::string hostname, const std::string &certificate, const std::string &private_key);
+			void addCertificate(std::string hostname, const std::string &certificate, const std::string &private_key, const std::string &rest_of_chain);
 
 			std::shared_ptr<Worker> makeWorker(size_t buffer_size, size_t id) override;
 

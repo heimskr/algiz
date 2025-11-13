@@ -161,7 +161,8 @@ namespace Algiz::Plugins {
 			throw std::runtime_error("Couldn't find end of first fullchain cert");
 		}
 		first_cert.erase(first_cert.begin() + position + end.size(), first_cert.end());
-		ssl->addCertificate(std::string(host), first_cert, certificate.privkey);
+		std::string rest_of_chain = certificate.fullchain.substr(first_cert.size());
+		ssl->addCertificate(std::string(host), first_cert, certificate.privkey, rest_of_chain);
 
 		if (host.contains('/')) {
 			WARN("Refusing to cache certificate for " << host);
@@ -177,6 +178,7 @@ namespace Algiz::Plugins {
 			{"hostname", host},
 			{"cert", first_cert},
 			{"privkey", certificate.privkey},
+			{"chain", rest_of_chain},
 		}.dump();
 		INFO("Registered and cached certificate for " << host);
 	}
@@ -201,7 +203,8 @@ namespace Algiz::Plugins {
 
 				std::string cert = json.at("cert");
 				std::string privkey = json.at("privkey");
-				ssl->addCertificate(hostname, cert, privkey);
+				std::string rest_of_chain = json.at("chain");
+				ssl->addCertificate(hostname, cert, privkey, rest_of_chain);
 				SUCCESS("Added cached certificate for " << hostname);
 			}
 		}

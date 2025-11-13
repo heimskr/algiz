@@ -55,11 +55,19 @@ namespace Algiz {
 				std::shared_lock lock{server->certificatesMutex};
 
 				if (auto iter = server->certificatesMap.find(servername); iter != server->certificatesMap.end()) {
-					auto [certificate, private_key] = iter->second;
+					const auto &[certificate, private_key, chain] = iter->second;
 
 					if (SSL_use_certificate(ssl, certificate) != 1) {
 						ERROR("Failed to set certificate for hostname " << servername);
 						return SSL_TLSEXT_ERR_ALERT_FATAL;
+					}
+
+					for (size_t i = 0; X509 *intermediate: chain) {
+						++i;
+						if (SSL_add1_chain_cert(ssl, intermediate) != 1) {
+							ERROR("Failed to add intermediate " << i << " for hostname " << servername);
+							return SSL_TLSEXT_ERR_ALERT_FATAL;
+						}
 					}
 
 					if (SSL_use_PrivateKey(ssl, private_key) != 1) {
@@ -218,11 +226,10 @@ namespace Algiz {
 		bufferevent_enable(buffer_event, EV_READ | EV_WRITE);
 	}
 
-	void SSLServer::addCertificate(std::string hostname, const std::string &certificate, const std::string &private_key) {
+	void SSLServer::addCertificate(std::string hostname, const std::string &certificate, const std::string &private_key, const std::string &rest_of_chain) {
 		std::unique_lock lock{certificatesMutex};
 
 		if (auto iter = certificatesMap.find(hostname); iter != certificatesMap.end()) {
-			iter->second.free();
 			certificatesMap.erase(iter);
 		}
 
@@ -235,7 +242,18 @@ namespace Algiz {
 			throw std::runtime_error("Couldn't read certificate");
 		}
 
-		X509 *x509 =  PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
+		X509 *x509 = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr);
+
+		if (BIO_puts(bio.get(), rest_of_chain.c_str()) <= 0) {
+			throw std::runtime_error("Couldn't read rest of chain");
+		}
+
+		std::vector<X509 *> chain;
+
+		X509 *intermediate = nullptr;
+		while ((intermediate = PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr)) != nullptr) {
+			chain.push_back(intermediate);
+		}
 
 		if (BIO_puts(bio.get(), private_key.c_str()) <= 0) {
 			X509_free(x509);
@@ -244,7 +262,7 @@ namespace Algiz {
 
 		EVP_PKEY *pkey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
 
-		certificatesMap.try_emplace(std::move(hostname), x509, pkey);
+		certificatesMap.try_emplace(std::move(hostname), x509, pkey, std::move(chain));
 	}
 
 	std::shared_ptr<Server::Worker> SSLServer::makeWorker(size_t buffer_size, size_t id) {
